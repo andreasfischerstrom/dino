@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { SPECIES, STATS, BASE_STATS, StatKey, Species } from '@/lib/game-data'
+import SignOutButton from '@/components/SignOutButton'
 
 export default function CreateCharacter() {
   const router = useRouter()
@@ -64,6 +65,9 @@ export default function CreateCharacter() {
 
   return (
     <div className="min-h-screen px-4 py-10 max-w-3xl mx-auto">
+      <div className="flex justify-end mb-2">
+        <SignOutButton />
+      </div>
       <h1 className="text-4xl font-bold mb-2 text-center" style={{ color: '#c8a84b' }}>
         Forge Your Warrior
       </h1>
