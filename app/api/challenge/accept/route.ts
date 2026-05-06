@@ -117,6 +117,7 @@ export async function POST(req: Request) {
     losses: !aWon ? attacker.losses + 1 : attacker.losses,
     kills: !battle.bAlive ? attacker.kills + 1 : attacker.kills,
     last_regen_at: now,
+    stat_points: (attacker.stat_points || 0) + Math.max(0, aProgress.level - attacker.level),
   }).eq('id', attacker.id)
 
   await supabase.from('characters').update({
@@ -125,6 +126,7 @@ export async function POST(req: Request) {
     losses: !bWon ? defender.losses + 1 : defender.losses,
     kills: !battle.aAlive ? defender.kills + 1 : defender.kills,
     last_regen_at: now,
+    stat_points: (defender.stat_points || 0) + Math.max(0, bProgress.level - defender.level),
   }).eq('id', defender.id)
 
   // Close challenge

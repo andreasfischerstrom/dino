@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { SPECIES, STATS, GEAR_SLOTS } from '@/lib/game-data'
+import { SPECIES, STATS, GEAR_SLOTS, xpForLevel } from '@/lib/game-data'
 import { getEquippedGear, computeGearBonus } from '@/lib/stats'
 import SignOutButton from '@/components/SignOutButton'
 import CharacterCard from '@/components/CharacterCard'
@@ -49,7 +49,8 @@ export default async function TownPage() {
   const buffs: { stat: string; bonus: number; label: string }[] = character.buffs || []
 
   const species = SPECIES.find(s => s.id === character.species)
-  const xpForNext = Math.floor(100 * Math.pow(character.level + 1, 1.6))
+  const xpCurrent = xpForLevel(character.level)
+  const xpForNext = xpForLevel(character.level + 1)
   const hpPct = Math.round((character.hp / character.max_hp) * 100)
 
   // Pre-compute stat rows for CharacterCard
@@ -98,7 +99,10 @@ export default async function TownPage() {
         hp={character.hp}
         maxHp={character.max_hp}
         xp={character.xp}
+        xpCurrent={xpCurrent}
         xpForNext={xpForNext}
+        statPoints={character.stat_points || 0}
+        characterId={character.id}
         kills={character.kills}
         wins={character.wins}
         losses={character.losses}

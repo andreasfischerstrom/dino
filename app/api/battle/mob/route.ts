@@ -71,6 +71,7 @@ export async function POST(req: Request) {
   const newXp = (character.xp || 0) + xpGained
   const newLevel = (() => { let l = character.level; while (xpForLevel(l + 1) <= newXp) l++; return l })()
   const leveledUp = newLevel > character.level
+  const levelsGained = newLevel - character.level
 
   // HP damage taken — simulation always runs from max HP, translate loss to actual HP
   const hpLost = Math.max(0, maxHp(charStats.constitution) - battle.aFinalHp)
@@ -98,6 +99,7 @@ export async function POST(req: Request) {
     wins: won ? character.wins + 1 : character.wins,
     losses: !won ? character.losses + 1 : character.losses,
     last_regen_at: new Date().toISOString(),
+    stat_points: (character.stat_points || 0) + levelsGained,
   }).eq('id', character.id)
 
   return NextResponse.json({

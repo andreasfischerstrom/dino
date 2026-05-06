@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { StatDefinition, GearSlot } from '@/lib/game-data'
+import { GearSlot } from '@/lib/game-data'
 
 interface SlotItem {
   key: GearSlot
@@ -35,7 +35,10 @@ interface Props {
   hp: number
   maxHp: number
   xp: number
+  xpCurrent: number
   xpForNext: number
+  statPoints: number
+  characterId: string
   kills: number
   wins: number
   losses: number
@@ -47,15 +50,36 @@ interface Props {
 
 export default function CharacterCard({
   name, image, speciesEmoji, speciesName, level,
-  hp, maxHp, xp, xpForNext,
+  hp, maxHp, xp, xpCurrent, xpForNext, statPoints, characterId,
   kills, wins, losses, bones,
   stats, slots, buffs,
 }: Props) {
   const [expanded, setExpanded] = useState(false)
+  const [localStatPoints, setLocalStatPoints] = useState(statPoints)
+  const [localStats, setLocalStats] = useState(stats)
+  const [spending, setSpending] = useState<string | null>(null)
 
   const hpPct = Math.round((hp / maxHp) * 100)
-  const xpPct = Math.min(100, Math.round((xp / xpForNext) * 100))
-  const hasGear = stats.some(s => s.gear !== 0)
+  const xpSpan = xpForNext - xpCurrent
+  const xpPct = Math.min(100, Math.round(((xp - xpCurrent) / xpSpan) * 100))
+
+  async function spendPoint(statKey: string) {
+    if (localStatPoints < 1 || spending) return
+    setSpending(statKey)
+    const res = await fetch('/api/character/spend-stat-point', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stat: statKey }),
+    })
+    if (res.ok) {
+      setLocalStatPoints(p => p - 1)
+      setLocalStats(prev => prev.map(s => s.key === statKey
+        ? { ...s, base: s.base + 1, total: s.total + 1 }
+        : s
+      ))
+    }
+    setSpending(null)
+  }
   const hasBuffs = buffs.length > 0
 
   return (
@@ -87,7 +111,7 @@ export default function CharacterCard({
               <div className="flex-1 stat-bar">
                 <div style={{ height: '8px', borderRadius: '4px', background: '#4a7a4a', width: `${xpPct}%`, transition: 'width 0.3s' }} />
               </div>
-              <span className="text-xs w-16 text-right tabular-nums" style={{ color: '#8a7a5a' }}>{xp}/{xpForNext}</span>
+              <span className="text-xs w-16 text-right tabular-nums" style={{ color: '#8a7a5a' }}>{xp - xpCurrent}/{xpSpan}</span>
             </div>
           </div>
           <div className="mt-1.5 flex gap-3 text-xs flex-wrap" style={{ color: '#5a4a3a' }}>
@@ -118,9 +142,14 @@ export default function CharacterCard({
             <p className="text-xs font-bold" style={{ color: '#5a4a3a' }}>STATS</p>
             <div className="flex gap-3 text-xs">
               <span style={{ color: '#8a7a5a' }}>■ base</span>
-              {hasGear && <span style={{ color: '#c8a84b' }}>■ gear</span>}
+              {localStats.some(s => s.gear !== 0) && <span style={{ color: '#c8a84b' }}>■ gear</span>}
               {hasBuffs && <span style={{ color: '#6abf6a' }}>■ buff</span>}
             </div>
+            {localStatPoints > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: '#1a3a1a', color: '#6abf6a', border: '1px solid #2d6e2d' }}>
+                +{localStatPoints} pts to spend
+              </span>
+            )}
             <Link href="/equipment" className="ml-auto text-xs font-bold"
               style={{ color: '#c8a84b', textDecoration: 'none' }}>
               ⚔️ Equipment →
@@ -129,7 +158,7 @@ export default function CharacterCard({
 
           {/* Stats grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-4">
-            {stats.map(stat => {
+            {localStats.map(stat => {
               const barMax = 15
               const basePct = Math.min(100, (stat.base / barMax) * 100)
               const gearPct = Math.min(100 - basePct, (stat.gear / barMax) * 100)
@@ -150,6 +179,15 @@ export default function CharacterCard({
                     {stat.gear !== 0 && <span style={{ color: '#9a8040' }}> +{stat.gear}</span>}
                     {stat.buff !== 0 && <span style={{ color: '#4a8a4a' }}> +{stat.buff}</span>}
                   </span>
+                  {localStatPoints > 0 && (
+                    <button
+                      onClick={() => spendPoint(stat.key)}
+                      disabled={spending !== null}
+                      className="shrink-0 w-5 h-5 rounded text-xs font-bold flex items-center justify-center"
+                      style={{ background: '#1a3a1a', color: '#6abf6a', border: '1px solid #2d6e2d' }}>
+                      {spending === stat.key ? '…' : '+'}
+                    </button>
+                  )}
                 </div>
               )
             })}
