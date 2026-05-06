@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SPECIES, STATS, GEAR } from '@/lib/game-data'
+import DeleteCharacterButton from '@/components/DeleteCharacterButton'
 
 export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -42,9 +43,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
     <div className="min-h-screen px-4 py-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <Link href="/town" className="btn-ghost text-sm">← Town</Link>
-        <h1 className="text-3xl font-bold" style={{ color: character.alive ? '#c8a84b' : '#8a7a5a' }}>
+        <h1 className="text-3xl font-bold flex-1" style={{ color: character.alive ? '#c8a84b' : '#8a7a5a' }}>
           {character.alive ? '' : '☠️ '}{character.name}
         </h1>
+        {isOwn && <DeleteCharacterButton />}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
