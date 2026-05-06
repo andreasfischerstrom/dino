@@ -7,9 +7,11 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Check if user already has a character
-  const { data: existing } = await supabase.from('characters').select('id').eq('user_id', user.id).single()
-  if (existing) return NextResponse.json({ error: 'You already have a character. One dinosaur per customer.' }, { status: 400 })
+  // Check if user already has a living character
+  const { data: existing } = await supabase.from('characters').select('id, alive').eq('user_id', user.id).single()
+  if (existing?.alive) return NextResponse.json({ error: 'You already have a character. One dinosaur per customer.' }, { status: 400 })
+  // Delete the dead character to make room for the new one
+  if (existing) await supabase.from('characters').delete().eq('id', existing.id)
 
   const formData = await req.formData()
   const name = (formData.get('name') as string)?.trim()
