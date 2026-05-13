@@ -9,7 +9,7 @@ interface CharacterSnapshot {
   xp: number
   xpForNextLevel: number
   bones: number
-  image: string   // emoji or URL
+  image: string
   name: string
 }
 
@@ -19,20 +19,20 @@ interface Props {
   fighterBName: string
   fighterBImage: string
   onComplete: () => void
-  userSide?: 'a' | 'b'   // which fighter in the simulation is the current user
+  userSide?: 'a' | 'b'
 }
 
 const EVENT_COLORS: Record<string, string> = {
-  intro:     '#8a7a5a',
+  intro:     '#7a6a4a',
   attack:    '#e8d5b0',
   crit:      '#ff9944',
-  miss:      '#5a4a3a',
+  miss:      '#4a3a22',
   counter:   '#aabb88',
-  roar:      '#c8a84b',
+  roar:      '#d4a843',
   surrender: '#6ab0bf',
   death:     '#bf4040',
-  outcome:   '#c8a84b',
-  flavor:    '#4a6a4a',
+  outcome:   '#d4a843',
+  flavor:    '#3a5a3a',
 }
 
 function isUrl(s: string) { return s.startsWith('http') || s.startsWith('/') }
@@ -42,10 +42,13 @@ function FighterHead({ image, name, align }: { image: string; name: string; alig
     <div className={`flex flex-col items-center gap-1 ${align === 'right' ? 'items-end' : 'items-start'}`} style={{ minWidth: 56 }}>
       {isUrl(image)
         ? <img src={image} alt={name} className="w-12 h-12 rounded-full object-cover"
-            style={{ border: '2px solid #3d2e1e' }} />
+            style={{ border: '2px solid #5a4028', boxShadow: '0 2px 6px rgba(0,0,0,0.8)' }} />
         : <div className="text-4xl leading-none">{image}</div>
       }
-      <span className="text-xs font-bold truncate max-w-[80px]" style={{ color: '#c8a84b' }}>{name}</span>
+      <span className="text-xs font-bold truncate max-w-[80px]"
+        style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>
+        {name}
+      </span>
     </div>
   )
 }
@@ -85,7 +88,6 @@ export default function BattleViewer({ battleData, fighterA, fighterBName, fight
   const hpPctA = Math.round((hpA / maxHpA) * 100)
   const hpPctB = Math.round((hpB / maxHpB) * 100)
 
-  // From the user's perspective: left = user, right = opponent
   const userIsA = userSide === 'a'
   const userHpPct  = userIsA ? hpPctA : hpPctB
   const userHp     = userIsA ? hpA    : hpB
@@ -125,29 +127,43 @@ export default function BattleViewer({ battleData, fighterA, fighterBName, fight
     )
   }
 
+  function hpBarColor(pct: number) {
+    if (pct > 50) return 'linear-gradient(to bottom, #d03030 0%, #921818 60%, #6a0f0f 100%)'
+    if (pct > 25) return 'linear-gradient(to bottom, #d07020 0%, #924010 60%, #6a2808 100%)'
+    return 'linear-gradient(to bottom, #ff4444 0%, #cc2020 60%, #991010 100%)'
+  }
+
   function HpBar({ hpPct, hp, maxHp }: { hpPct: number; hp: number; maxHp: number }) {
     return (
       <div className="flex-1">
-        <div className="stat-bar mb-0.5">
-          <div className="hp-bar-fill" style={{
+        <div className="hud-bar mb-0.5" style={{ flex: 'none', width: '100%' }}>
+          <div style={{
+            height: '100%',
             width: `${hpPct}%`,
-            background: hpPct > 50 ? '#8b2020' : hpPct > 25 ? '#c8601c' : '#ff3333'
+            background: hpBarColor(hpPct),
+            borderRadius: '2px',
+            transition: 'width 0.4s ease',
+            boxShadow: 'inset 0 1px 0 rgba(255,160,160,0.25)',
           }} />
         </div>
-        <div className="text-xs text-center" style={{ color: '#5a4a3a' }}>{hp}/{maxHp}</div>
+        <div className="text-xs text-center" style={{ color: '#4a3a22' }}>{hp}/{maxHp}</div>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen flex flex-col px-4 py-8 max-w-2xl mx-auto">
-      {/* HP bars — user always on left, opponent on right */}
-      <div className="flex items-center gap-3 mb-6">
+      {/* Fighter HP bars */}
+      <div className="flex items-center gap-3 mb-6 panel" style={{ padding: '1rem' }}>
         <FighterHead image={fighterA.image} name={fighterA.name} align="left" />
         <div className="flex-1">
-          <div className="flex gap-2 items-center mb-1">
+          <div className="flex gap-3 items-center">
             <HpBar hpPct={userHpPct} hp={userHp} maxHp={userMaxHp} />
-            <div className="text-sm font-bold shrink-0" style={{ color: '#5a4a3a' }}>VS</div>
+            <div className="text-xs font-bold shrink-0" style={{
+              color: '#4a3a22',
+              fontFamily: 'var(--font-cinzel, Georgia)',
+              letterSpacing: '0.08em',
+            }}>VS</div>
             <HpBar hpPct={oppHpPct} hp={oppHp} maxHp={oppMaxHp} />
           </div>
         </div>
@@ -169,7 +185,7 @@ export default function BattleViewer({ battleData, fighterA, fighterBName, fight
             {event.type === 'outcome' && '🏆 '}
             {event.type === 'counter' && '↩️ '}
             {event.round > 0 && event.type !== 'flavor' && event.type !== 'outcome'
-              ? <span style={{ color: '#3d2e1e', marginRight: '6px' }}>[R{event.round}]</span>
+              ? <span style={{ color: '#2a1e0e', marginRight: '6px' }}>[R{event.round}]</span>
               : null}
             {event.text}
           </p>
@@ -179,11 +195,11 @@ export default function BattleViewer({ battleData, fighterA, fighterBName, fight
 
       {/* Controls */}
       <div className="text-center space-y-3">
-        <div className="text-xs" style={{ color: '#3d2e1e' }}>{visibleCount} / {events.length}</div>
+        <div className="text-xs" style={{ color: '#2a1e10' }}>{visibleCount} / {events.length}</div>
         {!done ? (
           <div className="space-y-1">
             <button className="btn-primary w-full" onClick={advance}>Next ▶</button>
-            <p className="text-xs" style={{ color: '#3d2e1e' }}>or press Space</p>
+            <p className="text-xs" style={{ color: '#2a1e10' }}>or press Space</p>
           </div>
         ) : (
           <button className="btn-primary w-full fade-in" onClick={() => setShowOutcome(true)}>

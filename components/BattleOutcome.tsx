@@ -5,7 +5,7 @@ interface Props {
   won: boolean
   survived: boolean
   fighterName: string
-  fighterImage: string   // emoji or image URL
+  fighterImage: string
   hpBefore: number
   hpAfter: number
   maxHp: number
@@ -71,96 +71,111 @@ export default function BattleOutcome({
   const xpDelta    = xpAfter - xpBefore
   const hpDelta    = hpAfter - hpBefore
 
-  const headingColor = won ? '#c8a84b' : (survived ? '#8a7a5a' : '#8b2020')
+  const headingColor = won ? '#d4a843' : (survived ? '#7a6a4a' : '#9b1818')
   const headingText  = !survived
     ? `${fighterName} has fallen.`
     : won
     ? `${fighterName} stands victorious!`
     : `${fighterName} retreats, alive.`
 
+  function hpBarColor(pct: number) {
+    if (pct > 50) return 'linear-gradient(to bottom, #d03030 0%, #921818 60%, #6a0f0f 100%)'
+    if (pct > 25) return 'linear-gradient(to bottom, #d07020 0%, #924010 60%, #6a2808 100%)'
+    return 'linear-gradient(to bottom, #ff4444 0%, #cc2020 60%, #991010 100%)'
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 max-w-md mx-auto text-center">
-      {/* Fighter portrait */}
-      <div className="mb-4 fade-in" style={{ filter: survived ? 'none' : 'grayscale(80%) brightness(0.6)' }}>
+      <div className="mb-4 fade-in" style={{ filter: survived ? 'none' : 'grayscale(80%) brightness(0.5)' }}>
         {isImageUrl(fighterImage)
           ? <img src={fighterImage} alt={fighterName}
               className="w-28 h-28 rounded-full object-cover mx-auto"
-              style={{ border: `3px solid ${headingColor}`, boxShadow: won ? `0 0 24px ${headingColor}66` : 'none' }} />
-          : <div className="text-8xl leading-none" style={{ filter: won ? 'drop-shadow(0 0 12px #c8a84b88)' : 'none' }}>
+              style={{
+                border: `3px solid ${headingColor}`,
+                boxShadow: won ? `0 0 28px ${headingColor}55, 0 4px 12px rgba(0,0,0,0.8)` : '0 4px 12px rgba(0,0,0,0.8)',
+              }} />
+          : <div className="text-8xl leading-none"
+              style={{ filter: won ? 'drop-shadow(0 0 14px #d4a84388)' : 'none' }}>
               {fighterImage}
             </div>
         }
       </div>
 
-      <h2 className="text-2xl font-bold mb-6 fade-in" style={{ color: headingColor }}>
+      <h2 className="text-2xl font-bold mb-6 fade-in page-title" style={{ color: headingColor }}>
         {headingText}
       </h2>
 
-      {/* Animated stat changes */}
       {showStats && (
-        <div className="w-full panel space-y-5 mb-6 fade-in text-left">
+        <div className="w-full panel space-y-5 mb-6 fade-in text-left" style={{ borderTop: '2px solid #5a4028' }}>
 
           {/* HP */}
           <div>
-            <div className="flex justify-between text-xs mb-1" style={{ color: '#8a7a5a' }}>
-              <span>❤️ HP</span>
-              <span style={{ color: hpDelta >= 0 ? '#6abf6a' : '#bf6a6a' }}>
+            <div className="flex justify-between text-xs mb-1.5" style={{ color: '#7a6a4a' }}>
+              <span style={{ color: '#8b1515' }}>❤ HP</span>
+              <span style={{ color: hpDelta >= 0 ? '#5abf6a' : '#bf5a5a' }}>
                 {displayedHp}/{maxHp}
                 {showButton && hpDelta !== 0 && (
                   <span className="ml-1 font-bold">({hpDelta > 0 ? '+' : ''}{hpDelta})</span>
                 )}
               </span>
             </div>
-            <div className="stat-bar">
-              <div className="hp-bar-fill" style={{
+            <div className="hud-bar" style={{ flex: 'none', width: '100%' }}>
+              <div style={{
+                height: '100%',
                 width: `${showStats ? hpPctAfter : hpPctBefore}%`,
-                background: hpPctAfter > 50 ? '#8b2020' : hpPctAfter > 25 ? '#c8601c' : '#ff3333',
+                background: hpBarColor(hpPctAfter),
+                borderRadius: '2px',
                 transition: 'width 0.9s cubic-bezier(0.4,0,0.2,1)',
+                boxShadow: 'inset 0 1px 0 rgba(255,160,160,0.25)',
               }} />
             </div>
           </div>
 
           {/* XP */}
           <div>
-            <div className="flex justify-between text-xs mb-1" style={{ color: '#8a7a5a' }}>
-              <span>⭐ XP{leveledUp ? ' — LEVEL UP! 🎉' : ''}</span>
-              <span style={{ color: '#6abf6a' }}>
+            <div className="flex justify-between text-xs mb-1.5" style={{ color: '#7a6a4a' }}>
+              <span style={{ color: '#267a38' }}>✦ XP{leveledUp ? ' — LEVEL UP! 🎉' : ''}</span>
+              <span style={{ color: '#5abf6a' }}>
                 {displayedXp}/{xpForNextLevel}
                 {showButton && xpDelta > 0 && <span className="ml-1 font-bold">(+{xpDelta})</span>}
               </span>
             </div>
-            <div className="stat-bar">
+            <div className="hud-bar" style={{ flex: 'none', width: '100%' }}>
               <div style={{
-                height: '8px',
-                borderRadius: '4px',
-                background: '#4a7a4a',
+                height: '100%',
                 width: `${showStats ? xpPctAfter : xpPctBefore}%`,
+                background: 'linear-gradient(to bottom, #38b050 0%, #267a38 60%, #164820 100%)',
+                borderRadius: '2px',
                 transition: 'width 1.1s cubic-bezier(0.4,0,0.2,1)',
+                boxShadow: 'inset 0 1px 0 rgba(150,255,150,0.2)',
               }} />
             </div>
           </div>
 
           {/* Bones */}
           <div className="flex justify-between text-sm items-center">
-            <span style={{ color: '#8a7a5a' }}>🦴 Bones</span>
-            <span className="font-bold" style={{ color: '#c8a84b' }}>
+            <span style={{ color: '#7a6a4a' }}>🦴 Bones</span>
+            <span className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>
               {displayedBones}
               {showButton && bonusDelta !== 0 && (
-                <span className="ml-1 text-xs" style={{ color: bonusDelta > 0 ? '#6abf6a' : '#bf6a6a' }}>
+                <span className="ml-1 text-xs" style={{ color: bonusDelta > 0 ? '#5abf6a' : '#bf5a5a' }}>
                   ({bonusDelta > 0 ? '+' : ''}{bonusDelta})
                 </span>
               )}
             </span>
           </div>
 
-          {/* Loot */}
           {loot.length > 0 && showButton && (
-            <div className="fade-in pt-2" style={{ borderTop: '1px solid #3d2e1e' }}>
-              <p className="text-xs font-bold mb-1" style={{ color: '#c8a84b' }}>LOOT DROPPED</p>
+            <div className="fade-in pt-3" style={{ borderTop: '1px solid #3a2810' }}>
+              <p className="text-xs font-bold mb-1.5" style={{
+                color: '#d4a843',
+                fontFamily: 'var(--font-cinzel, Georgia)',
+                letterSpacing: '0.08em',
+              }}>LOOT DROPPED</p>
               <div className="flex flex-wrap gap-1">
                 {loot.map((l, i) => (
                   <span key={i} className="text-xs px-2 py-0.5 rounded"
-                    style={{ background: '#2a1f10', color: '#c8a84b', border: '1px solid #c8a84b44' }}>
+                    style={{ background: '#1e1408', color: '#d4a843', border: '1px solid #5a4020' }}>
                     {l.replace(/_/g, ' ')}
                   </span>
                 ))}
@@ -171,7 +186,7 @@ export default function BattleOutcome({
       )}
 
       {showButton && (
-        <button className="btn-primary px-8 py-3 text-lg fade-in" onClick={onContinue}>
+        <button className="btn-primary px-8 py-3 text-base fade-in" onClick={onContinue}>
           Back to Town
         </button>
       )}

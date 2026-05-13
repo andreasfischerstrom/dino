@@ -83,80 +83,101 @@ export default function CharacterCard({
   const hasBuffs = buffs.length > 0
 
   return (
-    <div className="panel mb-4">
+    <div className="mb-4" style={{
+      background: 'linear-gradient(155deg, #1e1a14 0%, #141008 100%)',
+      border: '1px solid #4a3520',
+      borderTop: '2px solid #5a4028',
+      borderRadius: '4px',
+      padding: '1.25rem',
+      boxShadow: '0 3px 12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,220,100,0.04)',
+    }}>
       {/* Always-visible top section */}
       <div className="flex items-center gap-4">
         <div className="shrink-0">
           {image
-            ? <img src={image} alt={name} className="w-14 h-14 rounded-lg object-cover" style={{ border: '2px solid #c8a84b' }} />
-            : <span className="text-4xl leading-none">{speciesEmoji}</span>}
+            ? <img src={image} alt={name} className="w-14 h-14 rounded-lg object-cover"
+                style={{ border: '2px solid #5a4028', boxShadow: '0 2px 6px rgba(0,0,0,0.7)' }} />
+            : <div className="text-4xl leading-none w-14 h-14 flex items-center justify-center rounded-lg"
+                style={{ background: '#0a0806', border: '2px solid #3a2810' }}>
+                {speciesEmoji}
+              </div>}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="font-bold text-lg" style={{ color: '#c8a84b' }}>{name}</span>
-            <span className="text-xs px-2 py-0.5 rounded" style={{ background: '#2a1f10', color: '#8a7a5a' }}>
+          <div className="flex items-center gap-2 flex-wrap mb-1.5">
+            <span className="font-bold text-lg leading-none" style={{
+              color: '#d4a843',
+              fontFamily: 'var(--font-cinzel, Georgia)',
+              textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+            }}>{name}</span>
+            <span className="text-xs px-2 py-0.5 rounded" style={{
+              background: '#1a1208',
+              color: '#7a6a4a',
+              border: '1px solid #3a2810',
+              fontFamily: 'var(--font-cinzel, Georgia)',
+              letterSpacing: '0.03em',
+            }}>
               Lvl {level} {speciesName}
             </span>
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs w-8" style={{ color: '#5a4a3a' }}>HP</span>
-              <div className="flex-1 stat-bar">
-                <div className="hp-bar-fill" style={{ width: `${hpPct}%` }} />
-              </div>
-              <span className="text-xs w-16 text-right tabular-nums" style={{ color: '#8a7a5a' }}>{hp}/{maxHp}</span>
+
+          {/* HP bar */}
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-xs shrink-0 w-6 text-center" style={{ color: '#8b1515' }}>❤</span>
+            <div className="hud-bar">
+              <div className="hud-bar-hp" style={{ width: `${hpPct}%` }} />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs w-8" style={{ color: '#5a4a3a' }}>XP</span>
-              <div className="flex-1 stat-bar">
-                <div style={{ height: '8px', borderRadius: '4px', background: '#4a7a4a', width: `${xpPct}%`, transition: 'width 0.3s' }} />
-              </div>
-              <span className="text-xs w-16 text-right tabular-nums" style={{ color: '#8a7a5a' }}>{xp - xpCurrent}/{xpSpan}</span>
-            </div>
+            <span className="text-xs w-16 text-right tabular-nums shrink-0" style={{ color: '#7a5a4a' }}>{hp}/{maxHp}</span>
           </div>
-          <div className="mt-1.5 flex gap-3 text-xs flex-wrap" style={{ color: '#5a4a3a' }}>
+
+          {/* XP bar */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs shrink-0 w-6 text-center" style={{ color: '#267a38' }}>✦</span>
+            <div className="hud-bar">
+              <div className="hud-bar-xp" style={{ width: `${xpPct}%` }} />
+            </div>
+            <span className="text-xs w-16 text-right tabular-nums shrink-0" style={{ color: '#7a5a4a' }}>{xp - xpCurrent}/{xpSpan}</span>
+          </div>
+
+          <div className="mt-2 flex gap-3 text-xs flex-wrap" style={{ color: '#5a4a30' }}>
             <span>💀 {kills}</span>
-            <span>✅ {wins}W/{losses}L</span>
+            <span>⚔ {wins}W/{losses}L</span>
             <span>🦴 {bones}</span>
           </div>
         </div>
 
-        {/* Expand toggle */}
         <button
           onClick={() => setExpanded(e => !e)}
           className="shrink-0 flex flex-col items-center gap-0.5 px-2 py-1 rounded transition-colors"
-          style={{ color: '#5a4a3a', background: 'transparent' }}
+          style={{ color: '#5a4a30', background: 'transparent' }}
           title={expanded ? 'Collapse' : 'Show stats & equipment'}>
-          <span className="text-xs" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <span className="text-xs" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'var(--font-cinzel, Georgia)' }}>
             {expanded ? 'less' : 'stats'}
           </span>
           <span style={{ fontSize: '12px' }}>{expanded ? '▲' : '▼'}</span>
         </button>
       </div>
 
-      {/* Collapsible stats + equipment section */}
+      {/* Collapsible section */}
       {expanded && (
-        <div className="mt-4 pt-3 fade-in" style={{ borderTop: '1px solid #3d2e1e' }}>
-          {/* Stats header */}
+        <div className="mt-4 pt-3 fade-in" style={{ borderTop: '1px solid #3a2810' }}>
           <div className="flex items-center gap-3 mb-3">
-            <p className="text-xs font-bold" style={{ color: '#5a4a3a' }}>STATS</p>
+            <p className="text-xs font-bold" style={{ color: '#5a4a30', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.08em' }}>STATS</p>
             <div className="flex gap-3 text-xs">
-              <span style={{ color: '#8a7a5a' }}>■ base</span>
-              {localStats.some(s => s.gear !== 0) && <span style={{ color: '#c8a84b' }}>■ gear</span>}
-              {hasBuffs && <span style={{ color: '#6abf6a' }}>■ buff</span>}
+              <span style={{ color: '#7a6a4a' }}>■ base</span>
+              {localStats.some(s => s.gear !== 0) && <span style={{ color: '#d4a843' }}>■ gear</span>}
+              {hasBuffs && <span style={{ color: '#5abf6a' }}>■ buff</span>}
             </div>
             {localStatPoints > 0 && (
-              <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: '#1a3a1a', color: '#6abf6a', border: '1px solid #2d6e2d' }}>
-                +{localStatPoints} pts to spend
+              <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>
+                +{localStatPoints} pts
               </span>
             )}
             <Link href="/equipment" className="ml-auto text-xs font-bold"
-              style={{ color: '#c8a84b', textDecoration: 'none' }}>
+              style={{ color: '#d4a843', textDecoration: 'none', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.04em' }}>
               ⚔️ Equipment →
             </Link>
           </div>
 
-          {/* Stats grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-4">
             {localStats.map(stat => {
               const barMax = 15
@@ -166,25 +187,25 @@ export default function CharacterCard({
               return (
                 <div key={stat.key} className="flex items-center gap-2">
                   <span className="text-sm w-5 text-center">{stat.emoji}</span>
-                  <span className="text-xs w-20 shrink-0" style={{ color: '#8a7a5a' }}>{stat.label}</span>
+                  <span className="text-xs w-20 shrink-0" style={{ color: '#7a6a4a' }}>{stat.label}</span>
                   <div className="flex-1 stat-bar">
-                    <div style={{ display: 'flex', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', height: '10px', borderRadius: '2px', overflow: 'hidden' }}>
                       <div style={{ width: `${basePct}%`, background: '#6a5a3a' }} />
-                      {stat.gear > 0 && <div style={{ width: `${gearPct}%`, background: '#9a8040' }} />}
-                      {stat.buff > 0 && <div style={{ width: `${buffPct}%`, background: '#4a8a4a' }} />}
+                      {stat.gear > 0 && <div style={{ width: `${gearPct}%`, background: '#a88030' }} />}
+                      {stat.buff > 0 && <div style={{ width: `${buffPct}%`, background: '#3a8a4a' }} />}
                     </div>
                   </div>
-                  <span className="text-xs font-bold w-5 text-right shrink-0" style={{ color: '#c8a84b' }}>{stat.total}</span>
+                  <span className="text-xs font-bold w-5 text-right shrink-0" style={{ color: '#d4a843' }}>{stat.total}</span>
                   <span className="text-xs w-10 shrink-0" style={{ fontSize: '10px' }}>
-                    {stat.gear !== 0 && <span style={{ color: '#9a8040' }}> +{stat.gear}</span>}
-                    {stat.buff !== 0 && <span style={{ color: '#4a8a4a' }}> +{stat.buff}</span>}
+                    {stat.gear !== 0 && <span style={{ color: '#a88030' }}> +{stat.gear}</span>}
+                    {stat.buff !== 0 && <span style={{ color: '#3a8a4a' }}> +{stat.buff}</span>}
                   </span>
                   {localStatPoints > 0 && (
                     <button
                       onClick={() => spendPoint(stat.key)}
                       disabled={spending !== null}
                       className="shrink-0 w-5 h-5 rounded text-xs font-bold flex items-center justify-center"
-                      style={{ background: '#1a3a1a', color: '#6abf6a', border: '1px solid #2d6e2d' }}>
+                      style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>
                       {spending === stat.key ? '…' : '+'}
                     </button>
                   )}
@@ -193,23 +214,22 @@ export default function CharacterCard({
             })}
           </div>
 
-          {/* Equipment slot mini-cards */}
-          <div className="pt-3" style={{ borderTop: '1px solid #2a1f10' }}>
+          <div className="pt-3" style={{ borderTop: '1px solid #1e1408' }}>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {slots.map(slot => (
                 <Link key={slot.key} href="/equipment" style={{ textDecoration: 'none' }}
                   title={slot.item ? slot.item.name : `${slot.label} — empty`}>
-                  <div className="flex flex-col items-center gap-1 p-2 rounded"
+                  <div className="flex flex-col items-center gap-1 p-2 rounded transition-colors"
                     style={{
-                      background: slot.item ? '#1a1610' : '#0d0d0d',
-                      border: `1px solid ${slot.item ? '#3d2e1e' : '#1a1410'}`,
+                      background: slot.item ? '#1a1610' : '#0d0b08',
+                      border: `1px solid ${slot.item ? '#4a3520' : '#1a1408'}`,
                       minHeight: '56px',
                       justifyContent: 'center',
                     }}>
                     <span className="text-base leading-none">{slot.item ? slot.item.emoji : slot.emoji}</span>
                     <span style={{
                       fontSize: '9px',
-                      color: slot.item ? '#8a7a5a' : '#2a1f10',
+                      color: slot.item ? '#7a6a4a' : '#2a1e0e',
                       width: '100%',
                       textAlign: 'center',
                       overflow: 'hidden',
@@ -224,12 +244,11 @@ export default function CharacterCard({
             </div>
           </div>
 
-          {/* Active buffs */}
           {hasBuffs && (
             <div className="mt-3 flex flex-wrap gap-2">
               {buffs.map((b, i) => (
                 <span key={i} className="text-xs px-2 py-0.5 rounded"
-                  style={{ background: '#1a3a1a', color: '#6abf6a', border: '1px solid #2d6e2d' }}>
+                  style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>
                   ⚡ {b.label} (+{b.bonus} {b.stat})
                 </span>
               ))}

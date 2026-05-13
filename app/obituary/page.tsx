@@ -35,31 +35,47 @@ export default async function ObituaryPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center"
-      style={{ background: 'radial-gradient(ellipse at 50% 40%, #1a0808 0%, #0d0d0d 70%)' }}>
-      <div className="max-w-lg">
-        <div className="text-8xl mb-6 grayscale opacity-60">{sp?.emoji || '🦕'}</div>
-        <h1 className="text-4xl font-bold mb-2" style={{ color: '#8a7a5a' }}>
+      style={{ background: 'radial-gradient(ellipse at 50% 40%, #1a0606 0%, #0a0906 70%)' }}>
+      <div className="max-w-lg w-full">
+        <div className="text-8xl mb-6 grayscale opacity-50" style={{ filter: 'grayscale(1) brightness(0.4)' }}>
+          {sp?.emoji || '🦕'}
+        </div>
+
+        <h1 className="text-4xl font-bold mb-2" style={{
+          color: '#5a4a30',
+          fontFamily: 'var(--font-cinzel, Georgia)',
+          letterSpacing: '0.06em',
+          textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+        }}>
           {character.name}
         </h1>
-        <p className="text-sm mb-1" style={{ color: '#5a4a3a' }}>
+        <p className="text-sm mb-1" style={{ color: '#3a2a18' }}>
           Lvl {character.level} {sp?.name} · {character.kills} kills · {character.wins}W / {character.losses}L
         </p>
-        <div className="my-8 p-6 rounded-lg" style={{ background: '#1a1410', border: '1px solid #3d2e1e' }}>
-          <p className="text-lg italic mb-4" style={{ color: '#8a7a5a' }}>
-            Here lies <strong style={{ color: '#c8a84b' }}>{character.name}</strong>,
+
+        <div className="my-8 p-6 rounded" style={{
+          background: 'linear-gradient(135deg, #161008 0%, #0e0a06 100%)',
+          border: '1px solid #3a2810',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.9)',
+        }}>
+          <p className="text-lg italic mb-4" style={{ color: '#7a6a4a' }}>
+            Here lies <strong style={{ color: '#a08040', fontFamily: 'var(--font-cinzel, Georgia)' }}>{character.name}</strong>,
           </p>
-          <p className="text-base italic" style={{ color: '#5a4a3a' }}>
+          <p className="text-base italic leading-relaxed" style={{ color: '#4a3a22' }}>
             who {obitLine}
           </p>
-          <p className="text-sm mt-4" style={{ color: '#3a2a1a' }}>
+          <div className="my-4" style={{ height: '1px', background: 'linear-gradient(to right, transparent, #3a2810, transparent)' }} />
+          <p className="text-sm" style={{ color: '#2a1e10' }}>
             They earned {character.bones} bones and spent most of them on things that did not save them.
           </p>
         </div>
-        <p className="text-sm mb-6" style={{ color: '#5a4a3a' }}>
-          Death is permanent. Your legacy is not. Start a new gladiator and carry the shame forward.
+
+        <p className="text-sm mb-8" style={{ color: '#3a2a18', fontStyle: 'italic' }}>
+          Death is permanent. Your legacy is not.<br />Start a new gladiator and carry the shame forward.
         </p>
+
         <Link href="/create-character">
-          <button className="btn-primary text-lg px-8 py-4">
+          <button className="btn-primary text-base px-8 py-3">
             Rise Again ☠️ → 🦕
           </button>
         </Link>

@@ -24,7 +24,6 @@ export default async function TownPage() {
   if (!character) redirect('/create-character')
   if (!character.alive) redirect('/obituary')
 
-  // HP regen — calculated from last_regen_at, capped at 24h to prevent runaway
   if (character.hp < character.max_hp) {
     const lastRegenRaw = character.last_regen_at ?? character.created_at
     const lastRegen = new Date(lastRegenRaw)
@@ -53,7 +52,6 @@ export default async function TownPage() {
   const xpForNext = xpForLevel(character.level + 1)
   const hpPct = Math.round((character.hp / character.max_hp) * 100)
 
-  // Pre-compute stat rows for CharacterCard
   const statRows = STATS.map(stat => {
     const base = (character.stats as Record<string, number>)[stat.key] || 0
     const gear = gearBonus[stat.key] || 0
@@ -61,7 +59,6 @@ export default async function TownPage() {
     return { key: stat.key, label: stat.label, emoji: stat.emoji, base, gear, buff, total: base + gear + buff }
   })
 
-  // Pre-compute equipment slots for CharacterCard
   const slotItems = GEAR_SLOTS.map(s => ({
     key: s.key,
     label: s.label,
@@ -82,10 +79,19 @@ export default async function TownPage() {
 
   return (
     <div className="min-h-screen px-4 py-8 max-w-4xl mx-auto">
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-5">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#c8a84b' }}>Gorgon's Gulch</h1>
-          <p className="text-sm mt-1" style={{ color: '#5a4a3a' }}>A mid-sized prehistoric settlement. Smells like ambition.</p>
+          <h1 className="text-4xl font-bold leading-none" style={{
+            fontFamily: 'var(--font-cinzel-deco, var(--font-cinzel, Georgia))',
+            color: '#d4a843',
+            textShadow: '0 2px 8px rgba(0,0,0,0.95), 0 0 24px rgba(212,168,67,0.2)',
+            letterSpacing: '0.06em',
+          }}>
+            Gorgon's Gulch
+          </h1>
+          <p className="text-sm mt-1.5" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
+            A mid-sized prehistoric settlement. Smells like ambition and bad choices.
+          </p>
         </div>
         <SignOutButton />
       </div>
@@ -113,23 +119,39 @@ export default async function TownPage() {
       />
 
       {hpPct < 30 && (
-        <div className="mb-4 p-3 rounded-lg text-sm" style={{ background: '#3a0f0f', border: '1px solid #8b2020', color: '#bf6a6a' }}>
-          ⚠️ HP critically low ({hpPct}%). Visit the Tavern before challenging anyone. Regen: {HP_REGEN_PER_MINUTE} HP/min passively.
+        <div className="mb-5 p-3 rounded text-sm" style={{
+          background: 'linear-gradient(135deg, #2a0808 0%, #1a0505 100%)',
+          border: '1px solid #7a1515',
+          color: '#c06060',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.6), 0 0 12px rgba(155,24,24,0.12)',
+        }}>
+          ⚠️ HP critically low ({hpPct}%). Visit the Tavern before challenging anyone.
+          Passive regen: {HP_REGEN_PER_MINUTE} HP/min.
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {locations.map(loc => (
-          <Link key={loc.href} href={loc.href}
-            className="hover:scale-[1.02] transition-transform block rounded-lg overflow-hidden relative"
-            style={{ textDecoration: 'none', minHeight: '160px', border: '1px solid #3d2e1e' }}>
-            {loc.img && <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${loc.img})` }} />}
-            <div className="absolute inset-0" style={{ background: loc.img
-              ? 'linear-gradient(to top, rgba(10,7,4,0.92) 40%, rgba(10,7,4,0.45) 100%)'
-              : 'linear-gradient(135deg, #1a1410 0%, #0d0d0d 100%)' }} />
-            <div className="relative p-4 flex flex-col justify-end h-full" style={{ minHeight: '160px' }}>
-              <h3 className="font-bold text-base mb-1" style={{ color: '#c8a84b' }}>{loc.name}</h3>
-              <p className="text-xs" style={{ color: '#8a7a5a' }}>{loc.desc}</p>
+          <Link key={loc.href} href={loc.href} className="location-card" style={{ minHeight: '185px' }}>
+            {loc.img && (
+              <div className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${loc.img})` }} />
+            )}
+            <div className="absolute inset-0" style={{
+              background: loc.img
+                ? 'linear-gradient(to top, rgba(8,5,2,0.96) 35%, rgba(8,5,2,0.5) 70%, rgba(8,5,2,0.2) 100%)'
+                : 'linear-gradient(135deg, #1a1410 0%, #0d0a06 100%)',
+            }} />
+            <div className="relative p-4 flex flex-col justify-end h-full" style={{ minHeight: '185px' }}>
+              <h3 className="font-bold text-base mb-1" style={{
+                color: '#d4a843',
+                fontFamily: 'var(--font-cinzel, Georgia)',
+                letterSpacing: '0.04em',
+                textShadow: '0 2px 4px rgba(0,0,0,0.9)',
+              }}>
+                {loc.name}
+              </h3>
+              <p className="text-xs" style={{ color: '#8a7a58', lineHeight: '1.5' }}>{loc.desc}</p>
             </div>
           </Link>
         ))}

@@ -63,28 +63,44 @@ export default function CreateCharacter() {
     router.push('/town')
   }
 
+  const steps = ['species', 'stats', 'name'] as const
+  const stepLabels = ['Species', 'Stats', 'Name']
+
   return (
     <div className="min-h-screen px-4 py-10 max-w-3xl mx-auto">
-      <div className="flex justify-end mb-2">
+      <div className="flex justify-end mb-4">
         <SignOutButton />
       </div>
-      <h1 className="text-4xl font-bold mb-2 text-center" style={{ color: '#c8a84b' }}>
+      <h1 className="text-4xl font-bold mb-2 text-center page-title">
         Forge Your Warrior
       </h1>
-      <p className="text-center mb-8 text-sm" style={{ color: '#5a4a3a' }}>
+      <p className="text-center mb-8 text-sm" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
         Choose wisely. You cannot un-choose. That's kind of the whole thing.
       </p>
 
       {/* Step indicator */}
       <div className="flex gap-2 justify-center mb-8">
-        {(['species', 'stats', 'name'] as const).map((s, i) => (
+        {steps.map((s, i) => (
           <div key={s} className="flex items-center gap-2">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
-              ${step === s ? 'text-black' : 'text-gray-600'}`}
-              style={{ background: step === s ? '#c8a84b' : '#2a1f10' }}>
-              {i + 1}
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                style={{
+                  background: step === s ? 'linear-gradient(to bottom, #e0ba40, #a87018)' : steps.indexOf(step) > i ? '#3a2810' : '#1a1408',
+                  color: step === s ? '#160c00' : steps.indexOf(step) > i ? '#7a5a30' : '#3a2810',
+                  border: `1px solid ${step === s ? '#7a5010' : '#2a1e0e'}`,
+                  fontFamily: 'var(--font-cinzel, Georgia)',
+                  boxShadow: step === s ? '0 2px 5px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.15)' : 'none',
+                }}>
+                {i + 1}
+              </div>
+              <span className="text-xs" style={{
+                color: step === s ? '#d4a843' : '#3a2810',
+                fontFamily: 'var(--font-cinzel, Georgia)',
+                fontSize: '10px',
+                letterSpacing: '0.04em',
+              }}>{stepLabels[i]}</span>
             </div>
-            {i < 2 && <div className="w-8 h-px" style={{ background: '#3d2e1e' }} />}
+            {i < 2 && <div className="w-8 h-px mb-4" style={{ background: '#2a1e0e' }} />}
           </div>
         ))}
       </div>
@@ -92,27 +108,35 @@ export default function CreateCharacter() {
       {/* Step 1: Species */}
       {step === 'species' && (
         <div className="fade-in">
-          <h2 className="text-xl font-bold mb-4" style={{ color: '#c8a84b' }}>Choose Your Species</h2>
+          <h2 className="text-xl font-bold mb-4 page-title" style={{ fontSize: '1.25rem' }}>Choose Your Species</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {SPECIES.map(s => (
               <button
                 key={s.id}
                 onClick={() => setSelectedSpecies(s)}
-                className={`text-left p-4 rounded-lg border transition-all`}
+                className="text-left p-4 rounded transition-all"
                 style={{
-                  background: selectedSpecies?.id === s.id ? '#2a1f10' : '#1a1410',
-                  borderColor: selectedSpecies?.id === s.id ? '#c8a84b' : '#3d2e1e',
+                  background: selectedSpecies?.id === s.id
+                    ? 'linear-gradient(135deg, #2a1e0e 0%, #1e1408 100%)'
+                    : 'linear-gradient(135deg, #1a1408 0%, #141008 100%)',
+                  border: `1px solid ${selectedSpecies?.id === s.id ? '#7a5020' : '#3a2810'}`,
+                  borderTop: selectedSpecies?.id === s.id ? '2px solid #d4a843' : '1px solid #3a2810',
+                  boxShadow: selectedSpecies?.id === s.id ? '0 0 12px rgba(212,168,67,0.1)' : 'none',
                 }}>
                 <div className="flex items-center gap-3 mb-1">
                   <span className="text-2xl">{s.emoji}</span>
-                  <span className="font-bold" style={{ color: '#c8a84b' }}>{s.name}</span>
+                  <span className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{s.name}</span>
                 </div>
-                <p className="text-xs mb-2" style={{ color: '#8a7a5a' }}>{s.tagline}</p>
-                <p className="text-xs" style={{ color: '#5a4a3a' }}>{s.flavor}</p>
+                <p className="text-xs mb-2" style={{ color: '#7a6a4a' }}>{s.tagline}</p>
+                <p className="text-xs" style={{ color: '#4a3a22' }}>{s.flavor}</p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {Object.entries(s.baseStats).map(([k, v]) => (
                     <span key={k} className="text-xs px-2 py-0.5 rounded"
-                      style={{ background: (v as number) > 0 ? '#1a3a1a' : '#3a1a1a', color: (v as number) > 0 ? '#6abf6a' : '#bf6a6a' }}>
+                      style={{
+                        background: (v as number) > 0 ? '#0e2410' : '#2a0e0e',
+                        color: (v as number) > 0 ? '#5abf6a' : '#bf5a5a',
+                        border: `1px solid ${(v as number) > 0 ? '#2a6428' : '#6a2828'}`,
+                      }}>
                       {(v as number) > 0 ? '+' : ''}{v} {k}
                     </span>
                   ))}
@@ -131,10 +155,13 @@ export default function CreateCharacter() {
       {/* Step 2: Stats */}
       {step === 'stats' && selectedSpecies && (
         <div className="fade-in">
-          <h2 className="text-xl font-bold mb-1" style={{ color: '#c8a84b' }}>Distribute Your Points</h2>
-          <p className="text-sm mb-4" style={{ color: '#5a4a3a' }}>
-            You have <span style={{ color: '#c8a84b', fontWeight: 'bold' }}>{pointsLeft}</span> of <span style={{ color: '#c8a84b', fontWeight: 'bold' }}>{totalPoints}</span> points remaining.
-            Base stats and species bonuses are already applied above.
+          <h2 className="text-xl font-bold mb-1 page-title" style={{ fontSize: '1.25rem' }}>Distribute Your Points</h2>
+          <p className="text-sm mb-4" style={{ color: '#4a3a22' }}>
+            You have{' '}
+            <span style={{ color: '#d4a843', fontWeight: 'bold', fontFamily: 'var(--font-cinzel, Georgia)' }}>{pointsLeft}</span>
+            {' '}of{' '}
+            <span style={{ color: '#d4a843', fontWeight: 'bold', fontFamily: 'var(--font-cinzel, Georgia)' }}>{totalPoints}</span>
+            {' '}points remaining.
           </p>
           <div className="panel space-y-3">
             {STATS.map(stat => {
@@ -143,20 +170,20 @@ export default function CreateCharacter() {
               return (
                 <div key={stat.key} className="flex items-center gap-3">
                   <div className="w-6 text-center">{stat.emoji}</div>
-                  <div className="w-28 text-sm font-bold" style={{ color: '#e8d5b0' }}>{stat.label}</div>
+                  <div className="w-28 text-sm font-bold" style={{ color: '#e8d5b0', fontFamily: 'var(--font-cinzel, Georgia)' }}>{stat.label}</div>
                   <div className="flex-1 stat-bar">
                     <div className="stat-bar-fill" style={{ width: `${Math.min(100, effective * 7)}%` }} />
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => adjustStat(stat.key, -1)} disabled={bonus <= 0}
                       className="w-7 h-7 rounded text-sm font-bold disabled:opacity-30 transition"
-                      style={{ background: '#3d2e1e', color: '#c8a84b' }}>−</button>
-                    <span className="w-6 text-center font-bold" style={{ color: '#c8a84b' }}>{effective}</span>
+                      style={{ background: '#2a1e0e', color: '#d4a843', border: '1px solid #4a3520' }}>−</button>
+                    <span className="w-6 text-center font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{effective}</span>
                     <button onClick={() => adjustStat(stat.key, 1)} disabled={pointsLeft <= 0}
                       className="w-7 h-7 rounded text-sm font-bold disabled:opacity-30 transition"
-                      style={{ background: '#3d2e1e', color: '#c8a84b' }}>+</button>
+                      style={{ background: '#2a1e0e', color: '#d4a843', border: '1px solid #4a3520' }}>+</button>
                   </div>
-                  <div className="text-xs w-20" style={{ color: '#5a4a3a' }}>{stat.description.split('.')[0]}.</div>
+                  <div className="text-xs w-20" style={{ color: '#4a3a22' }}>{stat.description.split('.')[0]}.</div>
                 </div>
               )
             })}
@@ -171,34 +198,33 @@ export default function CreateCharacter() {
       {/* Step 3: Name & Image */}
       {step === 'name' && selectedSpecies && (
         <div className="fade-in">
-          <h2 className="text-xl font-bold mb-1" style={{ color: '#c8a84b' }}>Name Your Beast</h2>
-          <p className="text-sm mb-6" style={{ color: '#5a4a3a' }}>
+          <h2 className="text-xl font-bold mb-1 page-title" style={{ fontSize: '1.25rem' }}>Name Your Beast</h2>
+          <p className="text-sm mb-6" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
             This name will be shouted by the arena crowd. Make it count. Or make it funny. Both are valid.
           </p>
 
-          <div className="panel space-y-6">
+          <div className="panel space-y-6" style={{ borderTop: '2px solid #5a4028' }}>
             <div>
-              <label className="block text-sm font-bold mb-2" style={{ color: '#c8a84b' }}>Warrior Name</label>
+              <label className="block text-sm font-bold mb-2" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>Warrior Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 maxLength={30}
                 placeholder='e.g. "Sir Chompsalot" or "Death from Above"'
-                className="w-full px-4 py-3 rounded-lg text-lg"
-                style={{ background: '#0d0d0d', border: '1px solid #3d2e1e', color: '#e8d5b0', fontFamily: 'Georgia, serif' }}
+                className="game-input text-lg"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-bold mb-2" style={{ color: '#c8a84b' }}>Profile Image (optional)</label>
+              <label className="block text-sm font-bold mb-2" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>Profile Image (optional)</label>
               <div className="flex items-center gap-4">
                 {profilePreview ? (
-                  <img src={profilePreview} alt="preview" className="w-20 h-20 rounded-lg object-cover"
-                    style={{ border: '2px solid #c8a84b' }} />
+                  <img src={profilePreview} alt="preview" className="w-20 h-20 rounded object-cover"
+                    style={{ border: '2px solid #5a4028', boxShadow: '0 2px 6px rgba(0,0,0,0.7)' }} />
                 ) : (
-                  <div className="w-20 h-20 rounded-lg flex items-center justify-center text-4xl"
-                    style={{ background: '#0d0d0d', border: '2px dashed #3d2e1e' }}>
+                  <div className="w-20 h-20 rounded flex items-center justify-center text-4xl"
+                    style={{ background: '#0a0806', border: '2px dashed #3a2810' }}>
                     {selectedSpecies.emoji}
                   </div>
                 )}
@@ -207,25 +233,24 @@ export default function CreateCharacter() {
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
               </div>
-              <p className="text-xs mt-2" style={{ color: '#3a2a1a' }}>
+              <p className="text-xs mt-2" style={{ color: '#2a1e10' }}>
                 JPG, PNG, GIF — max 2MB. If omitted, your species emoji will be used.
               </p>
             </div>
 
-            {/* Summary */}
-            <div className="pt-4" style={{ borderTop: '1px solid #3d2e1e' }}>
-              <p className="text-sm mb-2" style={{ color: '#5a4a3a' }}>Summary</p>
+            <div className="pt-4" style={{ borderTop: '1px solid #2a1e0e' }}>
+              <p className="text-xs mb-2" style={{ color: '#4a3a22', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>SUMMARY</p>
               <div className="flex items-center gap-3">
                 <span className="text-3xl">{selectedSpecies.emoji}</span>
                 <div>
-                  <p className="font-bold" style={{ color: '#c8a84b' }}>{name || '(no name yet)'}</p>
-                  <p className="text-sm" style={{ color: '#8a7a5a' }}>{selectedSpecies.name}</p>
+                  <p className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{name || '(no name yet)'}</p>
+                  <p className="text-sm" style={{ color: '#7a6a4a' }}>{selectedSpecies.name}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+          {error && <p className="mt-3 text-sm" style={{ color: '#c05050' }}>{error}</p>}
 
           <div className="mt-6 flex justify-between">
             <button className="btn-ghost" onClick={() => setStep('stats')}>← Back</button>

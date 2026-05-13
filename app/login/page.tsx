@@ -35,24 +35,30 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4"
-      style={{ background: 'radial-gradient(ellipse at 50% 60%, #1a0f00 0%, #0d0d0d 70%)' }}>
+      style={{ background: 'radial-gradient(ellipse at 50% 60%, #1e0e00 0%, #0a0906 70%)' }}>
       <div className="text-center max-w-md w-full">
-        <div className="text-8xl mb-6">🦖</div>
-        <h1 className="text-5xl font-bold mb-2" style={{ color: '#c8a84b', fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>
+        <div className="text-8xl mb-6" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.9))' }}>🦖</div>
+
+        <h1 className="game-logo text-5xl mb-2 leading-tight">
           CRETACEOUS<br />CARNAGE
         </h1>
-        <p className="text-base mt-4 mb-8" style={{ color: '#5a4a3a' }}>
-          65 million years ago, dinosaurs built an underground fighting league so brutal that historians refuse to acknowledge it existed. This is that game.
+        <div className="my-4" style={{ height: '1px', background: 'linear-gradient(to right, transparent, #5a4020, transparent)' }} />
+        <p className="text-base mb-8 leading-relaxed" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
+          65 million years ago, dinosaurs built an underground fighting league so brutal
+          that historians refuse to acknowledge it existed. This is that game.
         </p>
 
-        <div className="panel">
-          <div className="flex mb-6">
+        <div className="panel" style={{ borderTop: '2px solid #5a4028' }}>
+          <div className="flex mb-6 rounded overflow-hidden" style={{ border: '1px solid #4a3520' }}>
             {(['login', 'signup'] as const).map(m => (
               <button key={m} onClick={() => { setMode(m); setError(''); setMessage('') }}
-                className="flex-1 py-2 text-sm font-bold transition rounded"
+                className="flex-1 py-2.5 text-sm font-bold transition"
                 style={{
-                  background: mode === m ? '#c8a84b' : 'transparent',
-                  color: mode === m ? '#0d0d0d' : '#5a4a3a',
+                  background: mode === m ? 'linear-gradient(to bottom, #e0ba40, #a87018)' : 'transparent',
+                  color: mode === m ? '#160c00' : '#5a4a30',
+                  fontFamily: 'var(--font-cinzel, Georgia)',
+                  letterSpacing: '0.05em',
+                  boxShadow: mode === m ? 'inset 0 1px 0 rgba(255,255,255,0.15)' : 'none',
                 }}>
                 {m === 'login' ? 'Log In' : 'Sign Up'}
               </button>
@@ -66,8 +72,7 @@ export default function LoginPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-lg"
-              style={{ background: '#0d0d0d', border: '1px solid #3d2e1e', color: '#e8d5b0', fontFamily: 'Georgia' }}
+              className="game-input"
             />
             <input
               type="password"
@@ -75,20 +80,19 @@ export default function LoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-lg"
-              style={{ background: '#0d0d0d', border: '1px solid #3d2e1e', color: '#e8d5b0', fontFamily: 'Georgia' }}
+              className="game-input"
             />
 
-            {error && <p className="text-sm" style={{ color: '#bf4040' }}>{error}</p>}
-            {message && <p className="text-sm" style={{ color: '#6abf6a' }}>{message}</p>}
+            {error && <p className="text-sm" style={{ color: '#c05050' }}>{error}</p>}
+            {message && <p className="text-sm" style={{ color: '#5abf6a' }}>{message}</p>}
 
-            <button type="submit" className="btn-primary w-full py-3 text-lg" disabled={loading}>
-              {loading ? '...' : mode === 'login' ? 'Enter the Arena' : 'Create Account'}
+            <button type="submit" className="btn-primary w-full py-3 text-base" disabled={loading}>
+              {loading ? '...' : mode === 'login' ? 'Enter the Arena ⚔️' : 'Create Account'}
             </button>
           </form>
         </div>
 
-        <p className="mt-6 text-xs" style={{ color: '#3a2a1a' }}>
+        <p className="mt-6 text-xs" style={{ color: '#2a1e10' }}>
           By signing up you agree to occasionally lose a dinosaur you were emotionally attached to.
         </p>
       </div>
