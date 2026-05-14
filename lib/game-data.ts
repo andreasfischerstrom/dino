@@ -838,7 +838,7 @@ export const TAVERN_QUESTS: TavernQuest[] = [
     acceptLabel: 'Stare back',
     declineLabel: 'Laugh it off',
     acceptOutcome: 'Incredibly, it backs down. The crowd is impressed. You gain 20 XP for pure nerve.',
-    declineOutcome: 'You laugh. It laughs. Crisis averted. You each buy the other a drink. -10 bones, but worth it.',
+    declineOutcome: 'You laugh. It laughs. Crisis averted. The T-Rex buys the next round. No harm done.',
     xpDelta: 20,
   },
   {

@@ -103,6 +103,7 @@ export default function TavernClient({ character }: { character: Record<string, 
       body: JSON.stringify({ questId: quest.id, accepted }),
     })
     const json = await res.json()
+    if (!res.ok) { setMessage(json.error || 'Something went wrong.'); setLoading(null); return }
     setQuestOutcome(accepted ? quest.acceptOutcome : quest.declineOutcome)
     setQuestDone(true)
     if (json.newBones !== undefined) setBones(json.newBones)
