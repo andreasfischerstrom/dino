@@ -41,7 +41,7 @@ export default function LoginPage() {
       }}>
       {/* Dark overlay so text stays readable */}
       <div className="absolute inset-0" style={{
-        background: 'linear-gradient(to bottom, rgba(5,3,2,0.8) 0%, rgba(5,3,2,0.6) 40%, rgba(5,3,2,0.85) 100%)',
+        background: 'linear-gradient(to bottom, rgba(5,3,2,0.88) 0%, rgba(5,3,2,0.72) 40%, rgba(5,3,2,0.92) 100%)',
       }} />
 
       <div className="relative text-center max-w-md w-full">
