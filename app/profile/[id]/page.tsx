@@ -53,8 +53,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
         {/* Identity */}
         <div className="panel">
           <div className="flex items-center gap-4 mb-4">
-            {character.image_url
-              ? <img src={character.image_url} alt={character.name} className="w-20 h-20 rounded-lg object-cover" style={{ border: '2px solid #c8a84b' }} />
+            {character.image_url || sp?.image
+              ? <img src={(character.image_url || sp?.image) as string} alt={character.name as string} className="w-20 h-20 rounded-lg object-cover" style={{ border: '2px solid #c8a84b' }} />
               : <div className="text-6xl">{sp?.emoji}</div>}
             <div>
               <p className="font-bold" style={{ color: '#c8a84b' }}>{character.name}</p>
