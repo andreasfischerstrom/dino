@@ -37,7 +37,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4"
       style={{ background: 'radial-gradient(ellipse at 50% 60%, #1e0e00 0%, #0a0906 70%)' }}>
       <div className="text-center max-w-md w-full">
-        <div className="mb-5 mx-auto" style={{ width: '100%', maxWidth: 360 }}>
+        <div className="mt-4 mb-4 mx-auto" style={{ width: '100%', maxWidth: 260 }}>
           <img src="/images/login-battle.png" alt="Two dinosaurs battling in the arena"
             style={{ width: '100%', height: 'auto', borderRadius: '6px', border: '2px solid #5a4028', boxShadow: '0 0 24px rgba(212,120,20,0.2), 0 4px 16px rgba(0,0,0,0.9)' }} />
         </div>
