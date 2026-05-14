@@ -13,11 +13,12 @@ export default function EquipmentClient({ character, gear, inventory }: Props) {
   const [equippedIds, setEquippedIds] = useState<string[]>(
     inventory.filter(i => i.equipped).map(i => i.gear_id)
   )
+  const [ownedIds, setOwnedIds] = useState<string[]>(inventory.map(i => i.gear_id))
   const [loading, setLoading] = useState<string | null>(null)
+  const [selling, setSelling] = useState<string | null>(null)
+  const [bones, setBones] = useState(character.bones as number)
   const [error, setError] = useState('')
   const [openSlot, setOpenSlot] = useState<GearSlot | null>(null)
-
-  const ownedIds = inventory.map(i => i.gear_id)
 
   function equippedInSlot(slot: GearSlot): GearTemplate | null {
     const id = equippedIds.find(id => gear.find(g => g.id === id)?.slot === slot)
@@ -50,7 +51,22 @@ export default function EquipmentClient({ character, gear, inventory }: Props) {
     setOpenSlot(null)
   }
 
-  const bones = character.bones as number
+  async function sellItem(gearId: string) {
+    setSelling(gearId); setError('')
+    const res = await fetch('/api/shop/sell', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gearId }),
+    })
+    const json = await res.json()
+    if (!res.ok) { setError(json.error); setSelling(null); return }
+    setOwnedIds(ids => ids.filter(id => id !== gearId))
+    setEquippedIds(ids => ids.filter(id => id !== gearId))
+    setBones(b => b + json.sellPrice)
+    setSelling(null)
+    setOpenSlot(null)
+  }
+
   const charLevel = character.level as number
 
   return (
@@ -133,34 +149,42 @@ export default function EquipmentClient({ character, gear, inventory }: Props) {
                   )}
                   {owned.map(item => {
                     const isEquipped = equippedIds.includes(item.id)
+                    const sellPrice = Math.max(1, Math.floor(item.price * 0.25))
                     return (
-                      <button key={item.id}
-                        className="w-full text-left px-4 py-3 transition-colors"
-                        style={{
-                          borderBottom: '1px solid #1a1410',
-                          background: isEquipped ? '#1a1610' : 'transparent',
-                        }}
-                        disabled={loading === item.id}
-                        onClick={() => !isEquipped && equip(item.id)}>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">{item.emoji}</span>
-                          <div className="flex-1">
-                            <p className="font-bold text-sm" style={{ color: isEquipped ? '#c8a84b' : '#e8d5b0' }}>
-                              {item.name}
-                              {isEquipped && <span className="ml-2 text-xs" style={{ color: '#c8a84b' }}>✓ equipped</span>}
-                            </p>
-                            <div className="flex flex-wrap gap-1 mt-0.5">
-                              {Object.entries(item.statBonus).map(([k, v]) => (
-                                <span key={k} className="text-xs px-1 py-0.5 rounded"
-                                  style={{ background: (v as number) > 0 ? '#1a3a1a' : '#3a1a1a', color: (v as number) > 0 ? '#6abf6a' : '#bf6a6a' }}>
-                                  {(v as number) > 0 ? '+' : ''}{v} {k}
-                                </span>
-                              ))}
+                      <div key={item.id} style={{ borderBottom: '1px solid #1a1410', background: isEquipped ? '#1a1610' : 'transparent' }}>
+                        <button
+                          className="w-full text-left px-4 pt-3 pb-2 transition-colors"
+                          disabled={loading === item.id}
+                          onClick={() => !isEquipped && equip(item.id)}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">{item.emoji}</span>
+                            <div className="flex-1">
+                              <p className="font-bold text-sm" style={{ color: isEquipped ? '#c8a84b' : '#e8d5b0' }}>
+                                {item.name}
+                                {isEquipped && <span className="ml-2 text-xs" style={{ color: '#c8a84b' }}>✓ equipped</span>}
+                              </p>
+                              <div className="flex flex-wrap gap-1 mt-0.5">
+                                {Object.entries(item.statBonus).map(([k, v]) => (
+                                  <span key={k} className="text-xs px-1 py-0.5 rounded"
+                                    style={{ background: (v as number) > 0 ? '#1a3a1a' : '#3a1a1a', color: (v as number) > 0 ? '#6abf6a' : '#bf6a6a' }}>
+                                    {(v as number) > 0 ? '+' : ''}{v} {k}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
+                            {loading === item.id && <span className="text-xs" style={{ color: '#a08050' }}>...</span>}
                           </div>
-                          {loading === item.id && <span className="text-xs" style={{ color: '#a08050' }}>...</span>}
+                        </button>
+                        <div className="px-4 pb-2">
+                          <button
+                            className="text-xs px-2 py-1 rounded"
+                            style={{ background: '#1a0a0a', color: '#a06050', border: '1px solid #3a1a14' }}
+                            disabled={selling === item.id}
+                            onClick={() => sellItem(item.id)}>
+                            {selling === item.id ? 'Selling...' : `Sell for ${sellPrice} 🦴`}
+                          </button>
                         </div>
-                      </button>
+                      </div>
                     )
                   })}
                 </div>
