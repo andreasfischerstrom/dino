@@ -40,7 +40,7 @@ export default function LoginPage() {
         backgroundImage: 'url(/images/login-battle.png)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        filter: 'blur(2px)',
+        filter: 'blur(12px)',
         transform: 'scale(1.05)', // prevents blur from showing white edges
       }} />
       {/* Dark overlay */}
