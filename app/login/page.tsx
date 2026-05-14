@@ -37,10 +37,13 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4"
       style={{ background: 'radial-gradient(ellipse at 50% 60%, #1e0e00 0%, #0a0906 70%)' }}>
       <div className="text-center max-w-md w-full">
-        <div className="text-8xl mb-6" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.9))' }}>🦖</div>
+        <div className="mb-6 mx-auto" style={{ width: 220, height: 220 }}>
+          <img src="/images/login-battle.png" alt="Two dinosaurs battling in the arena"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', border: '3px solid #5a4028', boxShadow: '0 0 32px rgba(212,120,20,0.35), 0 4px 16px rgba(0,0,0,0.9)' }} />
+        </div>
 
         <h1 className="game-logo text-5xl mb-2 leading-tight">
-          CRETACEOUS<br />CARNAGE
+          JURASSIC<br />BRAWL
         </h1>
         <div className="my-4" style={{ height: '1px', background: 'linear-gradient(to right, transparent, #5a4020, transparent)' }} />
         <p className="text-base mb-8 leading-relaxed" style={{ color: '#a08050', fontStyle: 'italic' }}>
