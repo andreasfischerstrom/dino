@@ -37,11 +37,15 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4"
       style={{ background: 'radial-gradient(ellipse at 50% 60%, #1e0e00 0%, #0a0906 70%)' }}>
       <div className="text-center max-w-md w-full">
-        <div className="mb-4 mx-auto relative" style={{ width: '100%', maxWidth: 360, borderRadius: '6px', overflow: 'hidden', border: '2px solid #5a4028', boxShadow: '0 0 24px rgba(212,120,20,0.2), 0 4px 16px rgba(0,0,0,0.9)' }}>
+        <div className="mb-4 mx-auto relative" style={{ width: '100%', maxWidth: 360, overflow: 'hidden' }}>
           <img src="/images/login-battle.png" alt="Two dinosaurs battling in the arena"
             style={{ width: '100%', height: 'auto', display: 'block' }} />
-          <div className="absolute inset-0 flex flex-col items-center justify-center"
-            style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.6) 100%)' }}>
+          <div className="absolute inset-0 flex flex-col items-center justify-center" style={{
+            background: `
+              linear-gradient(to bottom, rgba(10,9,6,0.85) 0%, rgba(0,0,0,0.1) 35%, rgba(0,0,0,0.1) 65%, rgba(10,9,6,0.95) 100%),
+              linear-gradient(to right, rgba(10,9,6,0.8) 0%, transparent 25%, transparent 75%, rgba(10,9,6,0.8) 100%)
+            `,
+          }}>
             <h1 className="game-logo text-5xl mb-2 leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 32px rgba(212,168,67,0.3)' }}>
               JURASSIC<br />BRAWL
             </h1>
