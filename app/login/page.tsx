@@ -34,22 +34,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4"
-      style={{ background: 'radial-gradient(ellipse at 50% 60%, #1e0e00 0%, #0a0906 70%)' }}>
-      <div className="text-center max-w-md w-full">
-        <div className="mb-4 mx-auto relative" style={{ width: '100%', maxWidth: 380 }}>
-          <img src="/images/login-battle.png" alt="Two dinosaurs battling in the arena"
-            style={{
-              width: '100%', height: 'auto', display: 'block',
-              maskImage: 'radial-gradient(ellipse 85% 80% at 50% 55%, black 30%, transparent 75%)',
-              WebkitMaskImage: 'radial-gradient(ellipse 85% 80% at 50% 55%, black 30%, transparent 75%)',
-            }} />
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <h1 className="game-logo text-5xl mb-2 leading-tight" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 32px rgba(212,168,67,0.3)' }}>
-              JURASSIC<br />BRAWL
-            </h1>
-          </div>
-        </div>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 relative" style={{
+        backgroundImage: 'url(/images/login-battle.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}>
+      {/* Dark overlay so text stays readable */}
+      <div className="absolute inset-0" style={{
+        background: 'linear-gradient(to bottom, rgba(5,3,2,0.7) 0%, rgba(5,3,2,0.5) 40%, rgba(5,3,2,0.75) 100%)',
+      }} />
+
+      <div className="relative text-center max-w-md w-full">
+        <h1 className="game-logo text-5xl mb-2 leading-tight" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.95), 0 0 40px rgba(212,168,67,0.25)' }}>
+          JURASSIC<br />BRAWL
+        </h1>
 
         <div className="my-4" style={{ height: '1px', background: 'linear-gradient(to right, transparent, #5a4020, transparent)' }} />
         <p className="text-base mb-8 leading-relaxed" style={{ color: '#a08050', fontStyle: 'italic' }}>
