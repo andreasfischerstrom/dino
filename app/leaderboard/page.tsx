@@ -48,14 +48,13 @@ export default async function LeaderboardPage() {
           const rank = rankDisplay(i)
           return (
             <Link key={char.id} href={`/profile/${char.id}`}
-              className="flex items-center gap-4 px-4 py-3 block transition"
+              className="flex items-center gap-4 px-4 py-3 block row-hover"
               style={{
                 borderBottom: i < (top?.length || 0) - 1 ? '1px solid #2a1e0e' : 'none',
                 textDecoration: 'none',
                 background: i === 0 ? 'linear-gradient(90deg, rgba(212,168,67,0.06) 0%, transparent 100%)' : 'transparent',
+                borderRadius: 0,
               }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,220,100,0.04)'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = i === 0 ? 'linear-gradient(90deg, rgba(212,168,67,0.06) 0%, transparent 100%)' : 'transparent'}
             >
               <span className="w-10 text-center font-bold" style={{
                 color: rank.gold ? '#d4a843' : '#4a3a22',

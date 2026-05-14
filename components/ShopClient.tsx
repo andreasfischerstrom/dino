@@ -88,7 +88,7 @@ export default function ShopClient({ character, gear, inventory }: Props) {
                   const canAfford = bones >= item.price
                   const meetsLevel = level >= item.levelReq
                   return (
-                    <div key={item.id} className="panel flex items-center gap-4"
+                    <div key={item.id} className="panel row-hover flex items-center gap-4"
                       style={{ opacity: meetsLevel ? 1 : 0.5 }}>
                       <div className="text-3xl w-10 text-center">{item.emoji}</div>
                       <div className="flex-1">
@@ -142,7 +142,7 @@ export default function ShopClient({ character, gear, inventory }: Props) {
                   {ownedSlotGear.map(item => {
                     const isEquipped = equippedIds.includes(item.id)
                     return (
-                      <div key={item.id} className="panel flex items-center gap-4"
+                      <div key={item.id} className="panel row-hover flex items-center gap-4"
                         style={{ borderColor: isEquipped ? '#7a5020' : '#4a3520', borderTop: isEquipped ? '2px solid #d4a843' : undefined }}>
                         <div className="text-3xl w-10 text-center">{item.emoji}</div>
                         <div className="flex-1">

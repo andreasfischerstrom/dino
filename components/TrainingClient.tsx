@@ -74,7 +74,7 @@ export default function TrainingClient({ character, equippedGear, mobs, species 
           const difficulty = mob.level <= charLevel - 2 ? 'Easy' : mob.level <= charLevel + 1 ? 'Fair' : 'Hard'
           const diffColor = difficulty === 'Easy' ? '#2a6428' : difficulty === 'Fair' ? '#d4a843' : '#9b1818'
           return (
-            <div key={mob.id} className="panel flex items-center gap-4">
+            <div key={mob.id} className="panel row-hover flex items-center gap-4">
               <div className="text-4xl w-12 text-center">{mob.emoji}</div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">

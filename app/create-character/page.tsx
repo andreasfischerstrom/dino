@@ -114,7 +114,7 @@ export default function CreateCharacter() {
               <button
                 key={s.id}
                 onClick={() => setSelectedSpecies(s)}
-                className="text-left p-4 rounded transition-all"
+                className="text-left p-4 rounded species-card"
                 style={{
                   background: selectedSpecies?.id === s.id
                     ? 'linear-gradient(135deg, #2a1e0e 0%, #1e1408 100%)'

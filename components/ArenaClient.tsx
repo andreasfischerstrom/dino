@@ -148,7 +148,7 @@ export default function ArenaClient({ character, others, incomingChallenges, out
           {filteredOthers.map(other => {
             const otherSpecies = species.find(s => s.id === (other.species as string))
             return (
-              <div key={other.id as string} className="panel flex items-center gap-4">
+              <div key={other.id as string} className="panel row-hover flex items-center gap-4">
                 <div className="text-3xl">{otherSpecies?.emoji || '🦕'}</div>
                 <div className="flex-1">
                   <p className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{other.name as string}</p>
@@ -175,7 +175,7 @@ export default function ArenaClient({ character, others, incomingChallenges, out
             const challenger = c.challenger as Record<string, unknown>
             const cSpecies = species.find(s => s.id === (challenger.species as string))
             return (
-              <div key={c.id as string} className="panel">
+              <div key={c.id as string} className="panel row-hover">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-2xl">{cSpecies?.emoji}</span>
                   <div>

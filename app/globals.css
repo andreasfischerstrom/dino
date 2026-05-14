@@ -55,6 +55,10 @@ h1, h2, h3, h4 {
   background: linear-gradient(to bottom, #f0cc50 0%, #d8a838 55%, #b88028 100%);
   box-shadow: 0 3px 8px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.2), 0 0 12px rgba(212,168,67,0.2);
 }
+.btn-primary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
+}
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 
 .btn-ghost {
@@ -74,6 +78,7 @@ h1, h2, h3, h4 {
   border-color: var(--accent);
   box-shadow: 0 0 8px rgba(212,168,67,0.12);
 }
+.btn-ghost:active { transform: translateY(1px); }
 
 .btn-danger {
   background: linear-gradient(to bottom, #b82020 0%, #8b1515 55%, #6a0f0f 100%);
@@ -91,6 +96,7 @@ h1, h2, h3, h4 {
   background: linear-gradient(to bottom, #d02828 0%, #a01818 55%, #800f0f 100%);
   box-shadow: 0 3px 8px rgba(0,0,0,0.8), 0 0 10px rgba(180,30,30,0.15);
 }
+.btn-danger:active { transform: translateY(1px); box-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 
 /* ---- Panels ---- */
 .panel {
@@ -187,6 +193,29 @@ h1, h2, h3, h4 {
   text-shadow: 0 3px 8px rgba(0,0,0,0.95), 0 0 30px rgba(212,168,67,0.3), 0 0 60px rgba(212,168,67,0.1);
 }
 
+/* ---- Clickable rows (mob list, shop items, arena opponents, leaderboard) ---- */
+.row-hover {
+  transition: background 0.15s, border-color 0.15s;
+  cursor: pointer;
+}
+.row-hover:hover {
+  background: linear-gradient(155deg, #261e14 0%, #1a1208 100%);
+  border-color: #6a5030;
+}
+.row-hover:active { background: linear-gradient(155deg, #1e1810 0%, #141008 100%); }
+
+/* ---- Species selection cards (create-character) ---- */
+.species-card {
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  cursor: pointer;
+}
+.species-card:hover {
+  border-color: #8a6030 !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.8), 0 0 16px rgba(212,168,67,0.1) !important;
+  transform: translateY(-2px);
+}
+.species-card:active { transform: translateY(0); }
+
 /* ---- Location Cards (Town hub) ---- */
 .location-card {
   position: relative;
@@ -204,6 +233,7 @@ h1, h2, h3, h4 {
   box-shadow: 0 6px 24px rgba(0,0,0,0.9), 0 0 24px rgba(212,168,67,0.1), inset 0 1px 0 rgba(255,220,100,0.06);
   transform: translateY(-3px);
 }
+.location-card:active { transform: translateY(-1px); }
 
 /* ---- Tabs ---- */
 .tab-btn {
@@ -227,7 +257,8 @@ h1, h2, h3, h4 {
   background: #161210;
   color: #6a5a40;
 }
-.tab-inactive:hover { color: var(--accent); background: rgba(255,220,100,0.04); }
+.tab-inactive:hover { color: var(--accent); background: rgba(255,220,100,0.06); border-color: #6a5030; }
+.tab-active:active, .tab-inactive:active { transform: translateY(1px); }
 
 /* ---- Form Inputs ---- */
 .game-input {
