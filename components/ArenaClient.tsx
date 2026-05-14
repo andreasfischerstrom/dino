@@ -72,11 +72,11 @@ export default function ArenaClient({ character, others, incomingChallenges, out
           xp: character.xp as number,
           xpForNextLevel: nextLevelXp,
           bones: character.bones as number,
-          image: (character.image_url as string) || charSpecies?.emoji || '🦕',
+          image: (character.image_url as string) || charSpecies?.image || charSpecies?.emoji || '🦕',
           name: character.name as string,
         }}
         fighterBName={challengeTarget.name as string}
-        fighterBImage={(challengeTarget.image_url as string) || opponentSpecies?.emoji || '🦕'}
+        fighterBImage={(challengeTarget.image_url as string) || opponentSpecies?.image || opponentSpecies?.emoji || '🦕'}
         userSide='b'
         onComplete={() => { window.location.href = '/town' }}
       />

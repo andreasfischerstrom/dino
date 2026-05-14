@@ -37,8 +37,11 @@ export default async function ObituaryPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center"
       style={{ background: 'radial-gradient(ellipse at 50% 40%, #1a0606 0%, #0a0906 70%)' }}>
       <div className="max-w-lg w-full">
-        <div className="text-8xl mb-6 grayscale opacity-50" style={{ filter: 'grayscale(1) brightness(0.4)' }}>
-          {sp?.emoji || '🦕'}
+        <div className="mb-6 flex justify-center">
+          {sp?.image
+            ? <img src={sp.image} alt={sp.name} className="w-40 h-40 rounded-lg object-cover"
+                style={{ filter: 'grayscale(1) brightness(0.35)', border: '1px solid #2a1e0e' }} />
+            : <span className="text-8xl" style={{ filter: 'grayscale(1) brightness(0.4)' }}>{sp?.emoji || '🦕'}</span>}
         </div>
 
         <h1 className="text-4xl font-bold mb-2" style={{

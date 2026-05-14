@@ -98,7 +98,7 @@ export default async function TownPage() {
 
       <CharacterCard
         name={character.name}
-        image={character.image_url ?? null}
+        image={character.image_url ?? species?.image ?? null}
         speciesEmoji={species?.emoji ?? '🦕'}
         speciesName={species?.name ?? ''}
         level={character.level}

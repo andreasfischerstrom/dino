@@ -47,7 +47,7 @@ export default function TrainingClient({ character, equippedGear, mobs, species 
           xp: character.xp as number,
           xpForNextLevel: nextLevelXp,
           bones: character.bones as number,
-          image: (character.image_url as string) || sp?.emoji || '🦕',
+          image: (character.image_url as string) || sp?.image || sp?.emoji || '🦕',
           name: character.name as string,
         }}
         fighterBName={selectedMob.name}

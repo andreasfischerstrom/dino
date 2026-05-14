@@ -64,7 +64,9 @@ export default async function LeaderboardPage() {
               }}>
                 {rank.text}
               </span>
-              <span className="text-2xl">{sp?.emoji || '🦕'}</span>
+              {sp?.image
+                ? <img src={sp.image} alt={sp.name} className="w-10 h-10 rounded object-cover" style={{ border: '1px solid #4a3520' }} />
+                : <span className="text-2xl">{sp?.emoji || '🦕'}</span>}
               <div className="flex-1">
                 <p className="font-bold text-sm" style={{
                   color: '#e8d5b0',
@@ -91,7 +93,9 @@ export default async function LeaderboardPage() {
           return (
             <div key={char.id} className="flex items-center gap-4 px-4 py-3"
               style={{ borderBottom: i < (dead?.length || 0) - 1 ? '1px solid #1e1408' : 'none', opacity: 0.65 }}>
-              <span className="text-2xl grayscale">{sp?.emoji || '🦕'}</span>
+              {sp?.image
+                ? <img src={sp.image} alt={sp.name} className="w-10 h-10 rounded object-cover grayscale" style={{ border: '1px solid #2a1e0e', opacity: 0.5 }} />
+                : <span className="text-2xl grayscale">{sp?.emoji || '🦕'}</span>}
               <div className="flex-1">
                 <p className="font-bold text-sm line-through" style={{ color: '#5a4a30', fontFamily: 'var(--font-cinzel, Georgia)' }}>{char.name}</p>
                 <p className="text-xs" style={{ color: '#2a1e10' }}>Lvl {char.level} {sp?.name} · Died in battle</p>

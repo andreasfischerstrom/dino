@@ -123,11 +123,14 @@ export default function CreateCharacter() {
                   borderTop: selectedSpecies?.id === s.id ? '2px solid #d4a843' : '1px solid #3a2810',
                   boxShadow: selectedSpecies?.id === s.id ? '0 0 12px rgba(212,168,67,0.1)' : 'none',
                 }}>
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="text-2xl">{s.emoji}</span>
-                  <span className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{s.name}</span>
+                <div className="flex items-center gap-3 mb-2">
+                  <img src={s.image} alt={s.name} className="w-14 h-14 rounded object-cover shrink-0"
+                    style={{ border: '1px solid #4a3520' }} />
+                  <div>
+                    <p className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{s.name}</p>
+                    <p className="text-xs mt-0.5" style={{ color: '#7a6a4a' }}>{s.tagline}</p>
+                  </div>
                 </div>
-                <p className="text-xs mb-2" style={{ color: '#7a6a4a' }}>{s.tagline}</p>
                 <p className="text-xs" style={{ color: '#4a3a22' }}>{s.flavor}</p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {Object.entries(s.baseStats).map(([k, v]) => (
@@ -223,10 +226,9 @@ export default function CreateCharacter() {
                   <img src={profilePreview} alt="preview" className="w-20 h-20 rounded object-cover"
                     style={{ border: '2px solid #5a4028', boxShadow: '0 2px 6px rgba(0,0,0,0.7)' }} />
                 ) : (
-                  <div className="w-20 h-20 rounded flex items-center justify-center text-4xl"
-                    style={{ background: '#0a0806', border: '2px dashed #3a2810' }}>
-                    {selectedSpecies.emoji}
-                  </div>
+                  <img src={selectedSpecies.image} alt={selectedSpecies.name}
+                    className="w-20 h-20 rounded object-cover opacity-60"
+                    style={{ border: '2px dashed #3a2810' }} />
                 )}
                 <button className="btn-ghost text-sm" onClick={() => fileRef.current?.click()}>
                   {profilePreview ? 'Change Image' : 'Upload Image'}
@@ -241,7 +243,7 @@ export default function CreateCharacter() {
             <div className="pt-4" style={{ borderTop: '1px solid #2a1e0e' }}>
               <p className="text-xs mb-2" style={{ color: '#4a3a22', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>SUMMARY</p>
               <div className="flex items-center gap-3">
-                <span className="text-3xl">{selectedSpecies.emoji}</span>
+                <img src={selectedSpecies.image} alt={selectedSpecies.name} className="w-12 h-12 rounded object-cover" style={{ border: '1px solid #4a3520' }} />
                 <div>
                   <p className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{name || '(no name yet)'}</p>
                   <p className="text-sm" style={{ color: '#7a6a4a' }}>{selectedSpecies.name}</p>

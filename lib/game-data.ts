@@ -36,6 +36,7 @@ export interface Species {
   tagline: string
   flavor: string
   emoji: string
+  image: string
   baseStats: Partial<Stats>
   bonusPoints: number
 }
@@ -47,6 +48,7 @@ export const SPECIES: Species[] = [
     tagline: 'Apex predator. Terrible at hugs.',
     flavor: 'The king of the Cretaceous. Short arms, enormous attitude. Compensates for all physical limitations with an absolutely unhinged bite.',
     emoji: '🦖',
+    image: '/images/species/trex.png',
     baseStats: { strength: 2, ferocity: 1, agility: -2, cunning: -1 },
     bonusPoints: 15,
   },
@@ -56,6 +58,7 @@ export const SPECIES: Species[] = [
     tagline: 'Smart. Fast. Deeply unhinged.',
     flavor: 'Smaller than the movies suggested. Makes up for it by being absolutely everywhere at once and having opinions about everything.',
     emoji: '🐆',
+    image: '/images/species/velociraptor.png',
     baseStats: { agility: 2, cunning: 1, constitution: -2, hide: -1 },
     bonusPoints: 15,
   },
@@ -65,6 +68,7 @@ export const SPECIES: Species[] = [
     tagline: 'A tank. With horns on its face.',
     flavor: 'Three horns. Excellent defense. Moves like a furniture delivery truck but hits like one too. The accountant of the dinosaur world — boring until it gores you.',
     emoji: '🦏',
+    image: '/images/species/triceratops.png',
     baseStats: { hide: 2, constitution: 1, agility: -2, cunning: -1 },
     bonusPoints: 15,
   },
@@ -74,6 +78,7 @@ export const SPECIES: Species[] = [
     tagline: 'Effectively a boulder with opinions.',
     flavor: 'Nearly impenetrable armor. A tail club that has ended careers. So slow that opponents sometimes get bored and lose. This is considered a strategy.',
     emoji: '🪨',
+    image: '/images/species/ankylosaurus.png',
     baseStats: { hide: 3, constitution: 1, agility: -3, ferocity: -1 },
     bonusPoints: 15,
   },
@@ -83,6 +88,7 @@ export const SPECIES: Species[] = [
     tagline: 'Aquatic. Mysterious. Confident about the fin.',
     flavor: 'Part fish, part killing machine, entirely certain that the sail on its back is cool actually. Has never explained why. Nobody asks twice.',
     emoji: '🐊',
+    image: '/images/species/spinosaurus.png',
     baseStats: { strength: 1, stamina: 1, jaw: 1, roar: -1, cunning: -1 },
     bonusPoints: 15,
   },
@@ -92,6 +98,7 @@ export const SPECIES: Species[] = [
     tagline: 'Technically not a dinosaur. Brings it up constantly.',
     flavor: 'Agile, clever, and insufferable at parties. Keeps a blog about pterosaur taxonomy. Hits like a wet fern but will absolutely dodge everything you throw.',
     emoji: '🦅',
+    image: '/images/species/pterodactyl.png',
     baseStats: { agility: 2, cunning: 1, strength: -2, constitution: -1 },
     bonusPoints: 15,
   },
@@ -101,6 +108,7 @@ export const SPECIES: Species[] = [
     tagline: 'Literally just headbutts things. Elite.',
     flavor: 'A 10-inch dome of solid bone on top of an already thick skull. Scientists believe it used this for combat. Scientists are correct. Has never once used words when a headbutt would do.',
     emoji: '🐏',
+    image: '/images/species/pachycephalosaurus.png',
     baseStats: { strength: 2, ferocity: 1, cunning: -2, agility: -1 },
     bonusPoints: 15,
   },
@@ -110,6 +118,7 @@ export const SPECIES: Species[] = [
     tagline: 'Spiked tail. Walnut-sized brain. Peak performance.',
     flavor: 'The plates on its back serve no known offensive function. The tail spikes serve a very clear offensive function. Focus on the tail.',
     emoji: '🦔',
+    image: '/images/species/stegosaurus.png',
     baseStats: { hide: 1, constitution: 1, jaw: 1, cunning: -2, roar: -1 },
     bonusPoints: 15,
   },
