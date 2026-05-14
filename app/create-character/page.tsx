@@ -20,7 +20,6 @@ export default function CreateCharacter() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [activeStat, setActiveStat] = useState<StatKey | null>(null)
-  const [statsOpen, setStatsOpen] = useState(false)
   const totalPoints = selectedSpecies?.bonusPoints ?? 12
   const pointsUsed = Object.values(distributed).reduce((a, b) => a + b, 0)
   const pointsLeft = totalPoints - pointsUsed
@@ -110,25 +109,18 @@ export default function CreateCharacter() {
       {/* Step 1: Species */}
       {step === 'species' && (
         <div className="fade-in">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold page-title" style={{ fontSize: '1.25rem' }}>Choose Your Species</h2>
-            <button
-              onClick={() => setStatsOpen(o => !o)}
-              className="text-xs flex items-center gap-1 px-3 py-1.5 rounded"
-              style={{ color: '#a08040', background: '#1a1408', border: '1px solid #3a2810', cursor: 'pointer' }}>
-              {statsOpen ? '▾' : '▸'} Stats guide
-            </button>
+          <h2 className="text-xl font-bold mb-3 page-title" style={{ fontSize: '1.25rem' }}>Choose Your Species</h2>
+          <p className="text-sm mb-3" style={{ color: '#9a8a6a' }}>
+            Each species starts with different stat bonuses. Here's what they do:
+          </p>
+          <div className="panel mb-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2" style={{ padding: '1rem 1.25rem' }}>
+            {STATS.map(s => (
+              <p key={s.key} className="text-sm" style={{ color: '#9a8a6a' }}>
+                <span className="mr-1.5">{s.emoji}</span>
+                <strong style={{ color: '#c8b078' }}>{s.label}:</strong> {s.description}
+              </p>
+            ))}
           </div>
-          {statsOpen && (
-            <div className="panel mb-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5" style={{ padding: '0.875rem 1rem' }}>
-              {STATS.map(s => (
-                <p key={s.key} className="text-xs" style={{ color: '#5a4a30' }}>
-                  <span className="mr-1">{s.emoji}</span>
-                  <strong style={{ color: '#7a6a4a' }}>{s.label}:</strong> {s.description}
-                </p>
-              ))}
-            </div>
-          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {SPECIES.map(s => (
               <button
