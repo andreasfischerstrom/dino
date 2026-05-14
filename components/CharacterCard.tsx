@@ -138,10 +138,16 @@ export default function CharacterCard({
             <span className="text-xs w-16 text-right tabular-nums shrink-0" style={{ color: '#7a5a4a' }}>{xp - xpCurrent}/{xpSpan}</span>
           </div>
 
-          <div className="mt-2 flex gap-3 text-xs flex-wrap" style={{ color: '#5a4a30' }}>
-            <span>💀 {kills}</span>
-            <span>⚔ {wins}W/{losses}L</span>
-            <span>🦴 {bones}</span>
+          <div className="mt-2 flex gap-4 text-xs flex-wrap">
+            <span className="flex items-center gap-1" title="Kills — opponents defeated in battle" style={{ color: '#b09060' }}>
+              <span>💀</span><span>{kills} kills</span>
+            </span>
+            <span className="flex items-center gap-1" title="Win / Loss record" style={{ color: '#b09060' }}>
+              <span>⚔️</span><span>{wins}W / {losses}L</span>
+            </span>
+            <span className="flex items-center gap-1" title="Bones — currency used in the shop" style={{ color: '#b09060' }}>
+              <span>🦴</span><span>{bones} bones</span>
+            </span>
           </div>
         </div>
 
