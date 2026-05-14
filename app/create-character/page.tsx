@@ -19,7 +19,8 @@ export default function CreateCharacter() {
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const [hoveredStat, setHoveredStat] = useState<StatKey | null>(null)
+  const [activeStat, setActiveStat] = useState<StatKey | null>(null)
+  const [statsOpen, setStatsOpen] = useState(false)
   const totalPoints = selectedSpecies?.bonusPoints ?? 12
   const pointsUsed = Object.values(distributed).reduce((a, b) => a + b, 0)
   const pointsLeft = totalPoints - pointsUsed
@@ -148,6 +149,27 @@ export default function CreateCharacter() {
               </button>
             ))}
           </div>
+          {/* Collapsible stat legend */}
+          <div className="mt-4" style={{ borderTop: '1px solid #2a1e0e', paddingTop: '0.75rem' }}>
+            <button
+              onClick={() => setStatsOpen(o => !o)}
+              className="text-sm flex items-center gap-2"
+              style={{ color: '#7a6a4a', fontStyle: 'italic', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <span style={{ color: '#4a3a22' }}>{statsOpen ? '▾' : '▸'}</span>
+              What do these stats mean?
+            </button>
+            {statsOpen && (
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                {STATS.map(s => (
+                  <p key={s.key} className="text-xs" style={{ color: '#4a3a22' }}>
+                    <span className="mr-1">{s.emoji}</span>
+                    <strong style={{ color: '#7a6a4a' }}>{s.label}:</strong> {s.description}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="mt-6 flex justify-end">
             <button className="btn-primary" disabled={!selectedSpecies} onClick={() => setStep('stats')}>
               Continue →
@@ -167,34 +189,39 @@ export default function CreateCharacter() {
             <span style={{ color: '#d4a843', fontWeight: 'bold', fontFamily: 'var(--font-cinzel, Georgia)' }}>{totalPoints}</span>
             {' '}points remaining.
           </p>
-          <div className="panel space-y-3">
+          <div className="panel space-y-1">
             {STATS.map(stat => {
               const effective = getEffectiveStat(stat.key)
               const bonus = distributed[stat.key]
+              const isActive = activeStat === stat.key
               return (
-                <div key={stat.key} className="flex items-center gap-3"
-                  onMouseEnter={() => setHoveredStat(stat.key)}
-                  onMouseLeave={() => setHoveredStat(null)}>
-                  <div className="w-6 text-center">{stat.emoji}</div>
-                  <div className="w-28 text-sm font-bold" style={{ color: '#e8d5b0', fontFamily: 'var(--font-cinzel, Georgia)' }}>{stat.label}</div>
-                  <div className="flex-1 stat-bar">
-                    <div className="stat-bar-fill" style={{ width: `${Math.min(100, effective * 7)}%` }} />
+                <div key={stat.key}>
+                  <div className="flex items-center gap-3 py-2 rounded cursor-pointer"
+                    style={{ background: isActive ? 'rgba(212,168,67,0.05)' : 'transparent' }}
+                    onClick={() => setActiveStat(isActive ? null : stat.key)}>
+                    <div className="w-6 text-center">{stat.emoji}</div>
+                    <div className="w-28 text-sm font-bold" style={{ color: isActive ? '#d4a843' : '#e8d5b0', fontFamily: 'var(--font-cinzel, Georgia)' }}>{stat.label}</div>
+                    <div className="flex-1 stat-bar">
+                      <div className="stat-bar-fill" style={{ width: `${Math.min(100, effective * 7)}%` }} />
+                    </div>
+                    <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => adjustStat(stat.key, -1)} disabled={bonus <= 0}
+                        className="w-7 h-7 rounded text-sm font-bold disabled:opacity-30 transition"
+                        style={{ background: '#2a1e0e', color: '#d4a843', border: '1px solid #4a3520' }}>−</button>
+                      <span className="w-6 text-center font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{effective}</span>
+                      <button onClick={() => adjustStat(stat.key, 1)} disabled={pointsLeft <= 0}
+                        className="w-7 h-7 rounded text-sm font-bold disabled:opacity-30 transition"
+                        style={{ background: '#2a1e0e', color: '#d4a843', border: '1px solid #4a3520' }}>+</button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => adjustStat(stat.key, -1)} disabled={bonus <= 0}
-                      className="w-7 h-7 rounded text-sm font-bold disabled:opacity-30 transition"
-                      style={{ background: '#2a1e0e', color: '#d4a843', border: '1px solid #4a3520' }}>−</button>
-                    <span className="w-6 text-center font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{effective}</span>
-                    <button onClick={() => adjustStat(stat.key, 1)} disabled={pointsLeft <= 0}
-                      className="w-7 h-7 rounded text-sm font-bold disabled:opacity-30 transition"
-                      style={{ background: '#2a1e0e', color: '#d4a843', border: '1px solid #4a3520' }}>+</button>
-                  </div>
+                  {isActive && (
+                    <p className="text-xs pb-2 pl-9 pr-2" style={{ color: '#7a6a4a', fontStyle: 'italic' }}>
+                      {stat.description}
+                    </p>
+                  )}
                 </div>
               )
             })}
-          </div>
-          <div className="mt-2 text-sm px-1" style={{ minHeight: '1.5rem', color: '#7a6a4a', fontStyle: 'italic', transition: 'opacity 0.15s' }}>
-            {hoveredStat && (() => { const s = STATS.find(x => x.key === hoveredStat)!; return <>{s.emoji} <strong style={{ color: '#a08040', fontStyle: 'normal' }}>{s.label}:</strong> {s.description}</> })()}
           </div>
           <div className="mt-6 flex justify-between">
             <button className="btn-ghost" onClick={() => setStep('species')}>← Back</button>
