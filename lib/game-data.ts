@@ -346,7 +346,7 @@ export function computeStats(base: Stats, gear: GearTemplate[]): Stats {
 
 export function xpForLevel(level: number): number {
   if (level <= 1) return 0
-  return Math.floor(100 * Math.pow(level, 1.6))
+  return Math.floor(70 * Math.pow(level - 1, 1.5))
 }
 
 export function levelFromXp(xp: number): number {
