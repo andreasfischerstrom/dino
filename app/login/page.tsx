@@ -34,13 +34,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 relative" style={{
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 relative" style={{ overflow: 'hidden' }}>
+      {/* Background image on its own layer so we can blur it independently */}
+      <div className="absolute inset-0" style={{
         backgroundImage: 'url(/images/login-battle.png)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        imageRendering: 'auto',
-      }}>
-      {/* Dark overlay so text stays readable */}
+        filter: 'blur(2px)',
+        transform: 'scale(1.05)', // prevents blur from showing white edges
+      }} />
+      {/* Dark overlay */}
       <div className="absolute inset-0" style={{
         background: 'linear-gradient(to bottom, rgba(5,3,2,0.88) 0%, rgba(5,3,2,0.72) 40%, rgba(5,3,2,0.92) 100%)',
       }} />
