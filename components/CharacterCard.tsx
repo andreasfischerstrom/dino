@@ -228,14 +228,14 @@ export default function CharacterCard({
                   <div className="flex flex-col items-center gap-1 p-2 rounded transition-colors"
                     style={{
                       background: slot.item ? '#1a1610' : '#0d0b08',
-                      border: `1px solid ${slot.item ? '#4a3520' : '#1a1408'}`,
-                      minHeight: '56px',
+                      border: `1px solid ${slot.item ? '#4a3520' : '#2a1e14'}`,
+                      minHeight: '60px',
                       justifyContent: 'center',
                     }}>
-                    <span className="text-base leading-none">{slot.item ? slot.item.emoji : slot.emoji}</span>
+                    <span className="text-lg leading-none">{slot.item ? slot.item.emoji : slot.emoji}</span>
                     <span style={{
-                      fontSize: '9px',
-                      color: slot.item ? '#7a6a4a' : '#2a1e0e',
+                      fontSize: '11px',
+                      color: slot.item ? '#c0a060' : '#5a4a30',
                       width: '100%',
                       textAlign: 'center',
                       overflow: 'hidden',
