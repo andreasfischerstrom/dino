@@ -38,6 +38,7 @@ export default function LoginPage() {
         backgroundImage: 'url(/images/login-battle.png)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+        imageRendering: 'auto',
       }}>
       {/* Dark overlay so text stays readable */}
       <div className="absolute inset-0" style={{
