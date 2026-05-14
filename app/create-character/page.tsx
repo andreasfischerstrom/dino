@@ -110,7 +110,25 @@ export default function CreateCharacter() {
       {/* Step 1: Species */}
       {step === 'species' && (
         <div className="fade-in">
-          <h2 className="text-xl font-bold mb-4 page-title" style={{ fontSize: '1.25rem' }}>Choose Your Species</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold page-title" style={{ fontSize: '1.25rem' }}>Choose Your Species</h2>
+            <button
+              onClick={() => setStatsOpen(o => !o)}
+              className="text-xs flex items-center gap-1 px-3 py-1.5 rounded"
+              style={{ color: '#a08040', background: '#1a1408', border: '1px solid #3a2810', cursor: 'pointer' }}>
+              {statsOpen ? '▾' : '▸'} Stats guide
+            </button>
+          </div>
+          {statsOpen && (
+            <div className="panel mb-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5" style={{ padding: '0.875rem 1rem' }}>
+              {STATS.map(s => (
+                <p key={s.key} className="text-xs" style={{ color: '#5a4a30' }}>
+                  <span className="mr-1">{s.emoji}</span>
+                  <strong style={{ color: '#7a6a4a' }}>{s.label}:</strong> {s.description}
+                </p>
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {SPECIES.map(s => (
               <button
@@ -149,27 +167,6 @@ export default function CreateCharacter() {
               </button>
             ))}
           </div>
-          {/* Collapsible stat legend */}
-          <div className="mt-4" style={{ borderTop: '1px solid #2a1e0e', paddingTop: '0.75rem' }}>
-            <button
-              onClick={() => setStatsOpen(o => !o)}
-              className="text-sm flex items-center gap-2"
-              style={{ color: '#7a6a4a', fontStyle: 'italic', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-              <span style={{ color: '#4a3a22' }}>{statsOpen ? '▾' : '▸'}</span>
-              What do these stats mean?
-            </button>
-            {statsOpen && (
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                {STATS.map(s => (
-                  <p key={s.key} className="text-xs" style={{ color: '#4a3a22' }}>
-                    <span className="mr-1">{s.emoji}</span>
-                    <strong style={{ color: '#7a6a4a' }}>{s.label}:</strong> {s.description}
-                  </p>
-                ))}
-              </div>
-            )}
-          </div>
-
           <div className="mt-6 flex justify-end">
             <button className="btn-primary" disabled={!selectedSpecies} onClick={() => setStep('stats')}>
               Continue →
