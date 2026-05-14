@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { SPECIES, STATS, BASE_STATS, StatKey, Species } from '@/lib/game-data'
+import { SPECIES, STATS, BASE_STATS, STAT_MAX, StatKey, Species } from '@/lib/game-data'
 import SignOutButton from '@/components/SignOutButton'
 
 export default function CreateCharacter() {
@@ -20,13 +20,14 @@ export default function CreateCharacter() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [activeStat, setActiveStat] = useState<StatKey | null>(null)
-  const totalPoints = selectedSpecies?.bonusPoints ?? 12
+  const totalPoints = selectedSpecies?.bonusPoints ?? 5
   const pointsUsed = Object.values(distributed).reduce((a, b) => a + b, 0)
   const pointsLeft = totalPoints - pointsUsed
 
   function adjustStat(key: StatKey, delta: number) {
     const current = distributed[key]
     if (delta > 0 && pointsLeft <= 0) return
+    if (delta > 0 && getEffectiveStat(key) >= STAT_MAX) return
     if (delta < 0 && current <= 0) return
     setDistributed(prev => ({ ...prev, [key]: current + delta }))
   }
@@ -191,14 +192,14 @@ export default function CreateCharacter() {
                     <div className="w-6 text-center">{stat.emoji}</div>
                     <div className="w-28 text-sm font-bold" style={{ color: isActive ? '#d4a843' : '#e8d5b0', fontFamily: 'var(--font-cinzel, Georgia)' }}>{stat.label}</div>
                     <div className="flex-1 stat-bar">
-                      <div className="stat-bar-fill" style={{ width: `${Math.min(100, effective * 7)}%` }} />
+                      <div className="stat-bar-fill" style={{ width: `${Math.min(100, (effective / STAT_MAX) * 100)}%` }} />
                     </div>
                     <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                       <button onClick={() => adjustStat(stat.key, -1)} disabled={bonus <= 0}
                         className="w-7 h-7 rounded text-sm font-bold disabled:opacity-30 transition"
                         style={{ background: '#2a1e0e', color: '#d4a843', border: '1px solid #4a3520' }}>−</button>
                       <span className="w-6 text-center font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{effective}</span>
-                      <button onClick={() => adjustStat(stat.key, 1)} disabled={pointsLeft <= 0}
+                      <button onClick={() => adjustStat(stat.key, 1)} disabled={pointsLeft <= 0 || effective >= STAT_MAX}
                         className="w-7 h-7 rounded text-sm font-bold disabled:opacity-30 transition"
                         style={{ background: '#2a1e0e', color: '#d4a843', border: '1px solid #4a3520' }}>+</button>
                     </div>

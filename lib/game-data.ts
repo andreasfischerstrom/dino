@@ -50,7 +50,7 @@ export const SPECIES: Species[] = [
     emoji: '🦖',
     image: '/images/species/trex.png',
     baseStats: { strength: 2, ferocity: 1, agility: -2, cunning: -1 },
-    bonusPoints: 15,
+    bonusPoints: 5,
   },
   {
     id: 'velociraptor',
@@ -60,7 +60,7 @@ export const SPECIES: Species[] = [
     emoji: '🐆',
     image: '/images/species/velociraptor.png',
     baseStats: { agility: 2, cunning: 1, constitution: -2, hide: -1 },
-    bonusPoints: 15,
+    bonusPoints: 5,
   },
   {
     id: 'triceratops',
@@ -70,7 +70,7 @@ export const SPECIES: Species[] = [
     emoji: '🦏',
     image: '/images/species/triceratops.png',
     baseStats: { hide: 2, constitution: 1, agility: -2, cunning: -1 },
-    bonusPoints: 15,
+    bonusPoints: 5,
   },
   {
     id: 'ankylosaurus',
@@ -80,7 +80,7 @@ export const SPECIES: Species[] = [
     emoji: '🪨',
     image: '/images/species/ankylosaurus.png',
     baseStats: { hide: 3, constitution: 1, agility: -3, ferocity: -1 },
-    bonusPoints: 15,
+    bonusPoints: 5,
   },
   {
     id: 'spinosaurus',
@@ -90,7 +90,7 @@ export const SPECIES: Species[] = [
     emoji: '🐊',
     image: '/images/species/spinosaurus.png',
     baseStats: { strength: 1, stamina: 1, jaw: 1, roar: -1, cunning: -1 },
-    bonusPoints: 15,
+    bonusPoints: 5,
   },
   {
     id: 'pterodactyl',
@@ -100,7 +100,7 @@ export const SPECIES: Species[] = [
     emoji: '🦅',
     image: '/images/species/pterodactyl.png',
     baseStats: { agility: 2, cunning: 1, strength: -2, constitution: -1 },
-    bonusPoints: 15,
+    bonusPoints: 5,
   },
   {
     id: 'pachycephalosaurus',
@@ -110,7 +110,7 @@ export const SPECIES: Species[] = [
     emoji: '🐏',
     image: '/images/species/pachycephalosaurus.png',
     baseStats: { strength: 2, ferocity: 1, cunning: -2, agility: -1 },
-    bonusPoints: 15,
+    bonusPoints: 5,
   },
   {
     id: 'stegosaurus',
@@ -120,7 +120,7 @@ export const SPECIES: Species[] = [
     emoji: '🦔',
     image: '/images/species/stegosaurus.png',
     baseStats: { hide: 1, constitution: 1, jaw: 1, cunning: -2, roar: -1 },
-    bonusPoints: 15,
+    bonusPoints: 5,
   },
 ]
 
@@ -136,7 +136,8 @@ export const BASE_STATS: Stats = {
   roar: 3,
 }
 
-export const STAT_POOL = 12
+export const STAT_POOL = 5
+export const STAT_MAX = 25
 
 export type DaringLevel = 'timid' | 'measured' | 'bold' | 'reckless' | 'unhinged'
 
