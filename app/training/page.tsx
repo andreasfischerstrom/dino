@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { MOBS, GEAR, SPECIES } from '@/lib/game-data'
+import { MOBS, GEAR, SPECIES, DARING_OPTIONS } from '@/lib/game-data'
 import TrainingClient from '@/components/TrainingClient'
 
 export default async function TrainingPage() {
@@ -32,6 +32,7 @@ export default async function TrainingPage() {
       equippedGear={equippedGear}
       mobs={MOBS}
       species={SPECIES}
+      daringOptions={DARING_OPTIONS}
     />
   )
 }

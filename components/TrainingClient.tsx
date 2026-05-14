@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { Mob, GearTemplate, Species, xpForLevel } from '@/lib/game-data'
+import { Mob, GearTemplate, Species, DaringOption, xpForLevel } from '@/lib/game-data'
 import BattleViewer from './BattleViewer'
 
 interface Props {
@@ -9,31 +9,37 @@ interface Props {
   equippedGear: (GearTemplate | undefined)[]
   mobs: Mob[]
   species: Species[]
+  daringOptions: DaringOption[]
 }
 
-export default function TrainingClient({ character, equippedGear, mobs, species }: Props) {
+export default function TrainingClient({ character, equippedGear, mobs, species, daringOptions }: Props) {
   const [fighting, setFighting] = useState(false)
   const [battleData, setBattleData] = useState<Record<string, unknown> | null>(null)
   const [selectedMob, setSelectedMob] = useState<Mob | null>(null)
+  const [pendingMob, setPendingMob] = useState<Mob | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [daring, setDaring] = useState(character.daring as string || 'measured')
+  const [surrenderAt, setSurrenderAt] = useState(character.surrender_at as number ?? 20)
 
   const charLevel = character.level as number
   const availableMobs = mobs.filter(m => m.level <= charLevel + 3)
   const sp = species.find(s => s.id === (character.species as string))
 
-  async function startFight(mob: Mob) {
-    setLoading(true); setError(''); setSelectedMob(mob)
+  async function startFight() {
+    if (!pendingMob) return
+    setLoading(true); setError(''); setSelectedMob(pendingMob)
     const res = await fetch('/api/battle/mob', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mobId: mob.id }),
+      body: JSON.stringify({ mobId: pendingMob.id, daring, surrenderAt }),
     })
     const json = await res.json()
     if (!res.ok) { setError(json.error || 'Something went wrong'); setLoading(false); return }
     setBattleData(json)
     setFighting(true)
     setLoading(false)
+    setPendingMob(null)
   }
 
   if (fighting && battleData && selectedMob) {
@@ -89,14 +95,54 @@ export default function TrainingClient({ character, equippedGear, mobs, species 
                   Rewards: {mob.xpReward} XP · {mob.bonesReward[0]}–{mob.bonesReward[1]} bones
                 </p>
               </div>
-              <button className="btn-primary whitespace-nowrap" disabled={loading}
-                onClick={() => startFight(mob)}>
-                {loading && selectedMob?.id === mob.id ? 'Preparing...' : 'Fight'}
+              <button className="btn-primary whitespace-nowrap"
+                onClick={() => setPendingMob(mob)}>
+                Fight
               </button>
             </div>
           )
         })}
       </div>
+
+      {/* Pre-fight modal */}
+      {pendingMob && (
+        <div className="fixed inset-0 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
+          <div className="panel max-w-sm w-full space-y-4" style={{ borderTop: '2px solid #5a4028', boxShadow: '0 8px 32px rgba(0,0,0,0.95)' }}>
+            <div className="flex items-center gap-3">
+              <span className="text-4xl">{pendingMob.emoji}</span>
+              <h3 className="font-bold text-lg page-title">Fight {pendingMob.name}?</h3>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold mb-2" style={{ color: '#e8d5b0', fontFamily: 'var(--font-cinzel, Georgia)' }}>Daring Level</label>
+              <select value={daring} onChange={e => setDaring(e.target.value)} className="game-input">
+                {daringOptions.map(d => (
+                  <option key={d.key} value={d.key}>{d.label} — {d.description}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold mb-2" style={{ color: '#e8d5b0', fontFamily: 'var(--font-cinzel, Georgia)' }}>
+                Surrender at {surrenderAt}% HP
+              </label>
+              <input type="range" min={0} max={50} value={surrenderAt} onChange={e => setSurrenderAt(Number(e.target.value))} />
+              <p className="text-xs mt-1" style={{ color: '#a08050' }}>
+                {surrenderAt === 0
+                  ? '⚠️ You fight to the death. Your character will die if they lose.'
+                  : `You surrender at ${surrenderAt}% HP — likely to survive a loss.`}
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button className="btn-primary flex-1" onClick={startFight} disabled={loading}>
+                {loading ? 'Preparing...' : 'Fight! ⚔️'}
+              </button>
+              <button className="btn-ghost flex-1" onClick={() => setPendingMob(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

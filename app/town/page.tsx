@@ -87,7 +87,7 @@ export default async function TownPage() {
             textShadow: '0 2px 8px rgba(0,0,0,0.95), 0 0 24px rgba(212,168,67,0.2)',
             letterSpacing: '0.06em',
           }}>
-            Gorgon's Gulch
+            Jurassic Brawl
           </h1>
           <p className="text-sm mt-1.5" style={{ color: '#a08050', fontStyle: 'italic' }}>
             A mid-sized prehistoric settlement. Smells like ambition and bad choices.
@@ -116,6 +116,8 @@ export default async function TownPage() {
         stats={statRows}
         slots={slotItems}
         buffs={buffs}
+        lastRegenAt={character.last_regen_at ?? character.created_at}
+        regenPerMinute={HP_REGEN_PER_MINUTE}
       />
 
       {hpPct < 30 && (

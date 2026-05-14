@@ -7,6 +7,7 @@ export interface Fighter {
   stats: Stats
   daring: DaringLevel
   surrenderAt: number // percentage 0-50
+  initialHp?: number  // if set, battle starts at this HP instead of max
   isMob?: boolean
 }
 
@@ -153,8 +154,8 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter): BattleResu
 
   const maxHpA = maxHp(fighterA.stats.constitution)
   const maxHpB = maxHp(fighterB.stats.constitution)
-  let hpA = maxHpA
-  let hpB = maxHpB
+  let hpA = fighterA.initialHp !== undefined ? Math.min(fighterA.initialHp, maxHpA) : maxHpA
+  let hpB = fighterB.initialHp !== undefined ? Math.min(fighterB.initialHp, maxHpB) : maxHpB
 
   const events: BattleEvent[] = []
 

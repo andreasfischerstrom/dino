@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { mobId } = await req.json()
+  const { mobId, daring = 'measured', surrenderAt = 20 } = await req.json()
   const mob = MOBS.find(m => m.id === mobId)
   if (!mob) return NextResponse.json({ error: 'Unknown mob' }, { status: 400 })
 
@@ -44,8 +44,9 @@ export async function POST(req: Request) {
     name: character.name,
     species: character.species,
     stats: charStats,
-    daring: 'measured', // training always measured
-    surrenderAt: 0,
+    daring,
+    surrenderAt,
+    initialHp: character.hp,
     isMob: false,
   }
 
@@ -73,10 +74,8 @@ export async function POST(req: Request) {
   const leveledUp = newLevel > character.level
   const levelsGained = newLevel - character.level
 
-  // HP damage taken — simulation always runs from max HP, translate loss to actual HP
-  const hpLost = Math.max(0, maxHp(charStats.constitution) - battle.aFinalHp)
   const characterDied = !battle.aAlive
-  const newHp = characterDied ? 0 : Math.max(1, character.hp - hpLost)
+  const newHp = characterDied ? 0 : Math.max(1, battle.aFinalHp)
 
   // Loot
   const loot: string[] = []

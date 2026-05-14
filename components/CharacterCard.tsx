@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { GearSlot } from '@/lib/game-data'
 
@@ -46,6 +46,8 @@ interface Props {
   stats: StatRow[]
   slots: SlotItem[]
   buffs: Buff[]
+  lastRegenAt?: string
+  regenPerMinute?: number
 }
 
 export default function CharacterCard({
@@ -53,13 +55,34 @@ export default function CharacterCard({
   hp, maxHp, xp, xpCurrent, xpForNext, statPoints, characterId,
   kills, wins, losses, bones,
   stats, slots, buffs,
+  lastRegenAt, regenPerMinute,
 }: Props) {
   const [expanded, setExpanded] = useState(false)
   const [localStatPoints, setLocalStatPoints] = useState(statPoints)
   const [localStats, setLocalStats] = useState(stats)
   const [spending, setSpending] = useState<string | null>(null)
+  const [liveHp, setLiveHp] = useState(hp)
 
-  const hpPct = Math.round((hp / maxHp) * 100)
+  useEffect(() => {
+    if (!lastRegenAt || !regenPerMinute || hp >= maxHp) return
+    const msPerHp = 60000 / regenPerMinute
+    const elapsed = Date.now() - new Date(lastRegenAt).getTime()
+    const msUntilNext = msPerHp - (elapsed % msPerHp)
+
+    let currentHp = hp
+    let timeout: ReturnType<typeof setTimeout>
+
+    function tick() {
+      currentHp = Math.min(maxHp, currentHp + 1)
+      setLiveHp(currentHp)
+      if (currentHp < maxHp) timeout = setTimeout(tick, msPerHp)
+    }
+
+    timeout = setTimeout(tick, msUntilNext)
+    return () => clearTimeout(timeout)
+  }, [hp, maxHp, lastRegenAt, regenPerMinute])
+
+  const hpPct = Math.round((liveHp / maxHp) * 100)
   const xpSpan = xpForNext - xpCurrent
   const xpPct = Math.min(100, Math.round(((xp - xpCurrent) / xpSpan) * 100))
 
@@ -126,7 +149,7 @@ export default function CharacterCard({
             <div className="hud-bar">
               <div className="hud-bar-hp" style={{ width: `${hpPct}%` }} />
             </div>
-            <span className="text-xs w-16 text-right tabular-nums shrink-0" style={{ color: '#a08050' }}>{hp}/{maxHp}</span>
+            <span className="text-xs w-16 text-right tabular-nums shrink-0" style={{ color: '#a08050' }}>{liveHp}/{maxHp}</span>
           </div>
 
           {/* XP bar */}
