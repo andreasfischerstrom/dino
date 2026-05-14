@@ -15,7 +15,6 @@ interface Props {
   xpForNextLevel: number
   bonesBefore: number
   bonesAfter: number
-  loot?: string[]
   leveledUp: boolean
   onContinue: () => void
 }
@@ -54,7 +53,7 @@ export default function BattleOutcome({
   hpBefore, hpAfter, maxHp,
   xpBefore, xpAfter,
   bonesBefore, bonesAfter,
-  loot = [], leveledUp, onContinue,
+  leveledUp, onContinue,
 }: Props) {
   const oldLevel = levelFromXp(xpBefore)
   const newLevel = levelFromXp(xpAfter)
@@ -224,23 +223,6 @@ export default function BattleOutcome({
             </span>
           </div>
 
-          {loot.length > 0 && showButton && (
-            <div className="fade-in pt-3" style={{ borderTop: '1px solid #3a2810' }}>
-              <p className="text-xs font-bold mb-1.5" style={{
-                color: '#d4a843',
-                fontFamily: 'var(--font-cinzel, Georgia)',
-                letterSpacing: '0.08em',
-              }}>LOOT DROPPED</p>
-              <div className="flex flex-wrap gap-1">
-                {loot.map((l, i) => (
-                  <span key={i} className="text-xs px-2 py-0.5 rounded"
-                    style={{ background: '#1e1408', color: '#d4a843', border: '1px solid #5a4020' }}>
-                    {l.replace(/_/g, ' ')}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 

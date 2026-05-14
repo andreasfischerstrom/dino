@@ -77,14 +77,6 @@ export async function POST(req: Request) {
   const characterDied = !battle.aAlive
   const newHp = characterDied ? 0 : Math.max(1, battle.aFinalHp)
 
-  // Loot
-  const loot: string[] = []
-  if (won && Math.random() < 0.4) {
-    const lootItem = mob.lootTable[Math.floor(Math.random() * mob.lootTable.length)]
-    loot.push(lootItem)
-    await supabase.from('loot_items').insert({ character_id: character.id, item_id: lootItem })
-  }
-
   // Recalculate max_hp if leveled up (more points available conceptually, but stats unchanged)
   const newMaxHp = leveledUp ? maxHp(charStats.constitution) : character.max_hp
 
@@ -108,7 +100,6 @@ export async function POST(req: Request) {
       xpGained,
       bonesGained,
       leveledUp,
-      loot,
       newHp,
       newLevel,
     },

@@ -103,7 +103,6 @@ export default function BattleViewer({ battleData, fighterA, fighterBName, fight
     const xpGained = (result?.xpGained as number) ?? 0
     const bonesGained = (result?.bonesGained as number) ?? 0
     const newHp = (result?.newHp as number) ?? fighterA.hp
-    const loot = (result?.loot as string[]) ?? []
     const leveledUp = !!(result?.leveledUp)
 
     return (
@@ -120,7 +119,6 @@ export default function BattleViewer({ battleData, fighterA, fighterBName, fight
         xpForNextLevel={fighterA.xpForNextLevel}
         bonesBefore={fighterA.bones}
         bonesAfter={fighterA.bones + bonesGained}
-        loot={loot}
         leveledUp={leveledUp}
         onContinue={onComplete}
       />

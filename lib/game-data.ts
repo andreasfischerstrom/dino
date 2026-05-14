@@ -167,7 +167,6 @@ export interface Mob {
   stats: Stats
   xpReward: number
   bonesReward: [number, number]
-  lootTable: string[]
   deathQuip: string
 }
 
@@ -181,7 +180,7 @@ export const MOBS: Mob[] = [
     stats: { strength: 1, agility: 4, constitution: 2, ferocity: 1, hide: 1, stamina: 2, jaw: 1, cunning: 2, roar: 1 },
     xpReward: 20,
     bonesReward: [5, 15],
-    lootTable: ['old_bone', 'small_claw'],
+
     deathQuip: 'It lets out a tiny squeak and tips over. You feel like a monster.',
   },
   {
@@ -193,7 +192,7 @@ export const MOBS: Mob[] = [
     stats: { strength: 2, agility: 3, constitution: 3, ferocity: 2, hide: 2, stamina: 3, jaw: 2, cunning: 1, roar: 1 },
     xpReward: 35,
     bonesReward: [10, 25],
-    lootTable: ['small_claw', 'lizard_hide', 'old_bone'],
+
     deathQuip: 'It hisses one final time and retreats into a bush. You check the bush. It\'s gone.',
   },
   {
@@ -205,7 +204,7 @@ export const MOBS: Mob[] = [
     stats: { strength: 2, agility: 1, constitution: 6, ferocity: 1, hide: 6, stamina: 4, jaw: 2, cunning: 1, roar: 1 },
     xpReward: 50,
     bonesReward: [15, 35],
-    lootTable: ['turtle_shell_shard', 'old_bone'],
+
     deathQuip: 'It slowly retracts into its shell and refuses to come out. You declare victory anyway.',
   },
   {
@@ -217,7 +216,7 @@ export const MOBS: Mob[] = [
     stats: { strength: 5, agility: 3, constitution: 4, ferocity: 4, hide: 3, stamina: 3, jaw: 2, cunning: 1, roar: 2 },
     xpReward: 75,
     bonesReward: [20, 45],
-    lootTable: ['dome_fragment', 'small_claw', 'old_bone'],
+
     deathQuip: 'It headbutts a rock out of spite and staggers off. The rock is also slightly damaged.',
   },
   {
@@ -229,7 +228,7 @@ export const MOBS: Mob[] = [
     stats: { strength: 5, agility: 2, constitution: 5, ferocity: 3, hide: 5, stamina: 5, jaw: 6, cunning: 3, roar: 2 },
     xpReward: 100,
     bonesReward: [30, 60],
-    lootTable: ['croc_scale', 'croc_tooth', 'lizard_hide'],
+
     deathQuip: 'It sinks slowly into the swamp. You get the feeling it will be back. It will be back.',
   },
   {
@@ -241,7 +240,7 @@ export const MOBS: Mob[] = [
     stats: { strength: 5, agility: 7, constitution: 5, ferocity: 5, hide: 3, stamina: 5, jaw: 4, cunning: 6, roar: 5 },
     xpReward: 150,
     bonesReward: [50, 90],
-    lootTable: ['raptor_claw', 'alpha_fang', 'croc_scale'],
+
     deathQuip: 'It calls for backup. No backup comes. It calls again. Still nothing. It leaves with great dignity.',
   },
   {
@@ -253,7 +252,7 @@ export const MOBS: Mob[] = [
     stats: { strength: 8, agility: 4, constitution: 8, ferocity: 7, hide: 5, stamina: 6, jaw: 8, cunning: 2, roar: 7 },
     xpReward: 250,
     bonesReward: [80, 150],
-    lootTable: ['volcanic_fang', 'ember_scale', 'alpha_fang'],
+
     deathQuip: 'It collapses with a roar that shakes the ground. A nearby bird, safe at all times, watches judgmentally.',
   },
 ]
