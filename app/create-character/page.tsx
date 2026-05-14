@@ -110,14 +110,14 @@ export default function CreateCharacter() {
       {step === 'species' && (
         <div className="fade-in">
           <h2 className="text-xl font-bold mb-3 page-title" style={{ fontSize: '1.25rem' }}>Choose Your Species</h2>
-          <p className="text-sm mb-3" style={{ color: '#9a8a6a' }}>
+          <p className="text-sm mb-3" style={{ color: '#c8b890' }}>
             Each species starts with different stat bonuses. Here's what they do:
           </p>
-          <div className="panel mb-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2" style={{ padding: '1rem 1.25rem' }}>
+          <div className="panel mb-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5" style={{ padding: '1rem 1.25rem' }}>
             {STATS.map(s => (
-              <p key={s.key} className="text-sm" style={{ color: '#9a8a6a' }}>
+              <p key={s.key} className="text-sm" style={{ color: '#c8b890' }}>
                 <span className="mr-1.5">{s.emoji}</span>
-                <strong style={{ color: '#c8b078' }}>{s.label}:</strong> {s.description}
+                <strong style={{ color: '#d4a843' }}>{s.label}:</strong> {s.description}
               </p>
             ))}
           </div>
