@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Species, DaringOption } from '@/lib/game-data'
+import { Species, DaringOption, xpForLevel } from '@/lib/game-data'
 import BattleViewer from './BattleViewer'
 
 interface Props {
@@ -62,7 +62,7 @@ export default function ArenaClient({ character, others, incomingChallenges, out
 
   if (battleData && challengeTarget) {
     const opponentSpecies = species.find(s => s.id === (challengeTarget.species as string))
-    const nextLevelXp = Math.floor(100 * Math.pow((character.level as number) + 1, 1.6))
+    const nextLevelXp = xpForLevel((character.level as number) + 1)
     return (
       <BattleViewer
         battleData={battleData}
