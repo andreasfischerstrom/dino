@@ -49,23 +49,26 @@ export default function BattleOutcome({
   bonesBefore, bonesAfter,
   loot = [], leveledUp, onContinue,
 }: Props) {
+  const hpPctBefore = Math.round((hpBefore / maxHp) * 100)
+  const hpPctAfter  = Math.round((hpAfter  / maxHp) * 100)
+  const xpPctBefore = Math.min(100, Math.round((xpBefore / xpForNextLevel) * 100))
+  const xpPctAfter  = Math.min(100, Math.round((xpAfter  / xpForNextLevel) * 100))
+
   const [showStats, setShowStats] = useState(false)
   const [showButton, setShowButton] = useState(false)
+  const [hpBarPct, setHpBarPct] = useState(hpPctBefore)
+  const [xpBarPct, setXpBarPct] = useState(xpPctBefore)
 
   useEffect(() => {
     const t1 = setTimeout(() => setShowStats(true), 600)
-    const t2 = setTimeout(() => setShowButton(true), 2800)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
+    const t2 = setTimeout(() => { setHpBarPct(hpPctAfter); setXpBarPct(xpPctAfter) }, 700)
+    const t3 = setTimeout(() => setShowButton(true), 2800)
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
   }, [])
 
   const displayedHp    = useCountTo(hpBefore,    hpAfter,    700)
   const displayedXp    = useCountTo(xpBefore,    xpAfter,    1100)
   const displayedBones = useCountTo(bonesBefore, bonesAfter, 1500)
-
-  const hpPctBefore = Math.round((hpBefore / maxHp) * 100)
-  const hpPctAfter  = Math.round((hpAfter  / maxHp) * 100)
-  const xpPctBefore = Math.min(100, Math.round((xpBefore / xpForNextLevel) * 100))
-  const xpPctAfter  = Math.min(100, Math.round((xpAfter  / xpForNextLevel) * 100))
 
   const bonusDelta = bonesAfter - bonesBefore
   const xpDelta    = xpAfter - xpBefore
@@ -122,7 +125,7 @@ export default function BattleOutcome({
             <div className="hud-bar" style={{ flex: 'none', width: '100%' }}>
               <div style={{
                 height: '100%',
-                width: `${showStats ? hpPctAfter : hpPctBefore}%`,
+                width: `${hpBarPct}%`,
                 background: hpBarColor(hpPctAfter),
                 borderRadius: '2px',
                 transition: 'width 0.9s cubic-bezier(0.4,0,0.2,1)',
@@ -143,7 +146,7 @@ export default function BattleOutcome({
             <div className="hud-bar" style={{ flex: 'none', width: '100%' }}>
               <div style={{
                 height: '100%',
-                width: `${showStats ? xpPctAfter : xpPctBefore}%`,
+                width: `${xpBarPct}%`,
                 background: 'linear-gradient(to bottom, #38b050 0%, #267a38 60%, #164820 100%)',
                 borderRadius: '2px',
                 transition: 'width 1.1s cubic-bezier(0.4,0,0.2,1)',
