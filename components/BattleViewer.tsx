@@ -81,8 +81,8 @@ export default function BattleViewer({ battleData, fighterA, fighterBName, fight
   }, [advance])
 
   const currentEvent = events[visibleCount - 1]
-  const hpA = currentEvent?.hpA ?? events[0]?.maxHpA ?? 100
-  const hpB = currentEvent?.hpB ?? events[0]?.maxHpB ?? 100
+  const hpA = currentEvent?.hpA ?? events[0]?.hpA ?? 100
+  const hpB = currentEvent?.hpB ?? events[0]?.hpB ?? 100
   const maxHpA = events[0]?.maxHpA ?? 100
   const maxHpB = events[0]?.maxHpB ?? 100
   const hpPctA = Math.round((hpA / maxHpA) * 100)

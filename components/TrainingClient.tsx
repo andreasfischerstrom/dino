@@ -106,7 +106,7 @@ export default function TrainingClient({ character, equippedGear, mobs, species,
 
       {/* Pre-fight modal */}
       {pendingMob && (
-        <div className="fixed inset-0 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
+        <div className="fixed inset-0 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 50 }}>
           <div className="panel max-w-sm w-full space-y-4" style={{ borderTop: '2px solid #5a4028', boxShadow: '0 8px 32px rgba(0,0,0,0.95)' }}>
             <div className="flex items-center gap-3">
               <span className="text-4xl">{pendingMob.emoji}</span>
