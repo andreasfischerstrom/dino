@@ -43,7 +43,7 @@ export default function LoginPage() {
           CRETACEOUS<br />CARNAGE
         </h1>
         <div className="my-4" style={{ height: '1px', background: 'linear-gradient(to right, transparent, #5a4020, transparent)' }} />
-        <p className="text-base mb-8 leading-relaxed" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
+        <p className="text-base mb-8 leading-relaxed" style={{ color: '#a08050', fontStyle: 'italic' }}>
           65 million years ago, dinosaurs built an underground fighting league so brutal
           that historians refuse to acknowledge it existed. This is that game.
         </p>
@@ -92,7 +92,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-xs" style={{ color: '#2a1e10' }}>
+        <p className="mt-6 text-xs" style={{ color: '#8a7040' }}>
           By signing up you agree to occasionally lose a dinosaur you were emotionally attached to.
         </p>
       </div>

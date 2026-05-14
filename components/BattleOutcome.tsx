@@ -110,7 +110,7 @@ export default function BattleOutcome({
 
           {/* HP */}
           <div>
-            <div className="flex justify-between text-xs mb-1.5" style={{ color: '#7a6a4a' }}>
+            <div className="flex justify-between text-xs mb-1.5" style={{ color: '#a08050' }}>
               <span style={{ color: '#8b1515' }}>❤ HP</span>
               <span style={{ color: hpDelta >= 0 ? '#5abf6a' : '#bf5a5a' }}>
                 {displayedHp}/{maxHp}
@@ -133,7 +133,7 @@ export default function BattleOutcome({
 
           {/* XP */}
           <div>
-            <div className="flex justify-between text-xs mb-1.5" style={{ color: '#7a6a4a' }}>
+            <div className="flex justify-between text-xs mb-1.5" style={{ color: '#a08050' }}>
               <span style={{ color: '#267a38' }}>✦ XP{leveledUp ? ' — LEVEL UP! 🎉' : ''}</span>
               <span style={{ color: '#5abf6a' }}>
                 {displayedXp}/{xpForNextLevel}
@@ -154,7 +154,7 @@ export default function BattleOutcome({
 
           {/* Bones */}
           <div className="flex justify-between text-sm items-center">
-            <span style={{ color: '#7a6a4a' }}>🦴 Bones</span>
+            <span style={{ color: '#a08050' }}>🦴 Bones</span>
             <span className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>
               {displayedBones}
               {showButton && bonusDelta !== 0 && (

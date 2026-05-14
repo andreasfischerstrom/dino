@@ -60,7 +60,7 @@ export default function ShopClient({ character, gear, inventory }: Props) {
         <Link href="/town" className="btn-ghost text-sm">← Town</Link>
         <h1 className="text-3xl page-title">Grubclaw's Smithy</h1>
       </div>
-      <p className="text-sm mb-1" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
+      <p className="text-sm mb-1" style={{ color: '#a08050', fontStyle: 'italic' }}>
         "Quality not guaranteed. Refunds not offered. Grubclaw has three fingers and zero patience."
       </p>
       <p className="text-sm mb-6 font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>🦴 {bones} bones</p>
@@ -80,8 +80,8 @@ export default function ShopClient({ character, gear, inventory }: Props) {
         <div>
           {GEAR_SLOTS.map(slotDef => (
             <div key={slotDef.key} className="mb-6">
-              <h2 className="font-bold mb-1" style={{ color: '#7a6a4a', fontFamily: 'var(--font-cinzel, Georgia)' }}>{slotDef.emoji} {slotDef.label}</h2>
-              <p className="text-xs mb-3" style={{ color: '#3a2810' }}>{slotDef.description}</p>
+              <h2 className="font-bold mb-1" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)' }}>{slotDef.emoji} {slotDef.label}</h2>
+              <p className="text-xs mb-3" style={{ color: '#8a7040' }}>{slotDef.description}</p>
               <div className="space-y-2">
                 {gear.filter(g => g.slot === slotDef.key).map(item => {
                   const owned = ownedIds.includes(item.id)
@@ -93,7 +93,7 @@ export default function ShopClient({ character, gear, inventory }: Props) {
                       <div className="text-3xl w-10 text-center">{item.emoji}</div>
                       <div className="flex-1">
                         <p className="font-bold text-sm" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{item.name}</p>
-                        <p className="text-xs mb-1" style={{ color: '#4a3a22' }}>{item.description}</p>
+                        <p className="text-xs mb-1" style={{ color: '#a08050' }}>{item.description}</p>
                         <div className="flex flex-wrap gap-1">
                           {Object.entries(item.statBonus).map(([k, v]) => (
                             <span key={k} className="text-xs px-1.5 py-0.5 rounded"
@@ -128,7 +128,7 @@ export default function ShopClient({ character, gear, inventory }: Props) {
       {tab === 'inventory' && (
         <div>
           {ownedIds.length === 0 && (
-            <p className="text-sm" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
+            <p className="text-sm" style={{ color: '#a08050', fontStyle: 'italic' }}>
               You own nothing. This is both a financial and existential observation.
             </p>
           )}
@@ -137,7 +137,7 @@ export default function ShopClient({ character, gear, inventory }: Props) {
             if (ownedSlotGear.length === 0) return null
             return (
               <div key={slotDef.key} className="mb-6">
-                <h2 className="font-bold mb-3" style={{ color: '#7a6a4a', fontFamily: 'var(--font-cinzel, Georgia)' }}>{slotDef.emoji} {slotDef.label}</h2>
+                <h2 className="font-bold mb-3" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)' }}>{slotDef.emoji} {slotDef.label}</h2>
                 <div className="space-y-2">
                   {ownedSlotGear.map(item => {
                     const isEquipped = equippedIds.includes(item.id)

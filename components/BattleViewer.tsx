@@ -146,7 +146,7 @@ export default function BattleViewer({ battleData, fighterA, fighterBName, fight
             boxShadow: 'inset 0 1px 0 rgba(255,160,160,0.25)',
           }} />
         </div>
-        <div className="text-xs text-center" style={{ color: '#4a3a22' }}>{hp}/{maxHp}</div>
+        <div className="text-xs text-center" style={{ color: '#a08050' }}>{hp}/{maxHp}</div>
       </div>
     )
   }
@@ -160,7 +160,7 @@ export default function BattleViewer({ battleData, fighterA, fighterBName, fight
           <div className="flex gap-3 items-center">
             <HpBar hpPct={userHpPct} hp={userHp} maxHp={userMaxHp} />
             <div className="text-xs font-bold shrink-0" style={{
-              color: '#4a3a22',
+              color: '#a08050',
               fontFamily: 'var(--font-cinzel, Georgia)',
               letterSpacing: '0.08em',
             }}>VS</div>
@@ -195,11 +195,11 @@ export default function BattleViewer({ battleData, fighterA, fighterBName, fight
 
       {/* Controls */}
       <div className="text-center space-y-3">
-        <div className="text-xs" style={{ color: '#2a1e10' }}>{visibleCount} / {events.length}</div>
+        <div className="text-xs" style={{ color: '#8a7040' }}>{visibleCount} / {events.length}</div>
         {!done ? (
           <div className="space-y-1">
             <button className="btn-primary w-full" onClick={advance}>Next ▶</button>
-            <p className="text-xs" style={{ color: '#2a1e10' }}>or press Space</p>
+            <p className="text-xs" style={{ color: '#8a7040' }}>or press Space</p>
           </div>
         ) : (
           <button className="btn-primary w-full fade-in" onClick={() => setShowOutcome(true)}>

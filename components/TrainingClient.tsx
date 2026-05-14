@@ -63,7 +63,7 @@ export default function TrainingClient({ character, equippedGear, mobs, species 
         <Link href="/town" className="btn-ghost text-sm">← Town</Link>
         <h1 className="text-3xl page-title">The Bone Pit</h1>
       </div>
-      <p className="mb-6 text-sm" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
+      <p className="mb-6 text-sm" style={{ color: '#a08050', fontStyle: 'italic' }}>
         Train against the local wildlife. Gain XP and bones. Try not to think too hard about what they do with the bodies.
       </p>
 
@@ -84,8 +84,8 @@ export default function TrainingClient({ character, equippedGear, mobs, species 
                     Lvl {mob.level} · {difficulty}
                   </span>
                 </div>
-                <p className="text-sm mb-1" style={{ color: '#7a6a4a' }}>{mob.description}</p>
-                <p className="text-xs" style={{ color: '#4a3a22' }}>
+                <p className="text-sm mb-1" style={{ color: '#a08050' }}>{mob.description}</p>
+                <p className="text-xs" style={{ color: '#a08050' }}>
                   Rewards: {mob.xpReward} XP · {mob.bonesReward[0]}–{mob.bonesReward[1]} bones
                 </p>
               </div>

@@ -260,6 +260,11 @@ h1, h2, h3, h4 {
 .tab-inactive:hover { color: var(--accent); background: rgba(255,220,100,0.06); border-color: #6a5030; }
 .tab-active:active, .tab-inactive:active { transform: translateY(1px); }
 
+/* ---- Global cursor rules ---- */
+button:not(:disabled) { cursor: pointer; }
+select { cursor: pointer; }
+a { cursor: pointer; }
+
 /* ---- Form Inputs ---- */
 .game-input {
   background: #0a0806;

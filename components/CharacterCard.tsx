@@ -111,7 +111,7 @@ export default function CharacterCard({
             }}>{name}</span>
             <span className="text-xs px-2 py-0.5 rounded" style={{
               background: '#1a1208',
-              color: '#7a6a4a',
+              color: '#a08050',
               border: '1px solid #3a2810',
               fontFamily: 'var(--font-cinzel, Georgia)',
               letterSpacing: '0.03em',
@@ -126,7 +126,7 @@ export default function CharacterCard({
             <div className="hud-bar">
               <div className="hud-bar-hp" style={{ width: `${hpPct}%` }} />
             </div>
-            <span className="text-xs w-16 text-right tabular-nums shrink-0" style={{ color: '#7a5a4a' }}>{hp}/{maxHp}</span>
+            <span className="text-xs w-16 text-right tabular-nums shrink-0" style={{ color: '#a08050' }}>{hp}/{maxHp}</span>
           </div>
 
           {/* XP bar */}
@@ -135,7 +135,7 @@ export default function CharacterCard({
             <div className="hud-bar">
               <div className="hud-bar-xp" style={{ width: `${xpPct}%` }} />
             </div>
-            <span className="text-xs w-16 text-right tabular-nums shrink-0" style={{ color: '#7a5a4a' }}>{xp - xpCurrent}/{xpSpan}</span>
+            <span className="text-xs w-16 text-right tabular-nums shrink-0" style={{ color: '#a08050' }}>{xp - xpCurrent}/{xpSpan}</span>
           </div>
 
           <div className="mt-2 flex gap-4 text-xs flex-wrap">
@@ -153,8 +153,8 @@ export default function CharacterCard({
 
         <button
           onClick={() => setExpanded(e => !e)}
-          className="shrink-0 flex flex-col items-center gap-0.5 px-2 py-1 rounded transition-colors"
-          style={{ color: '#5a4a30', background: 'transparent' }}
+          className="shrink-0 flex flex-col items-center gap-0.5 px-2 py-1 rounded transition-colors btn-ghost"
+          style={{ color: '#a08050', border: 'none', padding: '0.25rem 0.5rem' }}
           title={expanded ? 'Collapse' : 'Show stats & equipment'}>
           <span className="text-xs" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'var(--font-cinzel, Georgia)' }}>
             {expanded ? 'less' : 'stats'}
@@ -167,9 +167,9 @@ export default function CharacterCard({
       {expanded && (
         <div className="mt-4 pt-3 fade-in" style={{ borderTop: '1px solid #3a2810' }}>
           <div className="flex items-center gap-3 mb-3">
-            <p className="text-xs font-bold" style={{ color: '#5a4a30', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.08em' }}>STATS</p>
+            <p className="text-xs font-bold" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.08em' }}>STATS</p>
             <div className="flex gap-3 text-xs">
-              <span style={{ color: '#7a6a4a' }}>■ base</span>
+              <span style={{ color: '#a08050' }}>■ base</span>
               {localStats.some(s => s.gear !== 0) && <span style={{ color: '#d4a843' }}>■ gear</span>}
               {hasBuffs && <span style={{ color: '#5abf6a' }}>■ buff</span>}
             </div>
@@ -193,7 +193,7 @@ export default function CharacterCard({
               return (
                 <div key={stat.key} className="flex items-center gap-2">
                   <span className="text-sm w-5 text-center">{stat.emoji}</span>
-                  <span className="text-xs w-20 shrink-0" style={{ color: '#7a6a4a' }}>{stat.label}</span>
+                  <span className="text-xs w-20 shrink-0" style={{ color: '#a08050' }}>{stat.label}</span>
                   <div className="flex-1 stat-bar">
                     <div style={{ display: 'flex', height: '10px', borderRadius: '2px', overflow: 'hidden' }}>
                       <div style={{ width: `${basePct}%`, background: '#6a5a3a' }} />

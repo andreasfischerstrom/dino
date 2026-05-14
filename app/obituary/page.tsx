@@ -45,7 +45,7 @@ export default async function ObituaryPage() {
         </div>
 
         <h1 className="text-4xl font-bold mb-2" style={{
-          color: '#5a4a30',
+          color: '#a08050',
           fontFamily: 'var(--font-cinzel, Georgia)',
           letterSpacing: '0.06em',
           textShadow: '0 2px 6px rgba(0,0,0,0.9)',
@@ -61,14 +61,14 @@ export default async function ObituaryPage() {
           border: '1px solid #3a2810',
           boxShadow: '0 4px 16px rgba(0,0,0,0.9)',
         }}>
-          <p className="text-lg italic mb-4" style={{ color: '#7a6a4a' }}>
+          <p className="text-lg italic mb-4" style={{ color: '#a08050' }}>
             Here lies <strong style={{ color: '#a08040', fontFamily: 'var(--font-cinzel, Georgia)' }}>{character.name}</strong>,
           </p>
-          <p className="text-base italic leading-relaxed" style={{ color: '#4a3a22' }}>
+          <p className="text-base italic leading-relaxed" style={{ color: '#a08050' }}>
             who {obitLine}
           </p>
           <div className="my-4" style={{ height: '1px', background: 'linear-gradient(to right, transparent, #3a2810, transparent)' }} />
-          <p className="text-sm" style={{ color: '#2a1e10' }}>
+          <p className="text-sm" style={{ color: '#8a7040' }}>
             They earned {character.bones} bones and spent most of them on things that did not save them.
           </p>
         </div>

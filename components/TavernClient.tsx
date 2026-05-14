@@ -123,15 +123,15 @@ export default function TavernClient({ character }: { character: Record<string, 
         <h1 className="text-3xl page-title">Tar Pit Tavern</h1>
         <span className="ml-auto text-sm font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>🦴 {bones}</span>
       </div>
-      <p className="text-sm mb-4" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
+      <p className="text-sm mb-4" style={{ color: '#a08050', fontStyle: 'italic' }}>
         Smells like smoke and bad decisions. You feel at home.
       </p>
 
       <div className="panel mb-4 py-3" style={{ borderLeft: '3px solid #4a3520' }}>
-        <p className="text-xs font-bold mb-1" style={{ color: '#4a3a22', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.08em' }}>
+        <p className="text-xs font-bold mb-1" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.08em' }}>
           OVERHEARD AT THE BAR
         </p>
-        <p className="text-sm italic" style={{ color: '#7a6a4a' }}>"{rumor}"</p>
+        <p className="text-sm italic" style={{ color: '#a08050' }}>"{rumor}"</p>
       </div>
 
       <div className="flex gap-2 mb-4">
@@ -151,7 +151,7 @@ export default function TavernClient({ character }: { character: Record<string, 
 
       {tab === 'shop' && (
         <div className="space-y-6">
-          <p className="text-xs" style={{ color: '#4a3a22' }}>
+          <p className="text-xs" style={{ color: '#a08050' }}>
             Consumables apply at the start of your next fight. Heals and XP apply immediately.
             Items marked 🔒 require higher stats to purchase.
           </p>
@@ -161,7 +161,7 @@ export default function TavernClient({ character }: { character: Record<string, 
             return (
               <div key={tier.label}>
                 <p className="text-xs font-bold mb-2 uppercase tracking-widest" style={{
-                  color: '#4a3a22',
+                  color: '#a08050',
                   fontFamily: 'var(--font-cinzel, Georgia)',
                 }}>{tier.label}</p>
                 <div className="space-y-2">
@@ -185,7 +185,7 @@ export default function TavernClient({ character }: { character: Record<string, 
                             }}>{item.name}</p>
                             {!unlocked && <span className="text-xs">🔒</span>}
                           </div>
-                          <p className="text-xs mt-0.5" style={{ color: '#4a3a22' }}>{item.description}</p>
+                          <p className="text-xs mt-0.5" style={{ color: '#a08050' }}>{item.description}</p>
                           <div className="flex flex-wrap gap-x-3 mt-0.5">
                             {effectDescs.map((d, i) => (
                               <p key={i} className="text-xs" style={{ color: d.color }}>{d.text}</p>
@@ -220,7 +220,7 @@ export default function TavernClient({ character }: { character: Record<string, 
         <div className="panel space-y-4">
           <div>
             <p className="font-bold mb-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>🌿 The Healer</p>
-            <p className="text-xs mb-3" style={{ color: '#4a3a22' }}>
+            <p className="text-xs mb-3" style={{ color: '#a08050' }}>
               An elderly Stegosaurus of dubious medical credentials. {HEALER_COST_PER_HP} bones per HP. No refunds.
             </p>
             <div className="flex items-center gap-3 mb-3">
@@ -228,11 +228,11 @@ export default function TavernClient({ character }: { character: Record<string, 
               <div className="hud-bar">
                 <div className="hud-bar-hp" style={{ width: `${hpPct}%` }} />
               </div>
-              <span className="text-xs shrink-0" style={{ color: '#7a6a4a' }}>{hp}/{maxHp}</span>
+              <span className="text-xs shrink-0" style={{ color: '#a08050' }}>{hp}/{maxHp}</span>
             </div>
             {hpMissing > 0 ? (
               <div className="flex items-center gap-4 flex-wrap">
-                <p className="text-sm" style={{ color: '#7a6a4a' }}>
+                <p className="text-sm" style={{ color: '#a08050' }}>
                   Full heal: <span style={{ color: '#d4a843' }}>🦴 {healCost}</span>
                 </p>
                 <button className="btn-primary text-sm" onClick={heal} disabled={loading === 'heal' || bones < healCost}>
@@ -243,7 +243,7 @@ export default function TavernClient({ character }: { character: Record<string, 
               <p className="text-sm" style={{ color: '#2a6428' }}>✓ Fully healed. The healer seems mildly disappointed.</p>
             )}
           </div>
-          <p className="text-xs" style={{ color: '#2a1e10' }}>
+          <p className="text-xs" style={{ color: '#8a7040' }}>
             Tip: HP also regenerates passively at 6/min. Check the shop for cheaper single-use salves.
           </p>
         </div>
@@ -254,7 +254,7 @@ export default function TavernClient({ character }: { character: Record<string, 
           {!quest ? (
             <div className="panel text-center py-8">
               <p className="text-3xl mb-3">🎲</p>
-              <p className="text-sm" style={{ color: '#4a3a22' }}>Nothing unusual happening right now. Come back later. Or don't. The tavern will be here either way.</p>
+              <p className="text-sm" style={{ color: '#a08050' }}>Nothing unusual happening right now. Come back later. Or don't. The tavern will be here either way.</p>
             </div>
           ) : (
             <div className="panel" style={{ borderColor: questDone ? '#4a3520' : '#6a5a2a', borderTop: `2px solid ${questDone ? '#4a3520' : '#9a8030'}` }}>
@@ -273,7 +273,7 @@ export default function TavernClient({ character }: { character: Record<string, 
                 </>
               ) : (
                 <div className="fade-in space-y-2">
-                  <p className="text-sm italic" style={{ color: '#7a6a4a' }}>{questOutcome}</p>
+                  <p className="text-sm italic" style={{ color: '#a08050' }}>{questOutcome}</p>
                   {quest.bonesDelta != null && quest.bonesDelta !== 0 && (
                     <p className="text-xs font-bold" style={{ color: quest.bonesDelta > 0 ? '#5abf6a' : '#bf5a5a' }}>
                       {quest.bonesDelta > 0 ? `+${quest.bonesDelta}` : quest.bonesDelta} bones

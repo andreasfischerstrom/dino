@@ -93,7 +93,7 @@ export default function ArenaClient({ character, others, incomingChallenges, out
       {/* Pre-fight settings */}
       <div className="panel mb-6" style={{ borderTop: '2px solid #5a4028' }}>
         <h2 className="font-bold mb-3" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>Pre-Fight Settings</h2>
-        <p className="text-xs mb-4" style={{ color: '#4a3a22' }}>
+        <p className="text-xs mb-4" style={{ color: '#a08050' }}>
           These apply to all challenges you send or accept. Set them before engaging anyone.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -110,7 +110,7 @@ export default function ArenaClient({ character, others, incomingChallenges, out
               Surrender at {surrenderAt}% HP
             </label>
             <input type="range" min={0} max={50} value={surrenderAt} onChange={e => setSurrenderAt(Number(e.target.value))} />
-            <p className="text-xs mt-1" style={{ color: '#4a3a22' }}>
+            <p className="text-xs mt-1" style={{ color: '#a08050' }}>
               {surrenderAt === 0
                 ? '⚠️ You fight to the death. Your character will die if they lose.'
                 : `You surrender at ${surrenderAt}% HP — likely to survive a loss.`}
@@ -141,7 +141,7 @@ export default function ArenaClient({ character, others, incomingChallenges, out
             className="game-input mb-1"
           />
           {filteredOthers.length === 0 && (
-            <p className="text-sm" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
+            <p className="text-sm" style={{ color: '#a08050', fontStyle: 'italic' }}>
               {search ? `No gladiators named "${search}" found. They're either dead or hiding.` : 'No other gladiators found. The arena echoes with your loneliness.'}
             </p>
           )}
@@ -152,7 +152,7 @@ export default function ArenaClient({ character, others, incomingChallenges, out
                 <div className="text-3xl">{otherSpecies?.emoji || '🦕'}</div>
                 <div className="flex-1">
                   <p className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{other.name as string}</p>
-                  <p className="text-xs" style={{ color: '#4a3a22' }}>
+                  <p className="text-xs" style={{ color: '#a08050' }}>
                     Lvl {other.level as number} {otherSpecies?.name} · {other.wins as number}W / {other.losses as number}L · {other.kills as number} kills
                   </p>
                 </div>
@@ -169,7 +169,7 @@ export default function ArenaClient({ character, others, incomingChallenges, out
       {tab === 'incoming' && (
         <div className="space-y-3">
           {incomingChallenges.length === 0 && (
-            <p className="text-sm" style={{ color: '#4a3a22', fontStyle: 'italic' }}>No incoming challenges. Either you're universally respected or universally ignored.</p>
+            <p className="text-sm" style={{ color: '#a08050', fontStyle: 'italic' }}>No incoming challenges. Either you're universally respected or universally ignored.</p>
           )}
           {incomingChallenges.map(c => {
             const challenger = c.challenger as Record<string, unknown>
@@ -180,7 +180,7 @@ export default function ArenaClient({ character, others, incomingChallenges, out
                   <span className="text-2xl">{cSpecies?.emoji}</span>
                   <div>
                     <p className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{challenger.name as string} challenges you!</p>
-                    <p className="text-xs" style={{ color: '#4a3a22' }}>
+                    <p className="text-xs" style={{ color: '#a08050' }}>
                       Lvl {challenger.level as number} {cSpecies?.name} · Daring: {c.challenger_daring as string}
                     </p>
                   </div>
@@ -199,12 +199,12 @@ export default function ArenaClient({ character, others, incomingChallenges, out
       {tab === 'outgoing' && (
         <div className="space-y-3">
           {outgoingChallenges.length === 0 && (
-            <p className="text-sm" style={{ color: '#4a3a22', fontStyle: 'italic' }}>No pending challenges. Go threaten someone.</p>
+            <p className="text-sm" style={{ color: '#a08050', fontStyle: 'italic' }}>No pending challenges. Go threaten someone.</p>
           )}
           {outgoingChallenges.map(c => {
             const challenged = c.challenged as Record<string, unknown>
             return (
-              <div key={c.id as string} className="panel text-sm" style={{ color: '#7a6a4a' }}>
+              <div key={c.id as string} className="panel text-sm" style={{ color: '#a08050' }}>
                 Challenge sent to <span style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{challenged.name as string}</span> — waiting for them to accept.
               </div>
             )
@@ -219,7 +219,7 @@ export default function ArenaClient({ character, others, incomingChallenges, out
             <h3 className="font-bold text-lg page-title" style={{ fontSize: '1.125rem' }}>
               Challenge {challengeTarget.name as string}?
             </h3>
-            <p className="text-sm" style={{ color: '#7a6a4a' }}>
+            <p className="text-sm" style={{ color: '#a08050' }}>
               You'll fight with Daring: <strong style={{ color: '#d4a843' }}>{daring}</strong> and surrender at <strong style={{ color: '#d4a843' }}>{surrenderAt}%</strong> HP.
               {surrenderAt === 0 && <span style={{ color: '#c05050' }}> This is a death match.</span>}
             </p>

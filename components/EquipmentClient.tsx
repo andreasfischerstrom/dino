@@ -60,7 +60,7 @@ export default function EquipmentClient({ character, gear, inventory }: Props) {
         <h1 className="text-3xl font-bold" style={{ color: '#c8a84b' }}>Equipment</h1>
         <span className="ml-auto text-sm font-bold" style={{ color: '#c8a84b' }}>🦴 {bones}</span>
       </div>
-      <p className="text-sm mb-6" style={{ color: '#5a4a3a' }}>
+      <p className="text-sm mb-6" style={{ color: '#a08050' }}>
         Six slots. One item each. Click a slot to swap what's equipped.
         Buy more gear at <Link href="/shop" style={{ color: '#c8a84b' }}>Grubclaw's Smithy</Link>.
       </p>
@@ -89,14 +89,14 @@ export default function EquipmentClient({ character, gear, inventory }: Props) {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-lg">{slotDef.emoji}</span>
-                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#5a4a3a' }}>
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#a08050' }}>
                     {slotDef.label}
                   </span>
                   {hasPending && !isOpen && (
-                    <span className="ml-auto text-xs" style={{ color: '#5a4a3a' }}>▾</span>
+                    <span className="ml-auto text-xs" style={{ color: '#a08050' }}>▾</span>
                   )}
                   {isOpen && (
-                    <span className="ml-auto text-xs" style={{ color: '#5a4a3a' }}>▴</span>
+                    <span className="ml-auto text-xs" style={{ color: '#a08050' }}>▴</span>
                   )}
                 </div>
                 {equipped ? (
@@ -125,7 +125,7 @@ export default function EquipmentClient({ character, gear, inventory }: Props) {
                   {equipped && (
                     <button
                       className="w-full text-left px-4 py-3 text-sm transition-colors"
-                      style={{ borderBottom: '1px solid #1a1410', color: '#5a4a3a' }}
+                      style={{ borderBottom: '1px solid #1a1410', color: '#a08050' }}
                       disabled={loading === 'unequip'}
                       onClick={() => equip(equipped.id)}>
                       {loading === equipped.id ? '...' : '✕ Unequip'}
@@ -158,7 +158,7 @@ export default function EquipmentClient({ character, gear, inventory }: Props) {
                               ))}
                             </div>
                           </div>
-                          {loading === item.id && <span className="text-xs" style={{ color: '#5a4a3a' }}>...</span>}
+                          {loading === item.id && <span className="text-xs" style={{ color: '#a08050' }}>...</span>}
                         </div>
                       </button>
                     )
@@ -182,7 +182,7 @@ export default function EquipmentClient({ character, gear, inventory }: Props) {
         })
         return (
           <div className="panel">
-            <p className="text-xs font-bold mb-2 uppercase tracking-wider" style={{ color: '#5a4a3a' }}>Total Gear Bonus</p>
+            <p className="text-xs font-bold mb-2 uppercase tracking-wider" style={{ color: '#a08050' }}>Total Gear Bonus</p>
             <div className="flex flex-wrap gap-2">
               {Object.entries(totals).filter(([, v]) => v !== 0).map(([k, v]) => (
                 <span key={k} className="text-sm px-2 py-0.5 rounded font-bold"

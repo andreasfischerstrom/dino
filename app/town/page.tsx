@@ -89,7 +89,7 @@ export default async function TownPage() {
           }}>
             Gorgon's Gulch
           </h1>
-          <p className="text-sm mt-1.5" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
+          <p className="text-sm mt-1.5" style={{ color: '#a08050', fontStyle: 'italic' }}>
             A mid-sized prehistoric settlement. Smells like ambition and bad choices.
           </p>
         </div>

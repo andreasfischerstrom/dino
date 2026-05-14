@@ -76,7 +76,7 @@ export default function CreateCharacter() {
       <h1 className="text-4xl font-bold mb-2 text-center page-title">
         Forge Your Warrior
       </h1>
-      <p className="text-center mb-8 text-sm" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
+      <p className="text-center mb-8 text-sm" style={{ color: '#a08050', fontStyle: 'italic' }}>
         Choose wisely. You cannot un-choose. That's kind of the whole thing.
       </p>
 
@@ -141,10 +141,10 @@ export default function CreateCharacter() {
                     style={{ border: '1px solid #4a3520' }} />
                   <div>
                     <p className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{s.name}</p>
-                    <p className="text-xs mt-0.5" style={{ color: '#7a6a4a' }}>{s.tagline}</p>
+                    <p className="text-xs mt-0.5" style={{ color: '#a08050' }}>{s.tagline}</p>
                   </div>
                 </div>
-                <p className="text-xs" style={{ color: '#4a3a22' }}>{s.flavor}</p>
+                <p className="text-xs" style={{ color: '#a08050' }}>{s.flavor}</p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {Object.entries(s.baseStats).map(([k, v]) => (
                     <span key={k} className="text-xs px-2 py-0.5 rounded"
@@ -172,7 +172,7 @@ export default function CreateCharacter() {
       {step === 'stats' && selectedSpecies && (
         <div className="fade-in">
           <h2 className="text-xl font-bold mb-1 page-title" style={{ fontSize: '1.25rem' }}>Distribute Your Points</h2>
-          <p className="text-sm mb-4" style={{ color: '#4a3a22' }}>
+          <p className="text-sm mb-4" style={{ color: '#a08050' }}>
             You have{' '}
             <span style={{ color: '#d4a843', fontWeight: 'bold', fontFamily: 'var(--font-cinzel, Georgia)' }}>{pointsLeft}</span>
             {' '}of{' '}
@@ -205,7 +205,7 @@ export default function CreateCharacter() {
                     </div>
                   </div>
                   {isActive && (
-                    <p className="text-xs pb-2 pl-9 pr-2" style={{ color: '#7a6a4a', fontStyle: 'italic' }}>
+                    <p className="text-xs pb-2 pl-9 pr-2" style={{ color: '#a08050', fontStyle: 'italic' }}>
                       {stat.description}
                     </p>
                   )}
@@ -224,7 +224,7 @@ export default function CreateCharacter() {
       {step === 'name' && selectedSpecies && (
         <div className="fade-in">
           <h2 className="text-xl font-bold mb-1 page-title" style={{ fontSize: '1.25rem' }}>Name Your Beast</h2>
-          <p className="text-sm mb-6" style={{ color: '#4a3a22', fontStyle: 'italic' }}>
+          <p className="text-sm mb-6" style={{ color: '#a08050', fontStyle: 'italic' }}>
             This name will be shouted by the arena crowd. Make it count. Or make it funny. Both are valid.
           </p>
 
@@ -257,18 +257,18 @@ export default function CreateCharacter() {
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
               </div>
-              <p className="text-xs mt-2" style={{ color: '#2a1e10' }}>
+              <p className="text-xs mt-2" style={{ color: '#8a7040' }}>
                 JPG, PNG, GIF — max 2MB. If omitted, your species emoji will be used.
               </p>
             </div>
 
             <div className="pt-4" style={{ borderTop: '1px solid #2a1e0e' }}>
-              <p className="text-xs mb-2" style={{ color: '#4a3a22', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>SUMMARY</p>
+              <p className="text-xs mb-2" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>SUMMARY</p>
               <div className="flex items-center gap-3">
                 <img src={selectedSpecies.image} alt={selectedSpecies.name} className="w-12 h-12 rounded object-cover" style={{ border: '1px solid #4a3520' }} />
                 <div>
                   <p className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{name || '(no name yet)'}</p>
-                  <p className="text-sm" style={{ color: '#7a6a4a' }}>{selectedSpecies.name}</p>
+                  <p className="text-sm" style={{ color: '#a08050' }}>{selectedSpecies.name}</p>
                 </div>
               </div>
             </div>
