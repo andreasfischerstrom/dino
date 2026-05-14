@@ -19,6 +19,7 @@ export default function CreateCharacter() {
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
+  const [hoveredStat, setHoveredStat] = useState<StatKey | null>(null)
   const totalPoints = selectedSpecies?.bonusPoints ?? 12
   const pointsUsed = Object.values(distributed).reduce((a, b) => a + b, 0)
   const pointsLeft = totalPoints - pointsUsed
@@ -171,7 +172,9 @@ export default function CreateCharacter() {
               const effective = getEffectiveStat(stat.key)
               const bonus = distributed[stat.key]
               return (
-                <div key={stat.key} className="flex items-center gap-3">
+                <div key={stat.key} className="flex items-center gap-3"
+                  onMouseEnter={() => setHoveredStat(stat.key)}
+                  onMouseLeave={() => setHoveredStat(null)}>
                   <div className="w-6 text-center">{stat.emoji}</div>
                   <div className="w-28 text-sm font-bold" style={{ color: '#e8d5b0', fontFamily: 'var(--font-cinzel, Georgia)' }}>{stat.label}</div>
                   <div className="flex-1 stat-bar">
@@ -186,10 +189,12 @@ export default function CreateCharacter() {
                       className="w-7 h-7 rounded text-sm font-bold disabled:opacity-30 transition"
                       style={{ background: '#2a1e0e', color: '#d4a843', border: '1px solid #4a3520' }}>+</button>
                   </div>
-                  <div className="text-xs w-20" style={{ color: '#4a3a22' }}>{stat.description.split('.')[0]}.</div>
                 </div>
               )
             })}
+          </div>
+          <div className="mt-2 text-sm px-1" style={{ minHeight: '1.5rem', color: '#7a6a4a', fontStyle: 'italic', transition: 'opacity 0.15s' }}>
+            {hoveredStat && (() => { const s = STATS.find(x => x.key === hoveredStat)!; return <>{s.emoji} <strong style={{ color: '#a08040', fontStyle: 'normal' }}>{s.label}:</strong> {s.description}</> })()}
           </div>
           <div className="mt-6 flex justify-between">
             <button className="btn-ghost" onClick={() => setStep('species')}>← Back</button>
