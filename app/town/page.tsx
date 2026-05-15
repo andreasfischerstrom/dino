@@ -68,7 +68,7 @@ export default async function TownPage() {
     const base = (character.stats as Record<string, number>)[stat.key] || 0
     const gear = gearBonus[stat.key] || 0
     const buff = buffs.filter(b => b.stat === stat.key).reduce((s, b) => s + b.bonus, 0)
-    return { key: stat.key, label: stat.label, emoji: stat.emoji, base, gear, buff, total: base + gear + buff }
+    return { key: stat.key, label: stat.label, emoji: stat.emoji, description: stat.description, base, gear, buff, total: base + gear + buff }
   })
 
   const slotItems = GEAR_SLOTS.map(s => ({

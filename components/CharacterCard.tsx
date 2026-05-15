@@ -23,6 +23,7 @@ interface StatRow {
   key: string
   label: string
   emoji: string
+  description: string
   base: number
   gear: number
   buff: number
@@ -71,6 +72,7 @@ export default function CharacterCard({
   const [localStats, setLocalStats] = useState(stats)
   const [spending, setSpending] = useState<string | null>(null)
   const [liveHp, setLiveHp] = useState(hp)
+  const [hoveredStat, setHoveredStat] = useState<string | null>(null)
 
   useEffect(() => {
     if (!lastRegenAt || !regenPerMinute || hp >= maxHp) return
@@ -238,7 +240,27 @@ export default function CharacterCard({
               const buffPct = Math.min(100 - basePct - gearPct, (stat.buff / barMax) * 100)
               return (
                 <div key={stat.key} className="flex items-center gap-2">
-                  <span className="text-xs w-20 shrink-0" style={{ color: '#a08050' }}>{stat.label}</span>
+                  <span
+                    className="text-xs w-20 shrink-0 cursor-help relative"
+                    style={{ color: '#a08050' }}
+                    onMouseEnter={() => setHoveredStat(stat.key)}
+                    onMouseLeave={() => setHoveredStat(null)}>
+                    {stat.label}
+                    {hoveredStat === stat.key && (
+                      <span className="absolute left-0 z-50 pointer-events-none"
+                        style={{
+                          bottom: '100%', marginBottom: '6px',
+                          background: '#1a1408', border: '1px solid #5a4020',
+                          borderRadius: '5px', padding: '6px 10px',
+                          color: '#c8a870', fontSize: '11px', lineHeight: '1.5',
+                          whiteSpace: 'normal', width: '200px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.7)',
+                        }}>
+                        <strong style={{ color: '#d4a843', display: 'block', marginBottom: '2px' }}>{stat.emoji} {stat.label}</strong>
+                        {stat.description}
+                      </span>
+                    )}
+                  </span>
                   <div className="flex-1 stat-bar">
                     <div style={{ display: 'flex', height: '10px', borderRadius: '2px', overflow: 'hidden' }}>
                       <div style={{ width: `${basePct}%`, background: '#6a5a3a' }} />
