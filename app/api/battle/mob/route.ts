@@ -87,7 +87,7 @@ export async function POST(req: Request) {
   const battle = simulateBattle(fighterA, fighterB, isRecompute ? { startRound: fromRound, skipIntro: true } : {})
 
   const won = battle.winner === 'a'
-  const xpGained = won ? mob.xpReward : Math.floor(mob.xpReward * 0.3)
+  const xpGained = won ? mob.xpReward : Math.floor(mob.xpReward * 0.10)
   const bonesGained = won
     ? Math.floor(Math.random() * (mob.bonesReward[1] - mob.bonesReward[0] + 1) + mob.bonesReward[0])
     : Math.floor(mob.bonesReward[0] * 0.2)

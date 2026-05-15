@@ -83,8 +83,8 @@ export async function POST(req: Request) {
 
   // XP rewards
   const baseXp = 80 + Math.abs(attacker.level - defender.level) * 15
-  const aXpGain = aWon ? baseXp : Math.floor(baseXp * 0.25)
-  const bXpGain = bWon ? baseXp : Math.floor(baseXp * 0.25)
+  const aXpGain = aWon ? baseXp : Math.floor(baseXp * 0.10)
+  const bXpGain = bWon ? baseXp : Math.floor(baseXp * 0.10)
 
   function newLevel(currentLevel: number, currentXp: number, xpGain: number) {
     const total = currentXp + xpGain
