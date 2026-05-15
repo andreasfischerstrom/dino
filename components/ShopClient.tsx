@@ -16,6 +16,12 @@ export default function ShopClient({ character, gear, inventory }: Props) {
   const [bones, setBones] = useState(character.bones as number)
   const [ownedIds, setOwnedIds] = useState<string[]>(inventory.map(i => i.gear_id))
   const [equippedIds, setEquippedIds] = useState<string[]>(inventory.filter(i => i.equipped).map(i => i.gear_id))
+  const [openSlots, setOpenSlots] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(GEAR_SLOTS.map(s => [s.key, true]))
+  )
+  function toggleSlot(key: string) {
+    setOpenSlots(prev => ({ ...prev, [key]: !prev[key] }))
+  }
 
   async function buy(gearId: string, price: number) {
     if (bones < price) { setError("You can't afford that. Go fight something."); return }
@@ -78,50 +84,84 @@ export default function ShopClient({ character, gear, inventory }: Props) {
 
       {tab === 'shop' && (
         <div>
-          {GEAR_SLOTS.map(slotDef => (
-            <div key={slotDef.key} className="mb-6">
-              <h2 className="font-bold mb-1" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)' }}>{slotDef.emoji} {slotDef.label}</h2>
-              <p className="text-xs mb-3" style={{ color: '#8a7040' }}>{slotDef.description}</p>
-              <div className="space-y-2">
-                {gear.filter(g => g.slot === slotDef.key).map(item => {
-                  const owned = ownedIds.includes(item.id)
-                  const canAfford = bones >= item.price
-                  const meetsLevel = level >= item.levelReq
-                  return (
-                    <div key={item.id} className="panel row-hover flex items-center gap-4"
-                      style={{ opacity: meetsLevel ? 1 : 0.5 }}>
-                      <div className="text-3xl w-10 text-center">{item.emoji}</div>
-                      <div className="flex-1">
-                        <p className="font-bold text-sm" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{item.name}</p>
-                        <p className="text-xs mb-1" style={{ color: '#a08050' }}>{item.description}</p>
-                        <div className="flex flex-wrap gap-1">
-                          {Object.entries(item.statBonus).map(([k, v]) => (
-                            <span key={k} className="text-xs px-1.5 py-0.5 rounded"
-                              style={{ background: (v as number) > 0 ? '#0e2410' : '#2a0e0e', color: (v as number) > 0 ? '#5abf6a' : '#bf5a5a', border: `1px solid ${(v as number) > 0 ? '#2a6428' : '#6a2828'}` }}>
-                              {(v as number) > 0 ? '+' : ''}{v} {k}
-                            </span>
-                          ))}
-                        </div>
-                        {!meetsLevel && <p className="text-xs mt-1" style={{ color: '#9b1818' }}>Requires level {item.levelReq}</p>}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold mb-1" style={{ color: '#d4a843' }}>🦴 {item.price}</p>
-                        {owned ? (
-                          <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>✓ Owned</span>
-                        ) : (
-                          <button className="btn-primary text-xs px-3 py-1"
-                            disabled={!canAfford || !meetsLevel || loading === item.id}
-                            onClick={() => buy(item.id, item.price)}>
-                            {loading === item.id ? '...' : !canAfford ? 'No bones' : 'Buy'}
-                          </button>
-                        )}
-                      </div>
+          {GEAR_SLOTS.map(slotDef => {
+            const slotGear = gear.filter(g => g.slot === slotDef.key)
+            const isOpen = openSlots[slotDef.key]
+            const ownedCount = slotGear.filter(g => ownedIds.includes(g.id)).length
+            const affordableCount = slotGear.filter(g => !ownedIds.includes(g.id) && bones >= g.price && level >= g.levelReq).length
+            return (
+              <div key={slotDef.key} className="mb-3">
+                <button
+                  onClick={() => toggleSlot(slotDef.key)}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded text-left transition-colors"
+                  style={{
+                    background: isOpen ? '#1a1208' : '#120e06',
+                    border: '1px solid #3a2810',
+                    borderBottom: isOpen ? '1px solid #2a1e0a' : '1px solid #3a2810',
+                    borderRadius: isOpen ? '6px 6px 0 0' : '6px',
+                  }}>
+                  <span className="text-lg">{slotDef.emoji}</span>
+                  <span className="font-bold text-sm flex-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{slotDef.label}</span>
+                  <div className="flex items-center gap-2">
+                    {ownedCount > 0 && (
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>
+                        {ownedCount} owned
+                      </span>
+                    )}
+                    {affordableCount > 0 && (
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#1a1408', color: '#d4a843', border: '1px solid #6a5020' }}>
+                        {affordableCount} available
+                      </span>
+                    )}
+                    <span className="text-xs" style={{ color: '#6a5030' }}>{isOpen ? '▲' : '▼'}</span>
+                  </div>
+                </button>
+                {isOpen && (
+                  <div className="rounded-b space-y-px" style={{ background: '#120e06', border: '1px solid #3a2810', borderTop: 'none', padding: '8px' }}>
+                    <p className="text-xs mb-2 px-1" style={{ color: '#6a5030', fontStyle: 'italic' }}>{slotDef.description}</p>
+                    <div className="space-y-2">
+                      {slotGear.map(item => {
+                        const owned = ownedIds.includes(item.id)
+                        const canAfford = bones >= item.price
+                        const meetsLevel = level >= item.levelReq
+                        return (
+                          <div key={item.id} className="panel row-hover flex items-center gap-4"
+                            style={{ opacity: meetsLevel ? 1 : 0.5 }}>
+                            <div className="text-3xl w-10 text-center">{item.emoji}</div>
+                            <div className="flex-1">
+                              <p className="font-bold text-sm" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{item.name}</p>
+                              <p className="text-xs mb-1" style={{ color: '#a08050' }}>{item.description}</p>
+                              <div className="flex flex-wrap gap-1">
+                                {Object.entries(item.statBonus).map(([k, v]) => (
+                                  <span key={k} className="text-xs px-1.5 py-0.5 rounded"
+                                    style={{ background: (v as number) > 0 ? '#0e2410' : '#2a0e0e', color: (v as number) > 0 ? '#5abf6a' : '#bf5a5a', border: `1px solid ${(v as number) > 0 ? '#2a6428' : '#6a2828'}` }}>
+                                    {(v as number) > 0 ? '+' : ''}{v} {k}
+                                  </span>
+                                ))}
+                              </div>
+                              {!meetsLevel && <p className="text-xs mt-1" style={{ color: '#9b1818' }}>Requires level {item.levelReq}</p>}
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-bold mb-1" style={{ color: '#d4a843' }}>🦴 {item.price}</p>
+                              {owned ? (
+                                <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>✓ Owned</span>
+                              ) : (
+                                <button className="btn-primary text-xs px-3 py-1"
+                                  disabled={!canAfford || !meetsLevel || loading === item.id}
+                                  onClick={() => buy(item.id, item.price)}>
+                                  {loading === item.id ? '...' : !canAfford ? 'No bones' : 'Buy'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
-                  )
-                })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -135,9 +175,30 @@ export default function ShopClient({ character, gear, inventory }: Props) {
           {GEAR_SLOTS.map(slotDef => {
             const ownedSlotGear = gear.filter(g => g.slot === slotDef.key && ownedIds.includes(g.id))
             if (ownedSlotGear.length === 0) return null
+            const isOpen = openSlots[slotDef.key]
+            const equippedInSlot = ownedSlotGear.filter(g => equippedIds.includes(g.id)).length
             return (
-              <div key={slotDef.key} className="mb-6">
-                <h2 className="font-bold mb-3" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)' }}>{slotDef.emoji} {slotDef.label}</h2>
+              <div key={slotDef.key} className="mb-3">
+                <button
+                  onClick={() => toggleSlot(slotDef.key)}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded text-left transition-colors"
+                  style={{
+                    background: isOpen ? '#1a1208' : '#120e06',
+                    border: '1px solid #3a2810',
+                    borderBottom: isOpen ? '1px solid #2a1e0a' : '1px solid #3a2810',
+                    borderRadius: isOpen ? '6px 6px 0 0' : '6px',
+                  }}>
+                  <span className="text-lg">{slotDef.emoji}</span>
+                  <span className="font-bold text-sm flex-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{slotDef.label}</span>
+                  <div className="flex items-center gap-2">
+                    {equippedInSlot > 0 && (
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#1a1000', color: '#d4a843', border: '1px solid #6a5020' }}>equipped</span>
+                    )}
+                    <span className="text-xs" style={{ color: '#6a5030' }}>{isOpen ? '▲' : '▼'}</span>
+                  </div>
+                </button>
+                {isOpen && (
+                <div className="rounded-b" style={{ background: '#120e06', border: '1px solid #3a2810', borderTop: 'none', padding: '8px' }}>
                 <div className="space-y-2">
                   {ownedSlotGear.map(item => {
                     const isEquipped = equippedIds.includes(item.id)
@@ -164,6 +225,8 @@ export default function ShopClient({ character, gear, inventory }: Props) {
                     )
                   })}
                 </div>
+                </div>
+                )}
               </div>
             )
           })}
