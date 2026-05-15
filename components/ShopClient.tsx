@@ -17,7 +17,7 @@ export default function ShopClient({ character, gear, inventory }: Props) {
   const [ownedIds, setOwnedIds] = useState<string[]>(inventory.map(i => i.gear_id))
   const [equippedIds, setEquippedIds] = useState<string[]>(inventory.filter(i => i.equipped).map(i => i.gear_id))
   const [openSlots, setOpenSlots] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(GEAR_SLOTS.map(s => [s.key, true]))
+    Object.fromEntries(GEAR_SLOTS.map(s => [s.key, false]))
   )
   function toggleSlot(key: string) {
     setOpenSlots(prev => ({ ...prev, [key]: !prev[key] }))
@@ -87,8 +87,6 @@ export default function ShopClient({ character, gear, inventory }: Props) {
           {GEAR_SLOTS.map(slotDef => {
             const slotGear = gear.filter(g => g.slot === slotDef.key)
             const isOpen = openSlots[slotDef.key]
-            const ownedCount = slotGear.filter(g => ownedIds.includes(g.id)).length
-            const affordableCount = slotGear.filter(g => !ownedIds.includes(g.id) && bones >= g.price && level >= g.levelReq).length
             return (
               <div key={slotDef.key} className="mb-3">
                 <button
@@ -102,19 +100,7 @@ export default function ShopClient({ character, gear, inventory }: Props) {
                   }}>
                   <span className="text-lg">{slotDef.emoji}</span>
                   <span className="font-bold text-sm flex-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{slotDef.label}</span>
-                  <div className="flex items-center gap-2">
-                    {ownedCount > 0 && (
-                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>
-                        {ownedCount} owned
-                      </span>
-                    )}
-                    {affordableCount > 0 && (
-                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#1a1408', color: '#d4a843', border: '1px solid #6a5020' }}>
-                        {affordableCount} available
-                      </span>
-                    )}
-                    <span className="text-xs" style={{ color: '#6a5030' }}>{isOpen ? '▲' : '▼'}</span>
-                  </div>
+                  <span className="text-xs" style={{ color: '#6a5030' }}>{isOpen ? '▲' : '▼'}</span>
                 </button>
                 {isOpen && (
                   <div className="rounded-b space-y-px" style={{ background: '#120e06', border: '1px solid #3a2810', borderTop: 'none', padding: '8px' }}>
@@ -176,7 +162,6 @@ export default function ShopClient({ character, gear, inventory }: Props) {
             const ownedSlotGear = gear.filter(g => g.slot === slotDef.key && ownedIds.includes(g.id))
             if (ownedSlotGear.length === 0) return null
             const isOpen = openSlots[slotDef.key]
-            const equippedInSlot = ownedSlotGear.filter(g => equippedIds.includes(g.id)).length
             return (
               <div key={slotDef.key} className="mb-3">
                 <button
@@ -190,12 +175,7 @@ export default function ShopClient({ character, gear, inventory }: Props) {
                   }}>
                   <span className="text-lg">{slotDef.emoji}</span>
                   <span className="font-bold text-sm flex-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{slotDef.label}</span>
-                  <div className="flex items-center gap-2">
-                    {equippedInSlot > 0 && (
-                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#1a1000', color: '#d4a843', border: '1px solid #6a5020' }}>equipped</span>
-                    )}
-                    <span className="text-xs" style={{ color: '#6a5030' }}>{isOpen ? '▲' : '▼'}</span>
-                  </div>
+                  <span className="text-xs" style={{ color: '#6a5030' }}>{isOpen ? '▲' : '▼'}</span>
                 </button>
                 {isOpen && (
                 <div className="rounded-b" style={{ background: '#120e06', border: '1px solid #3a2810', borderTop: 'none', padding: '8px' }}>
