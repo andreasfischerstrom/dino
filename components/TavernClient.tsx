@@ -32,15 +32,29 @@ function describeEffects(effects: TavernItemEffect[], maxHp: number, hp: number)
   })
 }
 
+type DiceOutcome = 'win' | 'loss' | 'cheat_win' | 'cheat_caught' | 'draw' | null
+
 export default function TavernClient({ character }: { character: Record<string, unknown> }) {
-  const [tab, setTab] = useState<'shop' | 'heal' | 'quest'>('shop')
+  const [tab, setTab] = useState<'shop' | 'heal' | 'quest' | 'dice'>('shop')
   const [bones, setBones] = useState(character.bones as number)
   const [hp, setHp] = useState(character.hp as number)
   const maxHp = character.max_hp as number
   const charStats = (character.stats || {}) as Record<StatKey, number>
+  const cunning = charStats.cunning || 0
   const [loading, setLoading] = useState<string | null>(null)
   const [message, setMessage] = useState('')
   const [rumor] = useState(() => RUMORS[Math.floor(Math.random() * RUMORS.length)])
+
+  // Dice game state
+  const [diceBet, setDiceBet] = useState(20)
+  const [diceCheat, setDiceCheat] = useState(false)
+  const [dicePlayed, setDicePlayed] = useState(false)
+  const [diceRolling, setDiceRolling] = useState(false)
+  const [diceResult, setDiceResult] = useState<{
+    playerDice: number[]; houseDice: number[]
+    playerTotal: number; houseTotal: number
+    outcome: DiceOutcome; boneDelta: number; newHp?: number
+  } | null>(null)
 
   const [quest] = useState(() => {
     if (Math.random() > 0.70) return null
@@ -111,9 +125,27 @@ export default function TavernClient({ character }: { character: Record<string, 
     setLoading(null)
   }
 
+  async function playDice() {
+    if (dicePlayed) return
+    setDiceRolling(true)
+    const res = await fetch('/api/tavern/dice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bet: diceBet, cheat: diceCheat }),
+    })
+    const json = await res.json()
+    if (!res.ok) { setMessage(json.error); setDiceRolling(false); return }
+    setDiceResult(json)
+    setBones(json.newBones)
+    if (json.newHp !== undefined) setHp(json.newHp)
+    setDicePlayed(true)
+    setDiceRolling(false)
+  }
+
   const tabs = [
     { key: 'shop' as const, label: '🛒 Shop' },
     { key: 'heal' as const, label: '🌿 Healer' },
+    { key: 'dice' as const, label: '🎲 Bone Dice' },
     { key: 'quest' as const, label: `⚡ Quest${quest ? '' : ' (none)'}` },
   ]
 
@@ -249,6 +281,164 @@ export default function TavernClient({ character }: { character: Record<string, 
           <p className="text-xs" style={{ color: '#5a4a30', borderTop: '1px solid #2a1e0e', paddingTop: '0.75rem' }}>
             HP also regenerates passively — full recovery takes 1 hour. Single-use salves in the shop cost less.
           </p>
+        </div>
+      )}
+
+      {tab === 'dice' && (
+        <div className="panel space-y-5">
+          <div>
+            <p className="font-bold mb-0.5" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>Bone Dice</p>
+            <p className="text-xs" style={{ color: '#a08050' }}>
+              Roll 3 dice against the house. Highest total wins. One game per visit.
+            </p>
+          </div>
+
+          {!dicePlayed && !diceRolling && (
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-xs mb-2" style={{ color: '#a08050' }}>
+                  <span>Your bet</span>
+                  <span className="font-bold" style={{ color: '#d4a843' }}>🦴 {diceBet}</span>
+                </div>
+                <input
+                  type="range" min={1} max={Math.min(300, bones)} value={diceBet}
+                  onChange={e => setDiceBet(Number(e.target.value))}
+                  className="w-full accent-yellow-600"
+                />
+                <div className="flex justify-between text-xs mt-1" style={{ color: '#5a4a30' }}>
+                  <span>1</span><span>300</span>
+                </div>
+              </div>
+
+              <div className="rounded p-3 space-y-1" style={{ background: '#0e0c08', border: '1px solid #3a2810' }}>
+                <div className="flex justify-between text-xs" style={{ color: '#a08050' }}>
+                  <span>Win pays</span><span style={{ color: '#5abf6a' }}>+🦴 {diceBet}</span>
+                </div>
+                <div className="flex justify-between text-xs" style={{ color: '#a08050' }}>
+                  <span>Cheat win pays</span><span style={{ color: '#d4a843' }}>+🦴 {diceBet * 2}</span>
+                </div>
+                <div className="flex justify-between text-xs" style={{ color: '#a08050' }}>
+                  <span>Caught cheating</span><span style={{ color: '#bf5a5a' }}>-🦴 {Math.ceil(diceBet * 1.2)} + 30% HP</span>
+                </div>
+              </div>
+
+              <label className="flex items-center justify-between cursor-pointer select-none rounded p-3"
+                style={{ background: '#120e06', border: `1px solid ${diceCheat ? '#6a3010' : '#2a1e0e'}` }}>
+                <div>
+                  <p className="text-sm font-bold" style={{ color: diceCheat ? '#d4804a' : '#a08050' }}>Load the dice</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#5a4a30' }}>
+                    {diceCheat
+                      ? `Catch chance: ${Math.round(Math.max(5, 45 - cunning * 4))}% — your cunning (${cunning}) helps`
+                      : 'Increase payout. Increase risk. Your cunning helps dodge detection.'}
+                  </p>
+                </div>
+                <div className="relative shrink-0 ml-3">
+                  <input type="checkbox" className="sr-only" checked={diceCheat} onChange={e => setDiceCheat(e.target.checked)} />
+                  <div style={{
+                    width: '44px', height: '24px', borderRadius: '12px',
+                    background: diceCheat ? '#7a3010' : '#2e2518',
+                    border: `1px solid ${diceCheat ? '#c05020' : '#4a3520'}`,
+                    transition: 'all 0.2s',
+                    boxShadow: diceCheat ? '0 0 8px rgba(200,80,30,0.3)' : 'none',
+                    position: 'relative',
+                  }}>
+                    <div style={{
+                      position: 'absolute', top: '3px',
+                      left: diceCheat ? '23px' : '3px',
+                      width: '16px', height: '16px', borderRadius: '50%',
+                      background: diceCheat ? '#e8804a' : '#a08868',
+                      transition: 'left 0.2s',
+                    }} />
+                  </div>
+                </div>
+              </label>
+
+              <button
+                className="btn-primary w-full py-3"
+                disabled={bones < diceBet}
+                onClick={playDice}>
+                {bones < diceBet ? 'Not enough bones' : 'Roll'}
+              </button>
+            </div>
+          )}
+
+          {diceRolling && (
+            <div className="text-center py-8">
+              <p className="text-4xl mb-3 animate-pulse">🎲🎲🎲</p>
+              <p className="text-sm" style={{ color: '#a08050' }}>The dice are rolling...</p>
+            </div>
+          )}
+
+          {diceResult && (
+            <div className="space-y-4 fade-in">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded p-3 text-center" style={{ background: '#0e0c08', border: '1px solid #3a2810' }}>
+                  <p className="text-xs mb-2 font-bold" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)' }}>You</p>
+                  <div className="flex justify-center gap-2 mb-2">
+                    {diceResult.playerDice.map((d, i) => (
+                      <span key={i} className="text-2xl">{['⚀','⚁','⚂','⚃','⚄','⚅'][d-1]}</span>
+                    ))}
+                  </div>
+                  <p className="text-lg font-bold" style={{ color: '#d4a843' }}>{diceResult.playerTotal}</p>
+                </div>
+                <div className="rounded p-3 text-center" style={{ background: '#0e0c08', border: '1px solid #3a2810' }}>
+                  <p className="text-xs mb-2 font-bold" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)' }}>House</p>
+                  <div className="flex justify-center gap-2 mb-2">
+                    {diceResult.houseDice.map((d, i) => (
+                      <span key={i} className="text-2xl">{['⚀','⚁','⚂','⚃','⚄','⚅'][d-1]}</span>
+                    ))}
+                  </div>
+                  <p className="text-lg font-bold" style={{ color: '#a08050' }}>{diceResult.houseTotal}</p>
+                </div>
+              </div>
+
+              <div className="rounded p-4 text-center" style={{
+                background: diceResult.outcome === 'cheat_caught' ? '#2a0808'
+                  : diceResult.outcome === 'win' || diceResult.outcome === 'cheat_win' ? '#0a1f0a'
+                  : '#1a1208',
+                border: `1px solid ${diceResult.outcome === 'cheat_caught' ? '#7a1515'
+                  : diceResult.outcome === 'win' || diceResult.outcome === 'cheat_win' ? '#2a6428'
+                  : '#3a2810'}`,
+              }}>
+                {diceResult.outcome === 'win' && (
+                  <>
+                    <p className="font-bold mb-1" style={{ color: '#5abf6a', fontFamily: 'var(--font-cinzel, Georgia)' }}>Victory</p>
+                    <p className="text-xs" style={{ color: '#a08050' }}>The house pays up. They look displeased.</p>
+                    <p className="text-sm font-bold mt-2" style={{ color: '#5abf6a' }}>+🦴 {diceResult.boneDelta}</p>
+                  </>
+                )}
+                {diceResult.outcome === 'cheat_win' && (
+                  <>
+                    <p className="font-bold mb-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>Cunning Victory</p>
+                    <p className="text-xs" style={{ color: '#a08050' }}>Nobody noticed. Probably.</p>
+                    <p className="text-sm font-bold mt-2" style={{ color: '#d4a843' }}>+🦴 {diceResult.boneDelta}</p>
+                  </>
+                )}
+                {diceResult.outcome === 'loss' && (
+                  <>
+                    <p className="font-bold mb-1" style={{ color: '#bf5a5a', fontFamily: 'var(--font-cinzel, Georgia)' }}>Defeat</p>
+                    <p className="text-xs" style={{ color: '#a08050' }}>The house wins. It usually does.</p>
+                    <p className="text-sm font-bold mt-2" style={{ color: '#bf5a5a' }}>{diceResult.boneDelta} 🦴</p>
+                  </>
+                )}
+                {diceResult.outcome === 'cheat_caught' && (
+                  <>
+                    <p className="font-bold mb-1" style={{ color: '#bf5a5a', fontFamily: 'var(--font-cinzel, Georgia)' }}>Caught.</p>
+                    <p className="text-xs" style={{ color: '#c07070' }}>The bar goes quiet. Then everyone stands up.</p>
+                    <p className="text-sm font-bold mt-2" style={{ color: '#bf5a5a' }}>{diceResult.boneDelta} 🦴 · -{Math.floor(maxHp * 0.30)} HP</p>
+                  </>
+                )}
+                {diceResult.outcome === 'draw' && (
+                  <>
+                    <p className="font-bold mb-1" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)' }}>Draw</p>
+                    <p className="text-xs" style={{ color: '#a08050' }}>Identical totals. Your bet is returned.</p>
+                  </>
+                )}
+              </div>
+
+              <p className="text-xs text-center" style={{ color: '#5a4a30' }}>Come back tomorrow for another game.</p>
+            </div>
+          )}
         </div>
       )}
 
