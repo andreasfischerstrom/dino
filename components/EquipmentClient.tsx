@@ -3,6 +3,15 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { GearTemplate, GearSlot, GEAR_SLOTS } from '@/lib/game-data'
 
+const SLOT_IMAGES: Record<GearSlot, string> = {
+  jaws:      '/images/equipment/fang.png',
+  claws:     '/images/equipment/claw.png',
+  body:      '/images/equipment/armour.png',
+  head:      '/images/equipment/head.png',
+  tail:      '/images/equipment/tail.png',
+  accessory: '/images/equipment/accessory.png',
+}
+
 interface Props {
   character: Record<string, unknown>
   gear: GearTemplate[]
@@ -95,43 +104,63 @@ export default function EquipmentClient({ character, gear, inventory }: Props) {
             <div key={slotDef.key}>
               {/* Slot card */}
               <button
-                className="w-full text-left panel transition-all"
+                className="w-full text-left transition-all relative overflow-hidden rounded"
                 style={{
-                  borderColor: equipped ? '#c8a84b' : hasPending ? '#5a4a3a' : '#2a1f10',
-                  background: isOpen ? '#1a1410' : '#0d0d0d',
+                  border: `1px solid ${equipped ? '#c8a84b' : hasPending ? '#5a4a3a' : '#2a1f10'}`,
+                  borderTop: `2px solid ${equipped ? '#c8a84b' : hasPending ? '#6a5a3a' : '#2a1f10'}`,
+                  background: '#0a0806',
                   cursor: hasPending ? 'pointer' : 'default',
+                  padding: '0.75rem',
                 }}
                 onClick={() => hasPending && setOpenSlot(isOpen ? null : slotDef.key)}
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">{slotDef.emoji}</span>
-                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#a08050' }}>
-                    {slotDef.label}
-                  </span>
-                  {hasPending && !isOpen && (
-                    <span className="ml-auto text-xs" style={{ color: '#a08050' }}>▾</span>
-                  )}
-                  {isOpen && (
-                    <span className="ml-auto text-xs" style={{ color: '#a08050' }}>▴</span>
+                {/* Category image background */}
+                <div className="absolute inset-0 bg-center bg-cover" style={{
+                  backgroundImage: `url(${SLOT_IMAGES[slotDef.key]})`,
+                  opacity: equipped ? 0.18 : 0.08,
+                }} />
+                {/* Dark gradient so text stays readable */}
+                <div className="absolute inset-0" style={{
+                  background: 'linear-gradient(135deg, rgba(10,8,6,0.6) 0%, rgba(10,8,6,0.3) 100%)',
+                }} />
+                {/* Content */}
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-2">
+                    <img src={SLOT_IMAGES[slotDef.key]} alt={slotDef.label}
+                      className="w-6 h-6 rounded object-cover"
+                      style={{ opacity: 0.7, border: '1px solid #3a2810' }} />
+                    <span className="text-xs font-bold uppercase tracking-wider" style={{
+                      color: equipped ? '#c8a84b' : '#a08050',
+                      fontFamily: 'var(--font-cinzel, Georgia)',
+                      letterSpacing: '0.08em',
+                    }}>
+                      {slotDef.label}
+                    </span>
+                    {hasPending && !isOpen && (
+                      <span className="ml-auto text-xs" style={{ color: '#a08050' }}>▾</span>
+                    )}
+                    {isOpen && (
+                      <span className="ml-auto text-xs" style={{ color: '#a08050' }}>▴</span>
+                    )}
+                  </div>
+                  {equipped ? (
+                    <div>
+                      <p className="font-bold text-sm" style={{ color: '#c8a84b' }}>{equipped.emoji} {equipped.name}</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {Object.entries(equipped.statBonus).map(([k, v]) => (
+                          <span key={k} className="text-xs px-1 py-0.5 rounded"
+                            style={{ background: (v as number) > 0 ? '#1a3a1a' : '#3a1a1a', color: (v as number) > 0 ? '#6abf6a' : '#bf6a6a' }}>
+                            {(v as number) > 0 ? '+' : ''}{v} {k}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm" style={{ color: '#3d2e1e' }}>
+                      {hasPending ? 'Nothing equipped — tap to choose' : 'Empty — buy from smithy'}
+                    </p>
                   )}
                 </div>
-                {equipped ? (
-                  <div>
-                    <p className="font-bold text-sm" style={{ color: '#c8a84b' }}>{equipped.emoji} {equipped.name}</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {Object.entries(equipped.statBonus).map(([k, v]) => (
-                        <span key={k} className="text-xs px-1 py-0.5 rounded"
-                          style={{ background: (v as number) > 0 ? '#1a3a1a' : '#3a1a1a', color: (v as number) > 0 ? '#6abf6a' : '#bf6a6a' }}>
-                          {(v as number) > 0 ? '+' : ''}{v} {k}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm" style={{ color: '#3d2e1e' }}>
-                    {hasPending ? 'Nothing equipped — tap to choose' : 'Empty — buy from smithy'}
-                  </p>
-                )}
               </button>
 
               {/* Inline picker */}

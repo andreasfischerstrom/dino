@@ -74,6 +74,8 @@ export default function ArenaClient({ character, others, incomingChallenges, out
           bones: character.bones as number,
           image: (character.image_url as string) || charSpecies?.image || charSpecies?.emoji || '🦕',
           name: character.name as string,
+          level: character.level as number,
+          statPoints: (character.stat_points || 0) as number,
         }}
         fighterBName={challengeTarget.name as string}
         fighterBImage={(challengeTarget.image_url as string) || opponentSpecies?.image || opponentSpecies?.emoji || '🦕'}

@@ -3,6 +3,15 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { GearSlot } from '@/lib/game-data'
 
+const SLOT_IMAGES: Record<GearSlot, string> = {
+  jaws:      '/images/equipment/fang.png',
+  claws:     '/images/equipment/claw.png',
+  body:      '/images/equipment/armour.png',
+  head:      '/images/equipment/head.png',
+  tail:      '/images/equipment/tail.png',
+  accessory: '/images/equipment/accessory.png',
+}
+
 interface SlotItem {
   key: GearSlot
   label: string
@@ -174,16 +183,30 @@ export default function CharacterCard({
           </div>
         </div>
 
-        <button
-          onClick={() => setExpanded(e => !e)}
-          className="shrink-0 flex flex-col items-center gap-0.5 px-2 py-1 rounded transition-colors btn-ghost"
-          style={{ color: '#a08050', border: 'none', padding: '0.25rem 0.5rem' }}
-          title={expanded ? 'Collapse' : 'Show stats & equipment'}>
-          <span className="text-xs" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'var(--font-cinzel, Georgia)' }}>
-            {expanded ? 'less' : 'stats'}
-          </span>
-          <span style={{ fontSize: '12px' }}>{expanded ? '▲' : '▼'}</span>
-        </button>
+        <div className="shrink-0 flex flex-col items-center gap-1">
+          {localStatPoints > 0 && !expanded && (
+            <span className="text-xs font-bold px-1.5 py-0.5 rounded animate-pulse" style={{
+              background: 'linear-gradient(to bottom, #1a3a10, #0e2408)',
+              color: '#5abf6a',
+              border: '1px solid #3a7a28',
+              fontFamily: 'var(--font-cinzel, Georgia)',
+              letterSpacing: '0.03em',
+              boxShadow: '0 0 8px rgba(90,191,106,0.3)',
+            }}>
+              +{localStatPoints} pts
+            </span>
+          )}
+          <button
+            onClick={() => setExpanded(e => !e)}
+            className="flex flex-col items-center gap-0.5 px-2 py-1 rounded transition-colors btn-ghost"
+            style={{ color: localStatPoints > 0 && !expanded ? '#5abf6a' : '#a08050', border: 'none', padding: '0.25rem 0.5rem' }}
+            title={expanded ? 'Collapse' : 'Show stats & equipment'}>
+            <span className="text-xs" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'var(--font-cinzel, Georgia)' }}>
+              {expanded ? 'less' : 'stats'}
+            </span>
+            <span style={{ fontSize: '12px' }}>{expanded ? '▲' : '▼'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Collapsible section */}
@@ -203,7 +226,7 @@ export default function CharacterCard({
             )}
             <Link href="/equipment" className="ml-auto text-xs font-bold"
               style={{ color: '#d4a843', textDecoration: 'none', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.04em' }}>
-              ⚔️ Equipment →
+              Equipment →
             </Link>
           </div>
 
@@ -215,7 +238,6 @@ export default function CharacterCard({
               const buffPct = Math.min(100 - basePct - gearPct, (stat.buff / barMax) * 100)
               return (
                 <div key={stat.key} className="flex items-center gap-2">
-                  <span className="text-sm w-5 text-center">{stat.emoji}</span>
                   <span className="text-xs w-20 shrink-0" style={{ color: '#a08050' }}>{stat.label}</span>
                   <div className="flex-1 stat-bar">
                     <div style={{ display: 'flex', height: '10px', borderRadius: '2px', overflow: 'hidden' }}>
@@ -247,26 +269,39 @@ export default function CharacterCard({
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {slots.map(slot => (
                 <Link key={slot.key} href="/equipment" style={{ textDecoration: 'none' }}
-                  title={slot.item ? slot.item.name : `${slot.label} — empty`}>
-                  <div className="flex flex-col items-center gap-1 p-2 rounded transition-colors"
-                    style={{
-                      background: slot.item ? '#1a1610' : '#0d0b08',
-                      border: `1px solid ${slot.item ? '#4a3520' : '#2a1e14'}`,
-                      minHeight: '60px',
-                      justifyContent: 'center',
-                    }}>
-                    <span className="text-lg leading-none">{slot.item ? slot.item.emoji : slot.emoji}</span>
-                    <span style={{
-                      fontSize: '11px',
-                      color: slot.item ? '#c0a060' : '#5a4a30',
-                      width: '100%',
-                      textAlign: 'center',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {slot.item ? slot.item.name : slot.label}
-                    </span>
+                  title={slot.item ? `${slot.label}: ${slot.item.name}` : `${slot.label} — empty`}>
+                  <div className="relative rounded overflow-hidden"
+                    style={{ border: '1px solid #2a1e14', minHeight: '64px', background: '#0a0806' }}>
+                    {/* Category image background */}
+                    <div className="absolute inset-0 bg-center bg-cover" style={{
+                      backgroundImage: `url(${SLOT_IMAGES[slot.key]})`,
+                      opacity: 0.08,
+                    }} />
+                    {/* Content */}
+                    <div className="relative flex flex-col items-center justify-center gap-0.5 p-1.5" style={{ minHeight: '64px' }}>
+                      <span style={{
+                        fontSize: '9px',
+                        color: '#5a4a30',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        fontFamily: 'var(--font-cinzel, Georgia)',
+                        lineHeight: 1,
+                      }}>
+                        {slot.label}
+                      </span>
+                      <span style={{
+                        fontSize: '10px',
+                        color: slot.item ? '#c8a860' : '#3a2a1a',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        lineHeight: 1.3,
+                        textAlign: 'center',
+                        width: '100%',
+                      }}>
+                        {slot.item ? slot.item.name : 'Empty'}
+                      </span>
+                    </div>
                   </div>
                 </Link>
               ))}

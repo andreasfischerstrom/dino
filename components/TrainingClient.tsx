@@ -21,9 +21,10 @@ export default function TrainingClient({ character, equippedGear, mobs, species,
   const [error, setError] = useState('')
   const [daring, setDaring] = useState(character.daring as string || 'measured')
   const [surrenderAt, setSurrenderAt] = useState(character.surrender_at as number ?? 20)
+  const [activeManagement, setActiveManagement] = useState(false)
 
   const charLevel = character.level as number
-  const availableMobs = mobs.filter(m => m.level <= charLevel + 3)
+  const availableMobs = mobs
   const sp = species.find(s => s.id === (character.species as string))
 
   async function startFight() {
@@ -55,10 +56,17 @@ export default function TrainingClient({ character, equippedGear, mobs, species,
           bones: character.bones as number,
           image: (character.image_url as string) || sp?.image || sp?.emoji || '🦕',
           name: character.name as string,
+          level: character.level as number,
+          statPoints: (character.stat_points || 0) as number,
         }}
         fighterBName={selectedMob.name}
-        fighterBImage={selectedMob.emoji}
+        fighterBImage={selectedMob.image || selectedMob.emoji}
         onComplete={() => { window.location.href = '/town' }}
+        mobId={selectedMob.id}
+        initialDaring={daring}
+        surrenderAt={surrenderAt}
+        daringOptions={daringOptions}
+        activeManagement={activeManagement}
       />
     )
   }
@@ -77,27 +85,47 @@ export default function TrainingClient({ character, equippedGear, mobs, species,
 
       <div className="space-y-3">
         {availableMobs.map(mob => {
+          const locked = mob.level > charLevel + 3
+          const levelsNeeded = mob.level - charLevel - 3
           const difficulty = mob.level <= charLevel - 2 ? 'Easy' : mob.level <= charLevel + 1 ? 'Fair' : 'Hard'
           const diffColor = difficulty === 'Easy' ? '#2a6428' : difficulty === 'Fair' ? '#d4a843' : '#9b1818'
           return (
-            <div key={mob.id} className="panel row-hover flex items-center gap-4">
-              <div className="text-4xl w-12 text-center">{mob.emoji}</div>
+            <div key={mob.id} className="panel flex items-center gap-4" style={{ opacity: locked ? 0.45 : 1 }}>
+              <div className="w-12 h-12 shrink-0 flex items-center justify-center">
+                {mob.image
+                  ? <img src={mob.image} alt={mob.name} className="w-12 h-12 rounded-full object-cover" style={{ border: `2px solid ${locked ? '#3a2a18' : '#5a4028'}` }} />
+                  : <span className="text-4xl">{mob.emoji}</span>}
+              </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{mob.name}</h3>
-                  <span className="text-xs px-2 py-0.5 rounded font-bold"
-                    style={{ background: diffColor + '22', color: diffColor, border: `1px solid ${diffColor}44` }}>
-                    Lvl {mob.level} · {difficulty}
-                  </span>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <h3 className="font-bold" style={{ color: locked ? '#7a6040' : '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{mob.name}</h3>
+                  {locked
+                    ? <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: '#1a1208', color: '#5a4a30', border: '1px solid #3a2a1044' }}>
+                        🔒 Lvl {mob.level}
+                      </span>
+                    : <span className="text-xs px-2 py-0.5 rounded font-bold"
+                        style={{ background: diffColor + '22', color: diffColor, border: `1px solid ${diffColor}44` }}>
+                        Lvl {mob.level} · {difficulty}
+                      </span>
+                  }
                 </div>
                 <p className="text-sm mb-1" style={{ color: '#a08050' }}>{mob.description}</p>
-                <p className="text-xs" style={{ color: '#a08050' }}>
-                  Rewards: {mob.xpReward} XP · {mob.bonesReward[0]}–{mob.bonesReward[1]} bones
-                </p>
+                {locked
+                  ? <p className="text-xs" style={{ color: '#6a4a28' }}>
+                      Reach level {mob.level - 3} to challenge this opponent.
+                      {levelsNeeded === 1 ? ' One more level.' : ` ${levelsNeeded} levels away.`}
+                    </p>
+                  : <p className="text-xs" style={{ color: '#a08050' }}>
+                      Rewards: {mob.xpReward} XP · {mob.bonesReward[0]}–{mob.bonesReward[1]} bones
+                    </p>
+                }
               </div>
-              <button className="btn-primary whitespace-nowrap"
-                onClick={() => setPendingMob(mob)}>
-                Fight
+              <button
+                className={locked ? 'btn-ghost whitespace-nowrap' : 'btn-primary whitespace-nowrap'}
+                disabled={locked}
+                onClick={() => !locked && setPendingMob(mob)}
+                style={locked ? { cursor: 'not-allowed', opacity: 0.5 } : {}}>
+                {locked ? 'Locked' : 'Fight'}
               </button>
             </div>
           )
@@ -109,7 +137,9 @@ export default function TrainingClient({ character, equippedGear, mobs, species,
         <div className="fixed inset-0 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 50 }}>
           <div className="panel max-w-sm w-full space-y-4" style={{ borderTop: '2px solid #5a4028', boxShadow: '0 8px 32px rgba(0,0,0,0.95)' }}>
             <div className="flex items-center gap-3">
-              <span className="text-4xl">{pendingMob.emoji}</span>
+              {pendingMob.image
+                ? <img src={pendingMob.image} alt={pendingMob.name} className="w-14 h-14 rounded-full object-cover" style={{ border: '2px solid #5a4028' }} />
+                : <span className="text-4xl">{pendingMob.emoji}</span>}
               <h3 className="font-bold text-lg page-title">Fight {pendingMob.name}?</h3>
             </div>
 
@@ -133,6 +163,42 @@ export default function TrainingClient({ character, equippedGear, mobs, species,
                   : `You surrender at ${surrenderAt}% HP — likely to survive a loss.`}
               </p>
             </div>
+
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                role="switch"
+                checked={activeManagement}
+                onChange={e => setActiveManagement(e.target.checked)}
+                className="sr-only"
+              />
+              {/* Track */}
+              <div className="shrink-0" style={{
+                width: '48px', height: '28px', borderRadius: '14px',
+                background: activeManagement ? '#2d6e2a' : '#2e2518',
+                border: `2px solid ${activeManagement ? '#5abf6a' : '#5a4530'}`,
+                position: 'relative',
+                transition: 'background 0.18s, border-color 0.18s',
+                boxShadow: activeManagement ? 'inset 0 1px 3px rgba(0,0,0,0.4), 0 0 6px rgba(90,191,106,0.25)' : 'inset 0 1px 3px rgba(0,0,0,0.5)',
+              }}>
+                {/* Thumb */}
+                <div style={{
+                  width: '20px', height: '20px', borderRadius: '50%',
+                  background: activeManagement ? '#7ee88a' : '#a08868',
+                  position: 'absolute', top: '2px',
+                  left: activeManagement ? '24px' : '2px',
+                  transition: 'left 0.18s cubic-bezier(0.4,0,0.2,1), background 0.18s',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.6)',
+                }} />
+              </div>
+              {/* Label */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm" style={{ color: '#e8d5b0' }}>Actively manage the fight</p>
+                <p className="text-xs mt-0.5" style={{ color: activeManagement ? '#7eb880' : '#6a5030' }}>
+                  {activeManagement ? 'Pause between rounds to adjust daring' : 'Set daring once and let it play out'}
+                </p>
+              </div>
+            </label>
 
             <div className="flex gap-3">
               <button className="btn-primary flex-1" onClick={startFight} disabled={loading}>

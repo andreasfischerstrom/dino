@@ -140,7 +140,12 @@ function flavorLine(nameA: string, nameB: string): string {
   return Math.random() < 0.4 ? pick(named) : pick(FLAVOR_STATIC)
 }
 
-export function simulateBattle(fighterA: Fighter, fighterB: Fighter): BattleResult {
+export interface SimulateOptions {
+  startRound?: number  // offset round numbering for recompute (default 1)
+  skipIntro?: boolean  // skip intro events for recompute
+}
+
+export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: SimulateOptions = {}): BattleResult {
   const daringA = DARING_OPTIONS.find(d => d.key === fighterA.daring)!
   const daringB = DARING_OPTIONS.find(d => d.key === fighterB.daring)!
 
@@ -163,19 +168,22 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter): BattleResu
     events.push({ ...e, hpA: Math.max(0, hpA), hpB: Math.max(0, hpB), maxHpA, maxHpB })
   }
 
-  // Intro
-  addEvent({ round: 0, type: 'intro', text: `The gates open. ${fighterA.name} and ${fighterB.name} enter the arena.` })
-  addEvent({ round: 0, type: 'intro', text: `${fighterA.name} has set their Daring to ${daringA.label.toUpperCase()}${effectiveDaringA.key !== daringA.key ? ` (reduced to ${effectiveDaringA.label.toUpperCase()} by ${fighterB.name}'s terrifying roar)` : ''}.` })
-  addEvent({ round: 0, type: 'intro', text: `${fighterB.name} has set their Daring to ${daringB.label.toUpperCase()}${effectiveDaringB.key !== daringB.key ? ` (reduced to ${effectiveDaringB.label.toUpperCase()} by ${fighterA.name}'s terrifying roar)` : ''}.` })
-  addEvent({ round: 0, type: 'intro', text: `The crowd screams. A horn sounds. Something in the distance catches fire. Let's go.` })
+  // Intro (skipped for recompute calls)
+  if (!opts.skipIntro) {
+    addEvent({ round: 0, type: 'intro', text: `The gates open. ${fighterA.name} and ${fighterB.name} enter the arena.` })
+    addEvent({ round: 0, type: 'intro', text: `${fighterA.name} has set their Daring to ${daringA.label.toUpperCase()}${effectiveDaringA.key !== daringA.key ? ` (reduced to ${effectiveDaringA.label.toUpperCase()} by ${fighterB.name}'s terrifying roar)` : ''}.` })
+    addEvent({ round: 0, type: 'intro', text: `${fighterB.name} has set their Daring to ${daringB.label.toUpperCase()}${effectiveDaringB.key !== daringB.key ? ` (reduced to ${effectiveDaringB.label.toUpperCase()} by ${fighterA.name}'s terrifying roar)` : ''}.` })
+    addEvent({ round: 0, type: 'intro', text: `The crowd screams. A horn sounds. Something in the distance catches fire. Let's go.` })
+  }
 
   const MAX_ROUNDS = 20
-  let round = 1
+  let round = opts.startRound ?? 1
+  const roundLimit = (opts.startRound ?? 1) - 1 + MAX_ROUNDS
   let winner: 'a' | 'b' | 'draw' = 'draw'
   let aAlive = true
   let bAlive = true
 
-  while (round <= MAX_ROUNDS && hpA > 0 && hpB > 0) {
+  while (round <= roundLimit && hpA > 0 && hpB > 0) {
     // Determine attack order by agility
     const aGoesFirst = fighterA.stats.agility >= fighterB.stats.agility
       ? (fighterA.stats.agility > fighterB.stats.agility ? true : Math.random() > 0.5)

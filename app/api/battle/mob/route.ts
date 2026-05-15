@@ -4,12 +4,34 @@ import { MOBS, GEAR, GearTemplate, StatKey, xpForLevel, maxHp } from '@/lib/game
 import { simulateBattle, Fighter } from '@/lib/battle-engine'
 import { applyGearAndBuffs } from '@/lib/stats'
 
+function computeLevel(xp: number) {
+  let l = 1
+  while (xpForLevel(l + 1) <= xp) l++
+  return l
+}
+
 export async function POST(req: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { mobId, daring = 'measured', surrenderAt = 20 } = await req.json()
+  const {
+    mobId,
+    daring = 'measured',
+    surrenderAt = 20,
+    // Recompute fields (present when player changed daring mid-battle)
+    hpA: clientHpA,
+    hpB: clientHpB,
+    fromRound,
+    originalXp,
+    originalBones,
+    originalLevel,
+    originalStatPoints,
+    previousWon,
+  } = await req.json()
+
+  const isRecompute = fromRound !== undefined
+
   const mob = MOBS.find(m => m.id === mobId)
   if (!mob) return NextResponse.json({ error: 'Unknown mob' }, { status: 400 })
 
@@ -22,7 +44,6 @@ export async function POST(req: Request) {
   if (!character) return NextResponse.json({ error: 'No character found' }, { status: 400 })
   if (!character.alive) return NextResponse.json({ error: 'Your character is dead. This is permanent.' }, { status: 400 })
 
-  // Get equipped gear
   const { data: inventory } = await supabase
     .from('inventory')
     .select('gear_id')
@@ -33,11 +54,13 @@ export async function POST(req: Request) {
     .map((i: { gear_id: string }) => GEAR.find(g => g.id === i.gear_id))
     .filter(Boolean) as GearTemplate[]
 
-  const buffs = character.buffs || []
+  // On initial call: apply buffs. On recompute: buffs already consumed.
+  const buffs = isRecompute ? [] : (character.buffs || [])
   const charStats = applyGearAndBuffs(character.stats as Record<StatKey, number>, equippedGear, buffs)
 
-  // Consume buffs after fight
-  await supabase.from('characters').update({ buffs: [] }).eq('id', character.id)
+  if (!isRecompute) {
+    await supabase.from('characters').update({ buffs: [] }).eq('id', character.id)
+  }
 
   const fighterA: Fighter = {
     id: character.id,
@@ -46,7 +69,7 @@ export async function POST(req: Request) {
     stats: charStats,
     daring,
     surrenderAt,
-    initialHp: character.hp,
+    initialHp: isRecompute ? clientHpA : character.hp,
     isMob: false,
   }
 
@@ -57,27 +80,64 @@ export async function POST(req: Request) {
     stats: mob.stats,
     daring: 'measured',
     surrenderAt: 0,
+    initialHp: isRecompute ? clientHpB : undefined,
     isMob: true,
   }
 
-  const battle = simulateBattle(fighterA, fighterB)
+  const battle = simulateBattle(fighterA, fighterB, isRecompute ? { startRound: fromRound, skipIntro: true } : {})
 
-  // Apply results
   const won = battle.winner === 'a'
   const xpGained = won ? mob.xpReward : Math.floor(mob.xpReward * 0.3)
   const bonesGained = won
     ? Math.floor(Math.random() * (mob.bonesReward[1] - mob.bonesReward[0] + 1) + mob.bonesReward[0])
     : Math.floor(mob.bonesReward[0] * 0.2)
 
-  const newXp = (character.xp || 0) + xpGained
-  const newLevel = (() => { let l = character.level; while (xpForLevel(l + 1) <= newXp) l++; return l })()
-  const leveledUp = newLevel > character.level
-  const levelsGained = newLevel - character.level
-
   const characterDied = !battle.aAlive
   const newHp = characterDied ? 0 : Math.max(1, battle.aFinalHp)
 
-  // Recalculate max_hp if leveled up (more points available conceptually, but stats unchanged)
+  if (isRecompute) {
+    // Recompute: apply results relative to original pre-fight state
+    const newXp = (originalXp ?? 0) + xpGained
+    const newLevel = computeLevel(newXp)
+    const levelsGained = newLevel - (originalLevel ?? character.level)
+    const newMaxHp = newLevel > (originalLevel ?? character.level) ? maxHp(charStats.constitution) : character.max_hp
+    const newStatPoints = (originalStatPoints ?? character.stat_points ?? 0) + Math.max(0, levelsGained)
+
+    // Reverse previous win/loss, apply new
+    const baseWins = character.wins - (previousWon ? 1 : 0)
+    const baseLosses = character.losses - (previousWon ? 0 : 1)
+
+    await supabase.from('characters').update({
+      xp: newXp,
+      level: newLevel,
+      bones: (originalBones ?? 0) + bonesGained,
+      hp: newHp,
+      max_hp: newMaxHp,
+      alive: !characterDied,
+      wins: baseWins + (won ? 1 : 0),
+      losses: baseLosses + (won ? 0 : 1),
+      last_regen_at: new Date().toISOString(),
+      stat_points: newStatPoints,
+    }).eq('id', character.id)
+
+    return NextResponse.json({
+      events: battle.events,
+      result: {
+        winner: battle.winner,
+        xpGained,
+        bonesGained,
+        leveledUp: levelsGained > 0,
+        newHp,
+        newLevel,
+      },
+    })
+  }
+
+  // Initial call: apply results as before
+  const newXp = (character.xp || 0) + xpGained
+  const newLevel = computeLevel(newXp)
+  const leveledUp = newLevel > character.level
+  const levelsGained = newLevel - character.level
   const newMaxHp = leveledUp ? maxHp(charStats.constitution) : character.max_hp
 
   await supabase.from('characters').update({
@@ -102,6 +162,7 @@ export async function POST(req: Request) {
       leveledUp,
       newHp,
       newLevel,
+      won,
     },
   })
 }
