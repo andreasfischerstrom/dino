@@ -216,9 +216,9 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
         continue
       }
 
-      // Base damage — strength sets the floor, jaw raises both floor and ceiling
-      const minDmg = Math.max(3, atk.stats.strength * 2 + Math.floor(atk.stats.jaw / 2))
-      const maxDmg = Math.max(minDmg + 2, atk.stats.strength * 4 + atk.stats.jaw * 2)
+      // Strength = reliable damage floor and ceiling; jaw only matters on crits
+      const minDmg = Math.max(3, atk.stats.strength * 2)
+      const maxDmg = Math.max(minDmg + 2, atk.stats.strength * 4)
       let baseDmg = rand(minDmg, maxDmg)
       baseDmg = Math.round(baseDmg * atkDaring.dmgMult)
 
@@ -237,7 +237,9 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
       const critChance = clamp(atk.stats.ferocity * 0.04 + atkDaring.critBonus, 0.02, 0.45)
       const isCrit = Math.random() < critChance
       if (isCrit) {
-        dmg = Math.round(dmg * 1.75)
+        // Jaw scales crit multiplier: jaw=3 → 1.8×, jaw=8 → 2.3×, jaw=15 → 3.0×
+        const critMult = 1.5 + atk.stats.jaw * 0.1
+        dmg = Math.round(dmg * critMult)
         addEvent({ round, type: 'crit', attacker, text: `${atk.name} ${pick(CRIT_PHRASES)} ${def.name} for ${dmg} damage!` })
       } else {
         addEvent({ round, type: 'attack', attacker, text: `${atk.name} ${pick(ATTACK_VERBS)} ${def.name} for ${dmg} damage.` })

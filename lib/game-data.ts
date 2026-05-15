@@ -23,7 +23,7 @@ export const STATS: StatDefinition[] = [
   { key: 'ferocity',     label: 'Ferocity',      emoji: '🔥', description: 'Critical hit chance. Sometimes you just snap.' },
   { key: 'hide',         label: 'Hide',          emoji: '🛡️', description: 'Natural armor. Reduces incoming damage. Great scales, fewer scrapes.' },
   { key: 'stamina',      label: 'Stamina',       emoji: '🫁', description: 'Performance in long fights. Low stamina = growing tired after round 5.' },
-  { key: 'jaw',          label: 'Jaw',           emoji: '🦷', description: 'Bite attack multiplier. Self-explanatory. Some jaws are better than others.' },
+  { key: 'jaw',          label: 'Jaw',           emoji: '🦷', description: 'Critical hit multiplier. Does nothing on normal hits — but the higher your jaw, the more catastrophic your crits become. Pairs well with Ferocity.' },
   { key: 'cunning',      label: 'Cunning',       emoji: '🧠', description: 'Counter-attack and trap chance. Intelligence is a weapon too, apparently.' },
   { key: 'roar',         label: 'Roar',          emoji: '📢', description: 'Pre-fight intimidation. Can rattle the opponent and reduce their effective Daring.' },
 ]
