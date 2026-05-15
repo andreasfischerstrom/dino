@@ -152,8 +152,8 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
   // Roar effect: high roar debuffs opponent daring by shifting index down
   const daringIndexA = DARING_OPTIONS.findIndex(d => d.key === fighterA.daring)
   const daringIndexB = DARING_OPTIONS.findIndex(d => d.key === fighterB.daring)
-  const roarDebuffOnB = Math.floor(fighterA.stats.roar / 5)
-  const roarDebuffOnA = Math.floor(fighterB.stats.roar / 5)
+  const roarDebuffOnB = Math.floor(fighterA.stats.roar / 4)
+  const roarDebuffOnA = Math.floor(fighterB.stats.roar / 4)
   const effectiveDaringA = DARING_OPTIONS[clamp(daringIndexA - roarDebuffOnA, 0, 4)]
   const effectiveDaringB = DARING_OPTIONS[clamp(daringIndexB - roarDebuffOnB, 0, 4)]
 
@@ -216,21 +216,20 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
         continue
       }
 
-      // Base damage — strength-scaled with jaw bonus
-      let baseDmg = rand(
-        Math.max(4, atk.stats.strength * 3),
-        atk.stats.strength * 6 + atk.stats.jaw * 2
-      )
+      // Base damage — strength sets the floor, jaw raises both floor and ceiling
+      const minDmg = Math.max(3, atk.stats.strength * 2 + Math.floor(atk.stats.jaw / 2))
+      const maxDmg = Math.max(minDmg + 2, atk.stats.strength * 4 + atk.stats.jaw * 2)
+      let baseDmg = rand(minDmg, maxDmg)
       baseDmg = Math.round(baseDmg * atkDaring.dmgMult)
 
-      // Percentage-based defense (flat armor was too strong vs weak mobs)
-      // Each hide point reduces damage by 4%, capped at 45%
+      // Percentage-based defense — each hide point reduces damage by 4%, capped at 45%
       const damageReduction = Math.min(0.45, def.stats.hide * 0.04)
       let dmg = Math.max(2, Math.round(baseDmg * (1 - damageReduction)))
 
-      // Stamina degradation in long fights
-      if (round > 8) {
-        const fatigue = 1 - Math.max(0, (10 - round) * 0.04) * (1 / Math.max(1, atk.stats.stamina))
+      // Stamina degradation in long fights — low stamina fighters fade noticeably
+      if (round > 5) {
+        const fatiguePer = 0.06 / Math.max(1, atk.stats.stamina)
+        const fatigue = Math.max(0.45, 1 - (round - 5) * fatiguePer)
         dmg = Math.round(dmg * fatigue)
       }
 
@@ -255,7 +254,8 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
       if (Math.random() < counterChance && (attacker === 'a' ? hpB : hpA) > 0) {
         let counterDmg = Math.max(1, rand(def.stats.strength, def.stats.strength * 2))
         counterDmg = Math.round(counterDmg * defDaring.dmgMult)
-        counterDmg = Math.max(1, Math.round(counterDmg - atk.stats.hide))
+        const counterReduction = Math.min(0.45, atk.stats.hide * 0.04)
+        counterDmg = Math.max(1, Math.round(counterDmg * (1 - counterReduction)))
         if (attacker === 'a') hpA = Math.max(0, hpA - counterDmg)
         else hpB = Math.max(0, hpB - counterDmg)
         addEvent({ round, type: 'counter', attacker: attacker === 'a' ? 'b' : 'a', text: `${def.name} ${pick(COUNTER_VERBS)} ${atk.name} for ${counterDmg} counter damage. Cunning.` })
