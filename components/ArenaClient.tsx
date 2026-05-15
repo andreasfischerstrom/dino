@@ -131,7 +131,7 @@ export default function ArenaClient({ character, others, incomingChallenges, out
         ))}
       </div>
 
-      {error && <p className="mb-4 text-sm" style={{ color: '#c05050' }}>{error}</p>}
+      {error && <div className="alert-error mb-4">{error}</div>}
 
       {tab === 'fight' && (
         <div className="space-y-3">

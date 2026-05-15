@@ -255,8 +255,8 @@ export default function CharacterCard({
                     <button
                       onClick={() => spendPoint(stat.key)}
                       disabled={spending !== null}
-                      className="shrink-0 w-5 h-5 rounded text-xs font-bold flex items-center justify-center"
-                      style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>
+                      className="shrink-0 rounded font-bold flex items-center justify-center"
+                      style={{ width: '28px', height: '28px', background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428', fontSize: '14px', boxShadow: '0 0 6px rgba(90,191,106,0.2)' }}>
                       {spending === stat.key ? '…' : '+'}
                     </button>
                   )}

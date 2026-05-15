@@ -90,20 +90,22 @@ export default async function LeaderboardPage() {
         {(dead || []).map((char, i) => {
           const sp = SPECIES.find(s => s.id === char.species)
           return (
-            <div key={char.id} className="flex items-center gap-4 px-4 py-3"
-              style={{ borderBottom: i < (dead?.length || 0) - 1 ? '1px solid #1e1408' : 'none', opacity: 0.65 }}>
+            <Link key={char.id} href={`/profile/${char.id}`}
+              className="flex items-center gap-4 px-4 py-3 block row-hover"
+              style={{ borderBottom: i < (dead?.length || 0) - 1 ? '1px solid #1e1408' : 'none', textDecoration: 'none' }}>
+              <span className="w-10 text-center text-base" style={{ color: '#4a3020' }}>☠</span>
               {sp?.image
-                ? <img src={sp.image} alt={sp.name} className="w-10 h-10 rounded object-cover grayscale" style={{ border: '1px solid #2a1e0e', opacity: 0.5 }} />
-                : <span className="text-2xl grayscale">{sp?.emoji || '🦕'}</span>}
+                ? <img src={sp.image} alt={sp.name} className="w-10 h-10 rounded object-cover" style={{ border: '1px solid #2a1e0e', filter: 'grayscale(1) brightness(0.45)' }} />
+                : <span className="text-2xl" style={{ filter: 'grayscale(1) brightness(0.5)' }}>{sp?.emoji || '🦕'}</span>}
               <div className="flex-1">
-                <p className="font-bold text-sm line-through" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)' }}>{char.name}</p>
-                <p className="text-xs" style={{ color: '#8a7040' }}>Lvl {char.level} {sp?.name} · Died in battle</p>
+                <p className="font-bold text-sm" style={{ color: '#6a5030', fontFamily: 'var(--font-cinzel, Georgia)' }}>{char.name}</p>
+                <p className="text-xs" style={{ color: '#4a3820' }}>Lvl {char.level} {sp?.name} · Fell in battle</p>
               </div>
-              <div className="text-right text-xs" style={{ color: '#a08050' }}>
+              <div className="text-right text-xs" style={{ color: '#5a4030' }}>
                 <p>💀 {char.kills} kills</p>
                 <p>{char.wins}W / {char.losses}L</p>
               </div>
-            </div>
+            </Link>
           )
         })}
       </div>

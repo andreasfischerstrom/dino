@@ -81,7 +81,7 @@ export default function TrainingClient({ character, equippedGear, mobs, species,
         Train against the local wildlife. Gain XP and bones. Try not to think too hard about what they do with the bodies.
       </p>
 
-      {error && <p className="mb-4 text-sm" style={{ color: '#c05050' }}>{error}</p>}
+      {error && <div className="alert-error mb-4">{error}</div>}
 
       <div className="space-y-3">
         {availableMobs.map(mob => {

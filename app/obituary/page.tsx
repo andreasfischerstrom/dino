@@ -52,7 +52,7 @@ export default async function ObituaryPage() {
         }}>
           {character.name}
         </h1>
-        <p className="text-sm mb-1" style={{ color: '#3a2a18' }}>
+        <p className="text-sm mb-1" style={{ color: '#7a6040' }}>
           Lvl {character.level} {sp?.name} · {character.kills} kills · {character.wins}W / {character.losses}L
         </p>
 
@@ -73,7 +73,7 @@ export default async function ObituaryPage() {
           </p>
         </div>
 
-        <p className="text-sm mb-8" style={{ color: '#3a2a18', fontStyle: 'italic' }}>
+        <p className="text-sm mb-8" style={{ color: '#6a5038', fontStyle: 'italic' }}>
           Death is permanent. Your legacy is not.<br />Start a new gladiator and carry the shame forward.
         </p>
 

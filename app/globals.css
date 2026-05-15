@@ -313,6 +313,26 @@ input[type="range"]::-webkit-slider-thumb {
 .fade-in { animation: fadeInUp 0.4s ease forwards; }
 .battle-line { opacity: 0; animation: fadeInUp 0.5s ease forwards; }
 
+/* ---- Alert banners ---- */
+.alert-error {
+  background: linear-gradient(135deg, #1e0808 0%, #140505 100%);
+  border: 1px solid #5a1818;
+  border-left: 3px solid #9b1818;
+  border-radius: 3px;
+  color: #c07070;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+}
+.alert-success {
+  background: linear-gradient(135deg, #0e1e08 0%, #0a1406 100%);
+  border: 1px solid #2a4a1a;
+  border-left: 3px solid #3a8a28;
+  border-radius: 3px;
+  color: #8abf7a;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+}
+
 /* ---- Utilities ---- */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

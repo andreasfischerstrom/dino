@@ -144,11 +144,7 @@ export default function TavernClient({ character }: { character: Record<string, 
         ))}
       </div>
 
-      {message && (
-        <div className="mb-4 p-3 rounded text-sm" style={{ background: '#141e0a', border: '1px solid #3a4a1e', color: '#9abf7a' }}>
-          {message}
-        </div>
-      )}
+      {message && <div className="alert-success mb-4">{message}</div>}
 
       {tab === 'shop' && (
         <div className="space-y-6">
@@ -218,34 +214,40 @@ export default function TavernClient({ character }: { character: Record<string, 
       )}
 
       {tab === 'heal' && (
-        <div className="panel space-y-4">
+        <div className="panel space-y-5">
           <div>
-            <p className="font-bold mb-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>🌿 The Healer</p>
-            <p className="text-xs mb-3" style={{ color: '#a08050' }}>
+            <p className="font-bold mb-0.5" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>The Healer</p>
+            <p className="text-xs" style={{ color: '#a08050' }}>
               An elderly Stegosaurus of dubious medical credentials. {HEALER_COST_PER_HP} bones per HP. No refunds.
             </p>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-xs shrink-0" style={{ color: '#8b1515' }}>❤</span>
-              <div className="hud-bar">
-                <div className="hud-bar-hp" style={{ width: `${hpPct}%` }} />
-              </div>
-              <span className="text-xs shrink-0" style={{ color: '#a08050' }}>{hp}/{maxHp}</span>
+          </div>
+
+          <div>
+            <div className="flex justify-between text-xs mb-1.5">
+              <span style={{ color: '#8b1515' }}>❤ Health</span>
+              <span style={{ color: '#a08050' }}>{hp} / {maxHp}</span>
             </div>
+            <div className="hud-bar mb-3">
+              <div className="hud-bar-hp" style={{ width: `${hpPct}%` }} />
+            </div>
+
             {hpMissing > 0 ? (
-              <div className="flex items-center gap-4 flex-wrap">
-                <p className="text-sm" style={{ color: '#a08050' }}>
-                  Full heal: <span style={{ color: '#d4a843' }}>🦴 {healCost}</span>
-                </p>
-                <button className="btn-primary text-sm" onClick={heal} disabled={loading === 'heal' || bones < healCost}>
-                  {loading === 'heal' ? 'Healing...' : `Heal for 🦴 ${healCost}`}
+              <div className="rounded p-4 space-y-3" style={{ background: '#0e0c08', border: '1px solid #3a2810' }}>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm" style={{ color: '#a08050' }}>Full heal cost</span>
+                  <span className="text-base font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>🦴 {healCost}</span>
+                </div>
+                <button className="btn-primary w-full py-2.5" onClick={heal} disabled={loading === 'heal' || bones < healCost}>
+                  {loading === 'heal' ? 'Healing...' : bones < healCost ? `Need ${healCost - bones} more bones` : `Heal to Full`}
                 </button>
               </div>
             ) : (
-              <p className="text-sm" style={{ color: '#2a6428' }}>✓ Fully healed. The healer seems mildly disappointed.</p>
+              <div className="alert-success">✓ Fully healed. The healer seems mildly disappointed.</div>
             )}
           </div>
-          <p className="text-xs" style={{ color: '#8a7040' }}>
-            Tip: HP regenerates passively — full regen takes 1 hour. Check the shop for cheaper single-use salves.
+
+          <p className="text-xs" style={{ color: '#5a4a30', borderTop: '1px solid #2a1e0e', paddingTop: '0.75rem' }}>
+            HP also regenerates passively — full recovery takes 1 hour. Single-use salves in the shop cost less.
           </p>
         </div>
       )}
@@ -273,20 +275,26 @@ export default function TavernClient({ character }: { character: Record<string, 
                   </div>
                 </>
               ) : (
-                <div className="fade-in space-y-2">
+                <div className="fade-in space-y-3">
                   <p className="text-sm italic" style={{ color: '#a08050' }}>{questOutcome}</p>
-                  {quest.bonesDelta != null && quest.bonesDelta !== 0 && (
-                    <p className="text-xs font-bold" style={{ color: quest.bonesDelta > 0 ? '#5abf6a' : '#bf5a5a' }}>
-                      {quest.bonesDelta > 0 ? `+${quest.bonesDelta}` : quest.bonesDelta} bones
-                    </p>
-                  )}
-                  {quest.hpDelta != null && quest.hpDelta !== 0 && (
-                    <p className="text-xs font-bold" style={{ color: quest.hpDelta > 0 ? '#5abf6a' : '#bf5a5a' }}>
-                      {quest.hpDelta > 0 ? `+${quest.hpDelta}` : quest.hpDelta} HP
-                    </p>
-                  )}
-                  {quest.xpDelta != null && quest.xpDelta > 0 && (
-                    <p className="text-xs font-bold" style={{ color: '#5abf6a' }}>+{quest.xpDelta} XP</p>
+                  {(quest.bonesDelta || quest.hpDelta || quest.xpDelta) && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {quest.bonesDelta != null && quest.bonesDelta !== 0 && (
+                        <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: quest.bonesDelta > 0 ? '#0e2410' : '#2a0808', color: quest.bonesDelta > 0 ? '#5abf6a' : '#bf5a5a', border: `1px solid ${quest.bonesDelta > 0 ? '#2a6428' : '#6a2828'}` }}>
+                          🦴 {quest.bonesDelta > 0 ? `+${quest.bonesDelta}` : quest.bonesDelta} bones
+                        </span>
+                      )}
+                      {quest.hpDelta != null && quest.hpDelta !== 0 && (
+                        <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: quest.hpDelta > 0 ? '#0e2410' : '#2a0808', color: quest.hpDelta > 0 ? '#5abf6a' : '#bf5a5a', border: `1px solid ${quest.hpDelta > 0 ? '#2a6428' : '#6a2828'}` }}>
+                          ❤ {quest.hpDelta > 0 ? `+${quest.hpDelta}` : quest.hpDelta} HP
+                        </span>
+                      )}
+                      {quest.xpDelta != null && quest.xpDelta > 0 && (
+                        <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>
+                          ✦ +{quest.xpDelta} XP
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

@@ -56,16 +56,16 @@ export default function ShopClient({ character, gear, inventory }: Props) {
 
   return (
     <div className="min-h-screen px-4 py-8 max-w-3xl mx-auto">
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-3 mb-2">
         <Link href="/town" className="btn-ghost text-sm">← Town</Link>
-        <h1 className="text-3xl page-title">Grubclaw's Smithy</h1>
+        <h1 className="text-3xl page-title flex-1">Grubclaw's Smithy</h1>
+        <span className="text-sm font-bold shrink-0" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>🦴 {bones}</span>
       </div>
-      <p className="text-sm mb-1" style={{ color: '#a08050', fontStyle: 'italic' }}>
+      <p className="text-sm mb-6" style={{ color: '#a08050', fontStyle: 'italic' }}>
         "Quality not guaranteed. Refunds not offered. Grubclaw has three fingers and zero patience."
       </p>
-      <p className="text-sm mb-6 font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>🦴 {bones} bones</p>
 
-      {error && <p className="mb-4 text-sm" style={{ color: '#c05050' }}>{error}</p>}
+      {error && <div className="alert-error mb-4">{error}</div>}
 
       <div className="flex gap-2 mb-4">
         {(['shop', 'inventory'] as const).map(t => (
@@ -107,7 +107,7 @@ export default function ShopClient({ character, gear, inventory }: Props) {
                       <div className="text-right">
                         <p className="text-sm font-bold mb-1" style={{ color: '#d4a843' }}>🦴 {item.price}</p>
                         {owned ? (
-                          <span className="text-xs" style={{ color: '#2a6428' }}>✓ Owned</span>
+                          <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>✓ Owned</span>
                         ) : (
                           <button className="btn-primary text-xs px-3 py-1"
                             disabled={!canAfford || !meetsLevel || loading === item.id}
@@ -157,7 +157,7 @@ export default function ShopClient({ character, gear, inventory }: Props) {
                           </div>
                         </div>
                         <button onClick={() => toggleEquip(item.id)} disabled={loading === item.id}
-                          className={isEquipped ? 'btn-danger text-xs px-3 py-1' : 'btn-primary text-xs px-3 py-1'}>
+                          className={isEquipped ? 'btn-ghost text-xs px-3 py-1' : 'btn-primary text-xs px-3 py-1'}>
                           {loading === item.id ? '...' : isEquipped ? 'Unequip' : 'Equip'}
                         </button>
                       </div>
