@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { TAVERN_QUESTS, TAVERN_ITEMS, TavernItem, TavernItemEffect, StatKey } from '@/lib/game-data'
 
@@ -55,6 +55,10 @@ export default function TavernClient({ character }: { character: Record<string, 
     playerTotal: number; houseTotal: number
     outcome: DiceOutcome; boneDelta: number; newHp?: number
   } | null>(null)
+  const [playerShown, setPlayerShown] = useState(0)
+  const [houseShown, setHouseShown] = useState(0)
+  const [showOutcome, setShowOutcome] = useState(false)
+  const timeouts = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const [quest] = useState(() => {
     if (Math.random() > 0.70) return null
@@ -125,9 +129,21 @@ export default function TavernClient({ character }: { character: Record<string, 
     setLoading(null)
   }
 
+  const DIE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅']
+
+  function schedule(ms: number, fn: () => void) {
+    const t = setTimeout(fn, ms)
+    timeouts.current.push(t)
+    return t
+  }
+
   async function playDice() {
     if (dicePlayed) return
     setDiceRolling(true)
+    setPlayerShown(0)
+    setHouseShown(0)
+    setShowOutcome(false)
+
     const res = await fetch('/api/tavern/dice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -135,11 +151,20 @@ export default function TavernClient({ character }: { character: Record<string, 
     })
     const json = await res.json()
     if (!res.ok) { setMessage(json.error); setDiceRolling(false); return }
-    setDiceResult(json)
+
     setBones(json.newBones)
     if (json.newHp !== undefined) setHp(json.newHp)
-    setDicePlayed(true)
+    setDiceResult(json)
     setDiceRolling(false)
+
+    // Reveal player dice one at a time, then house dice, then outcome
+    schedule(400,  () => setPlayerShown(1))
+    schedule(900,  () => setPlayerShown(2))
+    schedule(1400, () => setPlayerShown(3))
+    schedule(2200, () => setHouseShown(1))
+    schedule(2700, () => setHouseShown(2))
+    schedule(3200, () => setHouseShown(3))
+    schedule(4000, () => { setShowOutcome(true); setDicePlayed(true) })
   }
 
   const tabs = [
@@ -370,29 +395,39 @@ export default function TavernClient({ character }: { character: Record<string, 
           )}
 
           {diceResult && (
-            <div className="space-y-4 fade-in">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded p-3 text-center" style={{ background: '#0e0c08', border: '1px solid #3a2810' }}>
                   <p className="text-xs mb-2 font-bold" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)' }}>You</p>
-                  <div className="flex justify-center gap-2 mb-2">
-                    {diceResult.playerDice.map((d, i) => (
-                      <span key={i} className="text-2xl">{['⚀','⚁','⚂','⚃','⚄','⚅'][d-1]}</span>
+                  <div className="flex justify-center gap-2 mb-2" style={{ minHeight: '2rem' }}>
+                    {[0,1,2].map(i => (
+                      <span key={i} className="text-3xl transition-all duration-300" style={{
+                        opacity: playerShown > i ? 1 : 0.15,
+                        transform: playerShown > i ? 'scale(1)' : 'scale(0.6)',
+                      }}>
+                        {playerShown > i ? DIE_FACES[diceResult.playerDice[i]-1] : '🎲'}
+                      </span>
                     ))}
                   </div>
-                  <p className="text-lg font-bold" style={{ color: '#d4a843' }}>{diceResult.playerTotal}</p>
+                  <p className="text-lg font-bold" style={{ color: '#d4a843', opacity: playerShown >= 3 ? 1 : 0, transition: 'opacity 0.3s' }}>{diceResult.playerTotal}</p>
                 </div>
                 <div className="rounded p-3 text-center" style={{ background: '#0e0c08', border: '1px solid #3a2810' }}>
                   <p className="text-xs mb-2 font-bold" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)' }}>House</p>
-                  <div className="flex justify-center gap-2 mb-2">
-                    {diceResult.houseDice.map((d, i) => (
-                      <span key={i} className="text-2xl">{['⚀','⚁','⚂','⚃','⚄','⚅'][d-1]}</span>
+                  <div className="flex justify-center gap-2 mb-2" style={{ minHeight: '2rem' }}>
+                    {[0,1,2].map(i => (
+                      <span key={i} className="text-3xl transition-all duration-300" style={{
+                        opacity: houseShown > i ? 1 : playerShown >= 3 ? 0.15 : 0,
+                        transform: houseShown > i ? 'scale(1)' : 'scale(0.6)',
+                      }}>
+                        {houseShown > i ? DIE_FACES[diceResult.houseDice[i]-1] : '🎲'}
+                      </span>
                     ))}
                   </div>
-                  <p className="text-lg font-bold" style={{ color: '#a08050' }}>{diceResult.houseTotal}</p>
+                  <p className="text-lg font-bold" style={{ color: '#a08050', opacity: houseShown >= 3 ? 1 : 0, transition: 'opacity 0.3s' }}>{diceResult.houseTotal}</p>
                 </div>
               </div>
 
-              <div className="rounded p-4 text-center" style={{
+              {showOutcome && <div className="rounded p-4 text-center fade-in" style={{
                 background: diceResult.outcome === 'cheat_caught' ? '#2a0808'
                   : diceResult.outcome === 'win' || diceResult.outcome === 'cheat_win' ? '#0a1f0a'
                   : '#1a1208',
@@ -434,9 +469,9 @@ export default function TavernClient({ character }: { character: Record<string, 
                     <p className="text-xs" style={{ color: '#a08050' }}>Identical totals. Your bet is returned.</p>
                   </>
                 )}
-              </div>
+              </div>}
 
-              <p className="text-xs text-center" style={{ color: '#5a4a30' }}>Come back tomorrow for another game.</p>
+              {showOutcome && <p className="text-xs text-center" style={{ color: '#5a4a30' }}>Come back tomorrow for another game.</p>}
             </div>
           )}
         </div>
