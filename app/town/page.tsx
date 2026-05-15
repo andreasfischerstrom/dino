@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { SPECIES, STATS, GEAR_SLOTS, xpForLevel } from '@/lib/game-data'
+import { SPECIES, STATS, GEAR_SLOTS, xpForLevel, maxHp } from '@/lib/game-data'
 import { getEquippedGear, computeGearBonus } from '@/lib/stats'
 import SignOutButton from '@/components/SignOutButton'
 import CharacterCard from '@/components/CharacterCard'
@@ -47,6 +47,17 @@ export default async function TownPage() {
   const equippedGear = getEquippedGear(inventory || [])
   const gearBonus = computeGearBonus(equippedGear)
   const buffs: { stat: string; bonus: number; label: string }[] = character.buffs || []
+
+  // Sync max_hp to effective value (base + gear constitution) in case it drifted
+  const baseConstitution = (character.stats as Record<string, number>).constitution || 0
+  const gearConBonus = (gearBonus['constitution'] as number) || 0
+  const effectiveMaxHp = maxHp(baseConstitution + gearConBonus)
+  if (effectiveMaxHp !== character.max_hp) {
+    const syncedHp = Math.min(character.hp, effectiveMaxHp)
+    await supabase.from('characters').update({ max_hp: effectiveMaxHp, hp: syncedHp }).eq('id', character.id)
+    character.max_hp = effectiveMaxHp
+    character.hp = syncedHp
+  }
 
   const species = SPECIES.find(s => s.id === character.species)
   const xpCurrent = xpForLevel(character.level)

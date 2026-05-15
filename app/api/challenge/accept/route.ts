@@ -104,6 +104,12 @@ export async function POST(req: Request) {
   const aProgress = newLevel(attacker.level, attacker.xp, aXpGain)
   const bProgress = newLevel(defender.level, defender.xp, bXpGain)
 
+  // Update max_hp on level-up (effective max including gear)
+  const aLevelsGained = aProgress.level - attacker.level
+  const bLevelsGained = bProgress.level - defender.level
+  const aNewMaxHp = aLevelsGained > 0 ? maxHp(fighterA.stats.constitution) : attacker.max_hp
+  const bNewMaxHp = bLevelsGained > 0 ? maxHp(fighterB.stats.constitution) : defender.max_hp
+
   // Bones transfer: winner gets some of loser's bones
   const bonesBet = Math.floor(Math.min(attacker.bones, defender.bones) * 0.1)
   const aNewBones = aWon ? attacker.bones + bonesBet : Math.max(0, attacker.bones - bonesBet)
@@ -112,21 +118,23 @@ export async function POST(req: Request) {
   const now = new Date().toISOString()
 
   await supabase.from('characters').update({
-    hp: aNewHp, alive: battle.aAlive, xp: aProgress.xp, level: aProgress.level,
+    hp: Math.min(aNewHp, aNewMaxHp), max_hp: aNewMaxHp,
+    alive: battle.aAlive, xp: aProgress.xp, level: aProgress.level,
     bones: aNewBones, wins: aWon ? attacker.wins + 1 : attacker.wins,
     losses: !aWon ? attacker.losses + 1 : attacker.losses,
     kills: !battle.bAlive ? attacker.kills + 1 : attacker.kills,
     last_regen_at: now,
-    stat_points: (attacker.stat_points || 0) + Math.max(0, aProgress.level - attacker.level),
+    stat_points: (attacker.stat_points || 0) + Math.max(0, aLevelsGained),
   }).eq('id', attacker.id)
 
   await supabase.from('characters').update({
-    hp: bNewHp, alive: battle.bAlive, xp: bProgress.xp, level: bProgress.level,
+    hp: Math.min(bNewHp, bNewMaxHp), max_hp: bNewMaxHp,
+    alive: battle.bAlive, xp: bProgress.xp, level: bProgress.level,
     bones: bNewBones, wins: bWon ? defender.wins + 1 : defender.wins,
     losses: !bWon ? defender.losses + 1 : defender.losses,
     kills: !battle.aAlive ? defender.kills + 1 : defender.kills,
     last_regen_at: now,
-    stat_points: (defender.stat_points || 0) + Math.max(0, bProgress.level - defender.level),
+    stat_points: (defender.stat_points || 0) + Math.max(0, bLevelsGained),
   }).eq('id', defender.id)
 
   // Close challenge

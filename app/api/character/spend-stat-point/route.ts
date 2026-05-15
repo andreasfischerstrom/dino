@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { STATS, StatKey, maxHp } from '@/lib/game-data'
+import { STATS, StatKey } from '@/lib/game-data'
+
+const HP_PER_CONSTITUTION = 10  // from maxHp: 50 + constitution * 10
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -28,10 +30,9 @@ export async function POST(req: Request) {
   }
 
   if (stat === 'constitution') {
-    const newMaxHp = maxHp(newStats.constitution)
-    const hpIncrease = newMaxHp - character.max_hp
-    update.max_hp = newMaxHp
-    update.hp = Math.min(newMaxHp, character.hp + hpIncrease)
+    // Always add exactly HP_PER_CONSTITUTION — correct regardless of what's currently stored in max_hp
+    update.max_hp = character.max_hp + HP_PER_CONSTITUTION
+    update.hp = Math.min(character.max_hp + HP_PER_CONSTITUTION, character.hp + HP_PER_CONSTITUTION)
   }
 
   await supabase.from('characters').update(update).eq('id', character.id)
