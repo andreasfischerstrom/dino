@@ -245,7 +245,7 @@ export default function TavernClient({ character }: { character: Record<string, 
             )}
           </div>
           <p className="text-xs" style={{ color: '#8a7040' }}>
-            Tip: HP also regenerates passively at 6/min. Check the shop for cheaper single-use salves.
+            Tip: HP regenerates passively — full regen takes 1 hour. Check the shop for cheaper single-use salves.
           </p>
         </div>
       )}

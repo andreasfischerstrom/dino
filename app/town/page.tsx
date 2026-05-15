@@ -8,7 +8,8 @@ import { getEquippedGear, computeGearBonus } from '@/lib/stats'
 import SignOutButton from '@/components/SignOutButton'
 import CharacterCard from '@/components/CharacterCard'
 
-const HP_REGEN_PER_MINUTE = 6
+// Full regen in 1 hour: maxHp / 60 HP per minute
+const regenPerMinute = (maxHp: number) => maxHp / 60
 
 export default async function TownPage() {
   const supabase = await createClient()
@@ -29,7 +30,7 @@ export default async function TownPage() {
     const lastRegen = new Date(lastRegenRaw)
     const minutesElapsed = Math.min((Date.now() - lastRegen.getTime()) / 60000, 1440)
     if (!isNaN(minutesElapsed) && minutesElapsed > 0) {
-      const regenAmount = Math.floor(minutesElapsed * HP_REGEN_PER_MINUTE)
+      const regenAmount = Math.floor(minutesElapsed * regenPerMinute(character.max_hp))
       if (regenAmount >= 1) {
         const newHp = Math.min(character.max_hp, character.hp + regenAmount)
         await supabase.from('characters').update({ hp: newHp, last_regen_at: new Date().toISOString() }).eq('id', character.id)
@@ -117,7 +118,7 @@ export default async function TownPage() {
         slots={slotItems}
         buffs={buffs}
         lastRegenAt={character.last_regen_at ?? character.created_at}
-        regenPerMinute={HP_REGEN_PER_MINUTE}
+        regenPerMinute={regenPerMinute(character.max_hp)}
       />
 
       {hpPct < 30 && (
@@ -128,7 +129,7 @@ export default async function TownPage() {
           boxShadow: '0 2px 8px rgba(0,0,0,0.6), 0 0 12px rgba(155,24,24,0.12)',
         }}>
           ⚠️ HP critically low ({hpPct}%). Visit the Tavern before challenging anyone.
-          Passive regen: {HP_REGEN_PER_MINUTE} HP/min.
+          Passive regen: full HP in 1 hour.
         </div>
       )}
 
