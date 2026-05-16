@@ -25,7 +25,7 @@ const crimson = Crimson_Pro({
 })
 
 export const metadata: Metadata = {
-  title: 'Cretaceous Carnage',
+  title: 'Jurassic Brawl',
   description: 'A gladiatorial dinosaur fighting game. 65 million years in the making.',
 }
 

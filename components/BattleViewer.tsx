@@ -42,6 +42,7 @@ const EVENT_COLORS: Record<string, string> = {
   death:     '#bf4040',
   outcome:   '#d4a843',
   flavor:    '#3a5a3a',
+  passive:   '#d4a843',
 }
 
 const SPEEDS: Record<'normal' | 'fast', number> = { normal: 1300, fast: 420 }
@@ -373,7 +374,7 @@ export default function BattleViewer({
               style={{
                 color: EVENT_COLORS[event.type] || '#e8d5b0',
                 fontStyle: event.type === 'flavor' || event.type === 'intro' ? 'italic' : 'normal',
-                fontWeight: event.type === 'crit' || event.type === 'outcome' ? 'bold' : 'normal',
+                fontWeight: event.type === 'crit' || event.type === 'outcome' || event.type === 'passive' ? 'bold' : 'normal',
                 opacity: getOpacity(index),
                 transition: 'opacity 0.6s ease',
               }}>

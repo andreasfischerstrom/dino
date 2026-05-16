@@ -56,6 +56,8 @@ interface Props {
   stats: StatRow[]
   slots: SlotItem[]
   buffs: Buff[]
+  passiveName?: string
+  passiveDescription?: string
   lastRegenAt?: string
   regenPerMinute?: number
 }
@@ -65,6 +67,7 @@ export default function CharacterCard({
   hp, maxHp, xp, xpCurrent, xpForNext, statPoints, characterId,
   kills, wins, losses, bones,
   stats, slots, buffs,
+  passiveName, passiveDescription,
   lastRegenAt, regenPerMinute,
 }: Props) {
   const [expanded, setExpanded] = useState(false)
@@ -153,6 +156,17 @@ export default function CharacterCard({
               Lvl {level} {speciesName}
             </span>
           </div>
+
+          {/* Passive ability */}
+          {passiveName && (
+            <div className="mb-2 px-2 py-1 rounded text-xs" style={{
+              background: 'rgba(212,168,67,0.07)',
+              border: '1px solid rgba(212,168,67,0.2)',
+            }}>
+              <span style={{ color: '#d4a843', fontWeight: 'bold' }}>⚡ {passiveName}</span>
+              {passiveDescription && <span style={{ color: '#8a7040' }}> — {passiveDescription}</span>}
+            </div>
+          )}
 
           {/* HP bar */}
           <div className="flex items-center gap-2 mb-1.5">

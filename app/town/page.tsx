@@ -128,6 +128,8 @@ export default async function TownPage() {
         stats={statRows}
         slots={slotItems}
         buffs={buffs}
+        passiveName={species?.passive?.name}
+        passiveDescription={species?.passive?.description}
         lastRegenAt={character.last_regen_at ?? character.created_at}
         regenPerMinute={regenPerMinute(character.max_hp)}
       />

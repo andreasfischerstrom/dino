@@ -30,6 +30,11 @@ export const STATS: StatDefinition[] = [
 
 export type Stats = Record<StatKey, number>
 
+export interface SpeciesPassive {
+  name: string
+  description: string
+}
+
 export interface Species {
   id: string
   name: string
@@ -39,6 +44,7 @@ export interface Species {
   image: string
   baseStats: Partial<Stats>
   bonusPoints: number
+  passive: SpeciesPassive
 }
 
 export const SPECIES: Species[] = [
@@ -51,6 +57,7 @@ export const SPECIES: Species[] = [
     image: '/images/species/trex.png',
     baseStats: { strength: 2, ferocity: 1, agility: -2, cunning: -1 },
     bonusPoints: 5,
+    passive: { name: 'Last Stand', description: 'When HP drops below 25%, deal 40% more damage.' },
   },
   {
     id: 'velociraptor',
@@ -61,6 +68,7 @@ export const SPECIES: Species[] = [
     image: '/images/species/velociraptor.png',
     baseStats: { agility: 2, cunning: 1, constitution: -2, hide: -1 },
     bonusPoints: 5,
+    passive: { name: 'Pack Tactics', description: 'Every 3rd consecutive hit (no misses) deals double damage.' },
   },
   {
     id: 'triceratops',
@@ -71,6 +79,7 @@ export const SPECIES: Species[] = [
     image: '/images/species/triceratops.png',
     baseStats: { hide: 2, constitution: 1, agility: -2, cunning: -1 },
     bonusPoints: 5,
+    passive: { name: 'Brace', description: 'Once per fight, automatically halve an incoming hit that would deal more than 20% of max HP.' },
   },
   {
     id: 'ankylosaurus',
@@ -81,6 +90,7 @@ export const SPECIES: Species[] = [
     image: '/images/species/ankylosaurus.png',
     baseStats: { hide: 3, constitution: 1, agility: -3, ferocity: -1 },
     bonusPoints: 5,
+    passive: { name: 'Thorns', description: 'When struck by a critical hit, the attacker takes 15% of that damage back.' },
   },
   {
     id: 'spinosaurus',
@@ -91,6 +101,7 @@ export const SPECIES: Species[] = [
     image: '/images/species/spinosaurus.png',
     baseStats: { strength: 1, stamina: 1, jaw: 1, roar: -1, cunning: -1 },
     bonusPoints: 5,
+    passive: { name: 'Momentum', description: '+10% damage per consecutive round with a successful hit, stacking up to 3×. Resets on miss.' },
   },
   {
     id: 'pterodactyl',
@@ -101,6 +112,7 @@ export const SPECIES: Species[] = [
     image: '/images/species/pterodactyl.png',
     baseStats: { agility: 2, cunning: 1, strength: -2, constitution: -1 },
     bonusPoints: 5,
+    passive: { name: 'Evasion', description: 'Once per fight, automatically dodge a hit that would drop HP below 20%.' },
   },
   {
     id: 'pachycephalosaurus',
@@ -111,6 +123,7 @@ export const SPECIES: Species[] = [
     image: '/images/species/pachycephalosaurus.png',
     baseStats: { strength: 2, ferocity: 1, cunning: -2, agility: -1 },
     bonusPoints: 5,
+    passive: { name: 'Headbutt', description: 'First attack of every fight always hits and ignores all armor.' },
   },
   {
     id: 'stegosaurus',
@@ -121,6 +134,7 @@ export const SPECIES: Species[] = [
     image: '/images/species/stegosaurus.png',
     baseStats: { hide: 1, constitution: 1, jaw: 1, cunning: -2, roar: -1 },
     bonusPoints: 5,
+    passive: { name: 'Tail Club', description: 'Successful counter-attacks deal an additional 15 flat damage.' },
   },
 ]
 

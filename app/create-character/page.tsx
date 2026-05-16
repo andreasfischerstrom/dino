@@ -157,6 +157,12 @@ export default function CreateCharacter() {
                     </span>
                   ))}
                 </div>
+                <div className="mt-2 pt-2" style={{ borderTop: '1px solid #2a1e0e' }}>
+                  <p className="text-xs" style={{ color: '#7a5a20' }}>
+                    <span style={{ color: '#c8960a', fontWeight: 'bold' }}>⚡ {s.passive.name}:</span>{' '}
+                    <span style={{ color: '#8a7040' }}>{s.passive.description}</span>
+                  </p>
+                </div>
               </button>
             ))}
           </div>

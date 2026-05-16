@@ -1,4 +1,4 @@
-import { Stats, DaringLevel, DARING_OPTIONS, maxHp } from './game-data'
+import { Stats, DaringLevel, DARING_OPTIONS, maxHp, getSpeciesById } from './game-data'
 
 export interface Fighter {
   id: string
@@ -13,7 +13,7 @@ export interface Fighter {
 
 export interface BattleEvent {
   round: number
-  type: 'intro' | 'attack' | 'crit' | 'miss' | 'counter' | 'roar' | 'surrender' | 'death' | 'outcome' | 'flavor'
+  type: 'intro' | 'attack' | 'crit' | 'miss' | 'counter' | 'roar' | 'surrender' | 'death' | 'outcome' | 'flavor' | 'passive'
   attacker?: 'a' | 'b'
   text: string
   hpA: number
@@ -140,6 +140,18 @@ function flavorLine(nameA: string, nameB: string): string {
   return Math.random() < 0.4 ? pick(named) : pick(FLAVOR_STATIC)
 }
 
+interface PassiveState {
+  consecutiveHits: number  // Velociraptor Pack Tactics
+  braceUsed: boolean       // Triceratops Brace
+  evasionUsed: boolean     // Pterodactyl Evasion
+  headbuttUsed: boolean    // Pachycephalosaurus Headbutt
+  momentumStacks: number   // Spinosaurus Momentum
+}
+
+function initPassive(): PassiveState {
+  return { consecutiveHits: 0, braceUsed: false, evasionUsed: false, headbuttUsed: false, momentumStacks: 0 }
+}
+
 export interface SimulateOptions {
   startRound?: number  // offset round numbering for recompute (default 1)
   skipIntro?: boolean  // skip intro events for recompute
@@ -162,6 +174,11 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
   let hpA = fighterA.initialHp !== undefined ? Math.min(fighterA.initialHp, maxHpA) : maxHpA
   let hpB = fighterB.initialHp !== undefined ? Math.min(fighterB.initialHp, maxHpB) : maxHpB
 
+  const passiveA = initPassive()
+  const passiveB = initPassive()
+  const speciesA = getSpeciesById(fighterA.species)
+  const speciesB = getSpeciesById(fighterB.species)
+
   const events: BattleEvent[] = []
 
   function addEvent(e: Omit<BattleEvent, 'hpA' | 'hpB' | 'maxHpA' | 'maxHpB'>) {
@@ -173,6 +190,8 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
     addEvent({ round: 0, type: 'intro', text: `The gates open. ${fighterA.name} and ${fighterB.name} enter the arena.` })
     addEvent({ round: 0, type: 'intro', text: `${fighterA.name} has set their Daring to ${daringA.label.toUpperCase()}${effectiveDaringA.key !== daringA.key ? ` (reduced to ${effectiveDaringA.label.toUpperCase()} by ${fighterB.name}'s terrifying roar)` : ''}.` })
     addEvent({ round: 0, type: 'intro', text: `${fighterB.name} has set their Daring to ${daringB.label.toUpperCase()}${effectiveDaringB.key !== daringB.key ? ` (reduced to ${effectiveDaringB.label.toUpperCase()} by ${fighterA.name}'s terrifying roar)` : ''}.` })
+    if (speciesA?.passive) addEvent({ round: 0, type: 'passive', text: `⚡ ${fighterA.name}'s passive: ${speciesA.passive.name} — ${speciesA.passive.description}` })
+    if (speciesB?.passive) addEvent({ round: 0, type: 'passive', text: `⚡ ${fighterB.name}'s passive: ${speciesB.passive.name} — ${speciesB.passive.description}` })
     addEvent({ round: 0, type: 'intro', text: `The crowd screams. A horn sounds. Something in the distance catches fire. Let's go.` })
   }
 
@@ -206,15 +225,28 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
       const atkHp = attacker === 'a' ? hpA : hpB
       const defHp = attacker === 'a' ? hpB : hpA
       const defMax = attacker === 'a' ? maxHpB : maxHpA
+      const atkMax = attacker === 'a' ? maxHpA : maxHpB
+      const atkPassive = attacker === 'a' ? passiveA : passiveB
+      const defPassive = attacker === 'a' ? passiveB : passiveA
+
+      // Pachycephalosaurus: Headbutt — first attack always hits, ignores hide
+      const isPachyHeadbutt = atk.species === 'pachycephalosaurus' && !atkPassive.headbuttUsed
+      if (isPachyHeadbutt) atkPassive.headbuttUsed = true
 
       // Miss chance based on agility difference
       const agilityDiff = def.stats.agility - atk.stats.agility
       const missChance = clamp(0.05 + agilityDiff * 0.04, 0.02, 0.35)
 
-      if (Math.random() < missChance) {
+      if (!isPachyHeadbutt && Math.random() < missChance) {
+        if (atk.species === 'velociraptor') atkPassive.consecutiveHits = 0
+        if (atk.species === 'spinosaurus') atkPassive.momentumStacks = 0
         addEvent({ round, type: 'miss', attacker, text: `${atk.name} ${pick(ATTACK_VERBS)} ${def.name} but ${pick(MISS_PHRASES)}.` })
         continue
       }
+
+      // Track consecutive hits for Velociraptor Pack Tactics and Spinosaurus Momentum
+      if (atk.species === 'velociraptor') atkPassive.consecutiveHits++
+      if (atk.species === 'spinosaurus') atkPassive.momentumStacks = Math.min(3, atkPassive.momentumStacks + 1)
 
       // Strength = reliable damage floor and ceiling; jaw only matters on crits
       const minDmg = Math.max(3, atk.stats.strength * 2)
@@ -222,8 +254,8 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
       let baseDmg = rand(minDmg, maxDmg)
       baseDmg = Math.round(baseDmg * atkDaring.dmgMult)
 
-      // Percentage-based defense — each hide point reduces damage by 4%, capped at 45%
-      const damageReduction = Math.min(0.45, def.stats.hide * 0.04)
+      // Pachycephalosaurus Headbutt ignores hide; otherwise percentage-based defense
+      const damageReduction = isPachyHeadbutt ? 0 : Math.min(0.45, def.stats.hide * 0.04)
       let dmg = Math.max(2, Math.round(baseDmg * (1 - damageReduction)))
 
       // Stamina degradation in long fights — low stamina fighters fade noticeably
@@ -233,6 +265,19 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
         dmg = Math.round(dmg * fatigue)
       }
 
+      // T-Rex: Last Stand — when HP < 25%, +40% damage
+      const lastStandActive = atk.species === 'trex' && atkHp < atkMax * 0.25
+      if (lastStandActive) dmg = Math.round(dmg * 1.4)
+
+      // Velociraptor: Pack Tactics — every 3rd consecutive hit deals double damage
+      const packTacticsActive = atk.species === 'velociraptor' && atkPassive.consecutiveHits > 0 && atkPassive.consecutiveHits % 3 === 0
+      if (packTacticsActive) dmg *= 2
+
+      // Spinosaurus: Momentum — +10% damage per stack (max 3)
+      if (atk.species === 'spinosaurus' && atkPassive.momentumStacks > 0) {
+        dmg = Math.round(dmg * (1 + atkPassive.momentumStacks * 0.10))
+      }
+
       // Crit check
       const critChance = clamp(atk.stats.ferocity * 0.04 + atkDaring.critBonus, 0.02, 0.45)
       const isCrit = Math.random() < critChance
@@ -240,6 +285,28 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
         // Jaw scales crit multiplier: jaw=3 → 1.8×, jaw=8 → 2.3×, jaw=15 → 3.0×
         const critMult = 1.5 + atk.stats.jaw * 0.1
         dmg = Math.round(dmg * critMult)
+      }
+
+      // Triceratops: Brace — once per fight, halve a hit that would deal >20% max HP
+      let braceBlocked = 0
+      if (def.species === 'triceratops' && !defPassive.braceUsed && dmg > defMax * 0.20) {
+        defPassive.braceUsed = true
+        braceBlocked = Math.floor(dmg / 2)
+        dmg -= braceBlocked
+      }
+
+      // Pterodactyl: Evasion — once per fight, dodge a hit that would drop HP below 20%
+      let evasionDodged = false
+      if (def.species === 'pterodactyl' && !defPassive.evasionUsed && defHp > defMax * 0.20 && defHp - dmg < defMax * 0.20) {
+        defPassive.evasionUsed = true
+        evasionDodged = true
+        dmg = 0
+      }
+
+      // Add main attack event (or evasion event if dodged)
+      if (evasionDodged) {
+        addEvent({ round, type: 'passive', text: `💨 EVASION — ${def.name} vanishes at the last second, narrowly dodging ${atk.name}'s attack!` })
+      } else if (isCrit) {
         addEvent({ round, type: 'crit', attacker, text: `${atk.name} ${pick(CRIT_PHRASES)} ${def.name} for ${dmg} damage!` })
       } else {
         addEvent({ round, type: 'attack', attacker, text: `${atk.name} ${pick(ATTACK_VERBS)} ${def.name} for ${dmg} damage.` })
@@ -251,6 +318,21 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
       events[events.length - 1].hpA = Math.max(0, hpA)
       events[events.length - 1].hpB = Math.max(0, hpB)
 
+      // Passive narrative events
+      if (isPachyHeadbutt) addEvent({ round, type: 'passive', text: `💥 HEADBUTT — ${atk.name}'s first strike crashes through all defenses!` })
+      if (lastStandActive) addEvent({ round, type: 'passive', text: `⚡ LAST STAND — ${atk.name} fights with desperate fury, dealing 40% more damage!` })
+      if (packTacticsActive) addEvent({ round, type: 'passive', text: `⚡ PACK TACTICS — ${atk.name}'s ${atkPassive.consecutiveHits}th consecutive hit lands with double force!` })
+      if (atk.species === 'spinosaurus' && atkPassive.momentumStacks > 1) addEvent({ round, type: 'passive', text: `⚡ MOMENTUM — ${atk.name} is building unstoppable force! (${atkPassive.momentumStacks}× stack)` })
+      if (braceBlocked > 0) addEvent({ round, type: 'passive', text: `🛡️ BRACE — ${def.name} braces at the last moment, blocking ${braceBlocked} damage!` })
+
+      // Ankylosaurus: Thorns — on incoming crit, reflect 15% damage back to attacker
+      if (isCrit && dmg > 0 && def.species === 'ankylosaurus') {
+        const thornDmg = Math.max(1, Math.round(dmg * 0.15))
+        if (attacker === 'a') hpA = Math.max(0, hpA - thornDmg)
+        else hpB = Math.max(0, hpB - thornDmg)
+        addEvent({ round, type: 'passive', text: `🩸 THORNS — ${def.name}'s armored scales reflect ${thornDmg} damage back at ${atk.name}!` })
+      }
+
       // Counter-attack check
       const counterChance = clamp(def.stats.cunning * 0.05, 0.02, 0.30)
       if (Math.random() < counterChance && (attacker === 'a' ? hpB : hpA) > 0) {
@@ -258,9 +340,12 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
         counterDmg = Math.round(counterDmg * defDaring.dmgMult)
         const counterReduction = Math.min(0.45, atk.stats.hide * 0.04)
         counterDmg = Math.max(1, Math.round(counterDmg * (1 - counterReduction)))
+        // Stegosaurus: Tail Club — counter-attacks deal +15 damage
+        const tailClub = def.species === 'stegosaurus'
+        if (tailClub) counterDmg += 15
         if (attacker === 'a') hpA = Math.max(0, hpA - counterDmg)
         else hpB = Math.max(0, hpB - counterDmg)
-        addEvent({ round, type: 'counter', attacker: attacker === 'a' ? 'b' : 'a', text: `${def.name} ${pick(COUNTER_VERBS)} ${atk.name} for ${counterDmg} counter damage. Cunning.` })
+        addEvent({ round, type: 'counter', attacker: attacker === 'a' ? 'b' : 'a', text: `${def.name} ${pick(COUNTER_VERBS)} ${atk.name} for ${counterDmg} counter damage.${tailClub ? ' The tail club adds a sickening crack.' : ' Cunning.'}` })
       }
 
       // Check surrender (PvP only — mobs never surrender)
