@@ -1,6 +1,9 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { SPECIES, DARING_OPTIONS } from '@/lib/game-data'
+import { generateDailyBoss, alreadyFoughtToday, todayUTC } from '@/lib/daily-boss'
 import ArenaClient from '@/components/ArenaClient'
 
 export default async function ArenaPage() {
@@ -17,7 +20,6 @@ export default async function ArenaPage() {
   if (!character) redirect('/create-character')
   if (!character.alive) redirect('/obituary')
 
-  // Other players' characters (alive, not self)
   const { data: others } = await supabase
     .from('characters')
     .select('id, name, species, level, wins, losses, kills, daring, surrender_at')
@@ -26,19 +28,20 @@ export default async function ArenaPage() {
     .order('level', { ascending: false })
     .limit(20)
 
-  // Pending challenges sent to this character
   const { data: incomingChallenges } = await supabase
     .from('challenges')
     .select('*, challenger:challenger_id(name, species, level)')
     .eq('challenged_id', character.id)
     .eq('status', 'pending')
 
-  // Pending challenges this character sent
   const { data: outgoingChallenges } = await supabase
     .from('challenges')
     .select('*, challenged:challenged_id(name, species, level)')
     .eq('challenger_id', character.id)
     .eq('status', 'pending')
+
+  const dailyBoss = generateDailyBoss(todayUTC(), character.level)
+  const foughtToday = alreadyFoughtToday(character.last_daily_at ?? null)
 
   return (
     <ArenaClient
@@ -48,6 +51,8 @@ export default async function ArenaPage() {
       outgoingChallenges={outgoingChallenges || []}
       species={SPECIES}
       daringOptions={DARING_OPTIONS}
+      dailyBoss={dailyBoss}
+      foughtToday={foughtToday}
     />
   )
 }
