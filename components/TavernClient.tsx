@@ -34,8 +34,8 @@ function describeEffects(effects: TavernItemEffect[], maxHp: number, hp: number)
 
 type DiceOutcome = 'win' | 'loss' | 'cheat_win' | 'cheat_caught' | 'draw' | null
 
-export default function TavernClient({ character }: { character: Record<string, unknown> }) {
-  const [tab, setTab] = useState<'shop' | 'heal' | 'quest' | 'dice'>('shop')
+export default function TavernClient({ character, investment }: { character: Record<string, unknown>; investment: Record<string, unknown> | null }) {
+  const [tab, setTab] = useState<'shop' | 'heal' | 'dice' | 'invest' | 'quest'>('shop')
   const [bones, setBones] = useState(character.bones as number)
   const [hp, setHp] = useState(character.hp as number)
   const maxHp = character.max_hp as number
@@ -167,10 +167,46 @@ export default function TavernClient({ character }: { character: Record<string, 
     schedule(4000, () => { setShowOutcome(true); setDicePlayed(true) })
   }
 
+  // Investment state
+  const [activeInvestment, setActiveInvestment] = useState(investment)
+  const [investAmount, setInvestAmount] = useState(50)
+  const [investLoading, setInvestLoading] = useState(false)
+  const [collectLoading, setCollectLoading] = useState(false)
+  const [investMessage, setInvestMessage] = useState('')
+
+  const maturesAt = activeInvestment ? new Date(activeInvestment.matures_at as string) : null
+  const isMatured = maturesAt ? maturesAt <= new Date() : false
+
+  async function deposit() {
+    setInvestLoading(true); setInvestMessage('')
+    const res = await fetch('/api/tavern/invest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: investAmount }),
+    })
+    const json = await res.json()
+    if (!res.ok) { setInvestMessage(json.error); setInvestLoading(false); return }
+    setBones(json.newBones)
+    setActiveInvestment({ amount: investAmount, matures_at: json.maturesAt, collected: false })
+    setInvestLoading(false)
+  }
+
+  async function collect() {
+    setCollectLoading(true); setInvestMessage('')
+    const res = await fetch('/api/tavern/collect', { method: 'POST' })
+    const json = await res.json()
+    if (!res.ok) { setInvestMessage(json.error); setCollectLoading(false); return }
+    setBones(json.newBones)
+    setActiveInvestment(null)
+    setInvestMessage(`Collected 🦴 ${json.returns} — profit of ${json.profit} bones.`)
+    setCollectLoading(false)
+  }
+
   const tabs = [
     { key: 'shop' as const, label: '🛒 Shop' },
     { key: 'heal' as const, label: '🌿 Healer' },
     { key: 'dice' as const, label: '🎲 Bone Dice' },
+    { key: 'invest' as const, label: '🏦 Invest' },
     { key: 'quest' as const, label: `⚡ Quest${quest ? '' : ' (none)'}` },
   ]
 
@@ -474,6 +510,99 @@ export default function TavernClient({ character }: { character: Record<string, 
               {showOutcome && <p className="text-xs text-center" style={{ color: '#5a4a30' }}>Come back tomorrow for another game.</p>}
             </div>
           )}
+        </div>
+      )}
+
+      {tab === 'invest' && (
+        <div className="panel space-y-5">
+          <div>
+            <p className="font-bold mb-0.5" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>Tar Pit Investments</p>
+            <p className="text-xs" style={{ color: '#a08050' }}>
+              Lock your bones for 24 hours. Collect 120% back. Risk: you might die while your money's tied up.
+            </p>
+          </div>
+
+          {investMessage && (
+            <div className="alert-success">{investMessage}</div>
+          )}
+
+          {!activeInvestment ? (
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-xs mb-2" style={{ color: '#a08050' }}>
+                  <span>Deposit amount</span>
+                  <span className="font-bold" style={{ color: '#d4a843' }}>🦴 {investAmount} → 🦴 {Math.floor(investAmount * 1.2)} in 24h</span>
+                </div>
+                <input
+                  type="range" min={10} max={Math.max(10, bones)} value={Math.min(investAmount, Math.max(10, bones))}
+                  onChange={e => setInvestAmount(Number(e.target.value))}
+                  className="w-full accent-yellow-600"
+                />
+                <div className="flex justify-between text-xs mt-1" style={{ color: '#5a4a30' }}>
+                  <span>10</span><span>{Math.max(10, bones)}</span>
+                </div>
+              </div>
+
+              <div className="rounded p-3 space-y-1.5" style={{ background: '#0e0c08', border: '1px solid #3a2810' }}>
+                {[
+                  ['You lock', `🦴 ${investAmount}`],
+                  ['You receive after 24h', `🦴 ${Math.floor(investAmount * 1.2)}`],
+                  ['Profit', `+🦴 ${Math.floor(investAmount * 0.2)}`],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between text-xs" style={{ color: '#a08050' }}>
+                    <span>{label}</span>
+                    <span style={{ color: '#d4a843' }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                className="btn-primary w-full py-2.5"
+                disabled={investLoading || bones < 10}
+                onClick={deposit}>
+                {investLoading ? 'Depositing...' : bones < 10 ? 'Need at least 10 bones' : `Lock 🦴 ${investAmount} for 24 hours`}
+              </button>
+            </div>
+          ) : isMatured ? (
+            <div className="space-y-4">
+              <div className="rounded p-4 text-center" style={{ background: '#0a1f0a', border: '1px solid #2a6428' }}>
+                <p className="font-bold mb-1" style={{ color: '#5abf6a', fontFamily: 'var(--font-cinzel, Georgia)' }}>Investment Matured</p>
+                <p className="text-sm mb-1" style={{ color: '#a08050' }}>
+                  🦴 {activeInvestment.amount as number} → <span style={{ color: '#d4a843', fontWeight: 'bold' }}>🦴 {Math.floor((activeInvestment.amount as number) * 1.2)}</span>
+                </p>
+                <p className="text-xs" style={{ color: '#5abf6a' }}>+🦴 {Math.floor((activeInvestment.amount as number) * 0.2)} profit</p>
+              </div>
+              <button className="btn-primary w-full py-2.5" disabled={collectLoading} onClick={collect}>
+                {collectLoading ? 'Collecting...' : 'Collect Returns'}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded p-4" style={{ background: '#0e0c08', border: '1px solid #3a2810' }}>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm" style={{ color: '#a08050' }}>Locked</span>
+                  <span className="font-bold" style={{ color: '#d4a843' }}>🦴 {activeInvestment.amount as number}</span>
+                </div>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm" style={{ color: '#a08050' }}>Returns</span>
+                  <span className="font-bold" style={{ color: '#5abf6a' }}>🦴 {Math.floor((activeInvestment.amount as number) * 1.2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm" style={{ color: '#a08050' }}>Matures</span>
+                  <span className="text-sm" style={{ color: '#d4a843' }}>
+                    {maturesAt!.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · {maturesAt!.toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-center" style={{ color: '#5a4a30', fontStyle: 'italic' }}>
+                Your bones are locked. Try not to die before collecting.
+              </p>
+            </div>
+          )}
+
+          <p className="text-xs" style={{ color: '#5a4a30', borderTop: '1px solid #2a1e0e', paddingTop: '0.75rem' }}>
+            One active investment at a time. The Tar Pit charges no fees. The Tar Pit also assumes no liability.
+          </p>
         </div>
       )}
 

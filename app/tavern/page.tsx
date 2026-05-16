@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import TavernClient from '@/components/TavernClient'
@@ -15,5 +17,12 @@ export default async function TavernPage() {
 
   if (!character) redirect('/create-character')
 
-  return <TavernClient character={character} />
+  const { data: investment } = await supabase
+    .from('investments')
+    .select('*')
+    .eq('character_id', character.id)
+    .eq('collected', false)
+    .single()
+
+  return <TavernClient character={character} investment={investment ?? null} />
 }
