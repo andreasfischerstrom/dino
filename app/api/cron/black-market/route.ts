@@ -5,8 +5,9 @@ import { generateDailyMarket } from '@/lib/black-market'
 const SUPABASE_URL = 'https://xxyewnkrulnmgtcshcfx.supabase.co'
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-export async function POST(req: Request) {
+async function handle(req: Request) {
   const secret = req.headers.get('x-cron-secret')
+    ?? new URL(req.url).searchParams.get('secret')
   if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -37,7 +38,5 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, date: today, items: items.map(i => i.name) })
 }
 
-// Also allow GET for easy manual testing
-export async function GET(req: Request) {
-  return POST(req)
-}
+export async function POST(req: Request) { return handle(req) }
+export async function GET(req: Request) { return handle(req) }
