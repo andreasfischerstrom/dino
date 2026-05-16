@@ -2,14 +2,16 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { GearTemplate, GEAR_SLOTS, GearSlot } from '@/lib/game-data'
+import { BlackMarketItem } from '@/lib/black-market'
 
 interface Props {
   character: Record<string, unknown>
   gear: GearTemplate[]
   inventory: { gear_id: string; equipped: boolean }[]
+  blackMarketItem: BlackMarketItem
 }
 
-export default function ShopClient({ character, gear, inventory }: Props) {
+export default function ShopClient({ character, gear, inventory, blackMarketItem }: Props) {
   const [tab, setTab] = useState<'shop' | 'inventory'>('shop')
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -59,6 +61,20 @@ export default function ShopClient({ character, gear, inventory }: Props) {
   }
 
   const level = character.level as number
+  const today = new Date().toISOString().slice(0, 10)
+  const alreadyBoughtBM = (character.last_black_market_at as string | null) === today
+  const [bmBought, setBmBought] = useState(alreadyBoughtBM)
+  const [bmLoading, setBmLoading] = useState(false)
+
+  async function buyBlackMarket() {
+    setBmLoading(true); setError('')
+    const res = await fetch('/api/shop/buy-black-market', { method: 'POST' })
+    const json = await res.json()
+    if (!res.ok) { setError(json.error); setBmLoading(false); return }
+    setBones(json.newBones)
+    setBmBought(true)
+    setBmLoading(false)
+  }
 
   return (
     <div className="min-h-screen px-4 py-8 max-w-3xl mx-auto">
@@ -70,6 +86,63 @@ export default function ShopClient({ character, gear, inventory }: Props) {
       <p className="text-sm mb-6" style={{ color: '#a08050', fontStyle: 'italic' }}>
         "Quality not guaranteed. Refunds not offered. Grubclaw has three fingers and zero patience."
       </p>
+
+      {/* ── Black Market ── */}
+      <div className="mb-6 rounded-lg overflow-hidden" style={{ border: '1px solid #4a1a1a', boxShadow: '0 0 30px rgba(180,40,40,0.06)' }}>
+        <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #1e0a0a 0%, #140606 100%)', borderBottom: '1px solid #4a1a1a' }}>
+          <span>🩸</span>
+          <p className="font-bold text-xs tracking-widest uppercase" style={{ color: '#c04040', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.12em' }}>
+            Black Market
+          </p>
+          <span className="ml-auto text-xs" style={{ color: '#5a2020' }}>Refreshes daily · One purchase per day</span>
+        </div>
+        <div className="p-4" style={{ background: '#0e0707' }}>
+          <div className="flex gap-4">
+            <div className="text-4xl shrink-0 w-12 h-12 flex items-center justify-center rounded" style={{ background: '#1a0a0a', border: '1px solid #3a1010' }}>
+              {blackMarketItem.emoji}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm mb-0.5" style={{ color: '#e07070', fontFamily: 'var(--font-cinzel, Georgia)' }}>{blackMarketItem.name}</p>
+              <p className="text-xs mb-1.5" style={{ color: '#7a4040' }}>{blackMarketItem.flavor}</p>
+              <div className="flex flex-wrap gap-1">
+                {Object.entries(blackMarketItem.statBonus).map(([k, v]) => (
+                  <span key={k} className="text-xs px-1.5 py-0.5 rounded font-bold" style={{
+                    background: (v as number) > 0 ? '#0e2410' : '#2a0808',
+                    color: (v as number) > 0 ? '#5abf6a' : '#bf5a5a',
+                    border: `1px solid ${(v as number) > 0 ? '#2a6428' : '#6a2828'}`,
+                  }}>
+                    {(v as number) > 0 ? '+' : ''}{v} {k}
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs mt-1.5" style={{ color: '#6a4040', fontStyle: 'italic' }}>
+                Applies as a buff — consumed on your next fight.
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-sm font-bold mb-2" style={{ color: '#d4a843' }}>🦴 {blackMarketItem.price}</p>
+              {bmBought ? (
+                <span className="text-xs px-2 py-1 rounded" style={{ background: '#1a0a0a', color: '#5a3030', border: '1px solid #3a1818' }}>Purchased</span>
+              ) : (
+                <button
+                  className="text-xs px-3 py-1.5 rounded font-bold transition-colors"
+                  disabled={bmLoading || bones < blackMarketItem.price || level < blackMarketItem.levelReq}
+                  onClick={buyBlackMarket}
+                  style={{
+                    background: bones >= blackMarketItem.price && level >= blackMarketItem.levelReq ? '#2a0808' : '#160505',
+                    color: bones >= blackMarketItem.price && level >= blackMarketItem.levelReq ? '#e07070' : '#4a2020',
+                    border: '1px solid #5a1818',
+                  }}>
+                  {bmLoading ? '...'
+                    : level < blackMarketItem.levelReq ? `Req. lvl ${blackMarketItem.levelReq}`
+                    : bones < blackMarketItem.price ? 'No bones'
+                    : 'Make a deal'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {error && <div className="alert-error mb-4">{error}</div>}
 
