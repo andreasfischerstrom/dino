@@ -157,17 +157,6 @@ export default function CharacterCard({
             </span>
           </div>
 
-          {/* Passive ability */}
-          {passiveName && (
-            <div className="mb-2 px-2 py-1 rounded text-xs" style={{
-              background: 'rgba(212,168,67,0.07)',
-              border: '1px solid rgba(212,168,67,0.2)',
-            }}>
-              <span style={{ color: '#d4a843', fontWeight: 'bold' }}>⚡ {passiveName}</span>
-              {passiveDescription && <span style={{ color: '#8a7040' }}> — {passiveDescription}</span>}
-            </div>
-          )}
-
           {/* HP bar */}
           <div className="flex items-center gap-2 mb-1.5">
             <span className="text-xs shrink-0 w-6 text-center" style={{ color: '#8b1515' }}>❤</span>
@@ -300,6 +289,16 @@ export default function CharacterCard({
               )
             })}
           </div>
+
+          {passiveName && (
+            <div className="mb-3 px-2.5 py-2 rounded text-xs" style={{
+              background: 'rgba(212,168,67,0.06)',
+              border: '1px solid rgba(212,168,67,0.18)',
+            }}>
+              <span style={{ color: '#d4a843', fontWeight: 'bold' }}>⚡ Passive: {passiveName}</span>
+              {passiveDescription && <span style={{ color: '#8a7040' }}> — {passiveDescription}</span>}
+            </div>
+          )}
 
           <div className="pt-3" style={{ borderTop: '1px solid #1e1408' }}>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
