@@ -440,7 +440,12 @@ export default function BattleViewer({
   const userAhead = userIsA ? endHpA > endHpB : endHpB > endHpA
 
   return (
-    <div className="flex flex-col px-4 py-4 max-w-2xl mx-auto w-full" style={{ height: '100dvh' }}>
+    <div className="flex flex-col px-4 py-4 max-w-2xl mx-auto w-full" style={{
+      height: '100dvh',
+      backgroundImage: 'url(/images/arena-bg.png)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    }}>
       {/* Fighter HP bars */}
       <div className="shrink-0 flex items-center gap-3 mb-3 panel"
         style={{ padding: '0.75rem', animation: shake ? 'arena-shake 0.46s ease-out' : 'none' }}>
