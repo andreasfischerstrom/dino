@@ -16,6 +16,13 @@ interface CharacterSnapshot {
   statPoints: number
 }
 
+interface FloatNum {
+  id: number
+  amount: number
+  isCrit: boolean
+  isCounter: boolean
+}
+
 interface Props {
   battleData: Record<string, unknown>
   fighterA: CharacterSnapshot
@@ -68,14 +75,59 @@ function isTerminalEvent(e: BattleEvent) {
 
 function isUrl(s: string) { return s.startsWith('http') || s.startsWith('/') }
 
-function FighterHead({ image, name, align }: { image: string; name: string; align: 'left' | 'right' }) {
+function parseDamage(text: string): number {
+  const m = text.match(/for (\d+) damage/) ?? text.match(/reflect[s]? (\d+) damage/)
+  return m ? parseInt(m[1]) : 0
+}
+
+function triggerAnim(set: (v: boolean) => void) {
+  set(true)
+  setTimeout(() => set(false), 460)
+}
+
+function FighterHead({ image, name, align, attacking, dead, flash, floatNum }: {
+  image: string; name: string; align: 'left' | 'right'
+  attacking: boolean; dead: boolean; flash: boolean
+  floatNum: FloatNum | null
+}) {
+  const animName = dead
+    ? 'dino-death 0.8s ease-out forwards'
+    : attacking
+    ? `${align === 'left' ? 'dino-attack-left' : 'dino-attack-right'} 0.46s ease-out`
+    : 'dino-idle 3s ease-in-out infinite'
+
+  const imgStyle: React.CSSProperties = { animation: animName }
+
   return (
-    <div className={`flex flex-col items-center gap-1 ${align === 'right' ? 'items-end' : 'items-start'}`} style={{ minWidth: 56 }}>
-      {isUrl(image)
-        ? <img src={image} alt={name} className="w-12 h-12 rounded-full object-cover"
-            style={{ border: '2px solid #5a4028', boxShadow: '0 2px 6px rgba(0,0,0,0.8)' }} />
-        : <div className="text-4xl leading-none">{image}</div>
-      }
+    <div className="flex flex-col items-center gap-1" style={{ minWidth: 56 }}>
+      <div style={{ position: 'relative' }}>
+        {floatNum && (
+          <div key={floatNum.id} style={{
+            position: 'absolute', top: '-6px', left: '50%',
+            animation: 'float-damage 1s ease-out forwards',
+            zIndex: 50, pointerEvents: 'none',
+            fontWeight: 'bold', fontFamily: 'var(--font-cinzel, Georgia)',
+            fontSize: floatNum.isCrit ? '17px' : '13px',
+            color: floatNum.isCrit ? '#ff4444' : floatNum.isCounter ? '#aabb88' : '#ffaa44',
+            textShadow: '0 1px 4px rgba(0,0,0,1)', whiteSpace: 'nowrap',
+          }}>
+            {floatNum.isCrit ? '💥 ' : ''}-{floatNum.amount}
+          </div>
+        )}
+        {isUrl(image)
+          ? <img src={image} alt={name} className="w-12 h-12 rounded-full object-cover"
+              style={{ ...imgStyle, border: '2px solid #5a4028', boxShadow: '0 2px 6px rgba(0,0,0,0.8)' }} />
+          : <div className="text-4xl leading-none" style={imgStyle}>{image}</div>
+        }
+        {flash && (
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            background: 'rgba(255, 50, 50, 0.55)',
+            animation: 'hit-flash 0.35s ease-out forwards',
+            pointerEvents: 'none',
+          }} />
+        )}
+      </div>
       <span className="text-xs font-bold truncate max-w-[80px]"
         style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>
         {name}
@@ -140,6 +192,56 @@ export default function BattleViewer({
   const prevHpARef = useRef<number | null>(null)
   const prevHpBRef = useRef<number | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  // Portrait animations
+  const [attackingA, setAttackingA] = useState(false)
+  const [attackingB, setAttackingB] = useState(false)
+  const [deadA, setDeadA] = useState(false)
+  const [deadB, setDeadB] = useState(false)
+  const [floatA, setFloatA] = useState<FloatNum | null>(null)
+  const [floatB, setFloatB] = useState<FloatNum | null>(null)
+  const [shake, setShake] = useState(false)
+  const floatIdRef = useRef(0)
+
+  function showFloat(set: (v: FloatNum | null) => void, amount: number, isCrit: boolean, isCounter: boolean) {
+    set({ id: ++floatIdRef.current, amount, isCrit, isCounter })
+    setTimeout(() => set(null), 1050)
+  }
+
+  useEffect(() => {
+    if (visibleCount === 0) return
+    const event = localEvents[visibleCount - 1]
+    if (!event) return
+
+    if (event.type === 'attack' || event.type === 'crit') {
+      const dmg = parseDamage(event.text)
+      if (event.attacker === 'a') {
+        triggerAnim(setAttackingA)
+        if (dmg) showFloat(setFloatB, dmg, event.type === 'crit', false)
+      } else {
+        triggerAnim(setAttackingB)
+        if (dmg) showFloat(setFloatA, dmg, event.type === 'crit', false)
+      }
+      if (event.type === 'crit') {
+        setShake(true)
+        setTimeout(() => setShake(false), 500)
+      }
+    }
+
+    if (event.type === 'counter') {
+      const dmg = parseDamage(event.text)
+      if (event.attacker === 'b') {
+        triggerAnim(setAttackingB)
+        if (dmg) showFloat(setFloatA, dmg, false, true)
+      } else {
+        triggerAnim(setAttackingA)
+        if (dmg) showFloat(setFloatB, dmg, false, true)
+      }
+    }
+
+    if (event.hpA <= 0) setDeadA(true)
+    if (event.hpB <= 0) setDeadB(true)
+  }, [visibleCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const advance = useCallback(() => {
     setVisibleCount(v => Math.min(v + 1, localEvents.length))
@@ -340,8 +442,10 @@ export default function BattleViewer({
   return (
     <div className="flex flex-col px-4 py-4 max-w-2xl mx-auto w-full" style={{ height: '100dvh' }}>
       {/* Fighter HP bars */}
-      <div className="shrink-0 flex items-center gap-3 mb-3 panel" style={{ padding: '0.75rem' }}>
-        <FighterHead image={fighterA.image} name={fighterA.name} align="left" />
+      <div className="shrink-0 flex items-center gap-3 mb-3 panel"
+        style={{ padding: '0.75rem', animation: shake ? 'arena-shake 0.46s ease-out' : 'none' }}>
+        <FighterHead image={fighterA.image} name={fighterA.name} align="left"
+          attacking={attackingA} dead={deadA} flash={flashA} floatNum={floatA} />
         <div className="flex-1">
           <div className="flex gap-3 items-center">
             <HpBar hpPct={userHpPct} hp={userHp} maxHp={userMaxHp} flash={userFlash} />
@@ -351,7 +455,8 @@ export default function BattleViewer({
             <HpBar hpPct={oppHpPct} hp={oppHp} maxHp={oppMaxHp} flash={oppFlash} />
           </div>
         </div>
-        <FighterHead image={fighterBImage} name={fighterBName} align="right" />
+        <FighterHead image={fighterBImage} name={fighterBName} align="right"
+          attacking={attackingB} dead={deadB} flash={flashB} floatNum={floatB} />
       </div>
 
       {/* Event log */}
