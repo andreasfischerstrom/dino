@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { BattleEvent } from '@/lib/battle-engine'
 import { DaringOption } from '@/lib/game-data'
 import BattleOutcome from './BattleOutcome'
@@ -41,17 +41,18 @@ const EVENT_COLORS: Record<string, string> = {
   intro:     '#7a6a4a',
   attack:    '#e8d5b0',
   crit:      '#ff9944',
-  miss:      '#4a3a22',
+  miss:      '#6a5a3a',
   counter:   '#aabb88',
   roar:      '#d4a843',
   surrender: '#6ab0bf',
   death:     '#bf4040',
   outcome:   '#d4a843',
-  flavor:    '#3a5a3a',
+  flavor:    '#6a5a3a',
   passive:   '#d4a843',
 }
 
-const SPEEDS: Record<'normal' | 'fast', number> = { normal: 2800, fast: 1000 }
+const SPEED = 2800        // ms per event
+const SUSPENSE_HOLD = 2000
 const DISPLAY_ROUND_SIZE = 3
 
 function getDisplayRoundEndIdx(events: BattleEvent[], displayRound: number): number {
@@ -86,12 +87,10 @@ function hpBarColor(pct: number) {
   return 'linear-gradient(to bottom, #ff4444 0%, #cc2020 60%, #991010 100%)'
 }
 
-function FighterHead({ image, name, align, large = false, attacking, dead, flash, floatNum }: {
-  image: string; name: string; align: 'left' | 'right'
-  large?: boolean; attacking: boolean; dead: boolean; flash: boolean
-  floatNum: FloatNum | null
+function FighterHead({ image, name, align, size = 72, attacking, dead, flash, floatNum }: {
+  image: string; name: string; align: 'left' | 'right'; size?: number
+  attacking: boolean; dead: boolean; flash: boolean; floatNum: FloatNum | null
 }) {
-  const size = large ? 88 : 48
   const animName = dead
     ? 'dino-death 0.8s ease-out forwards'
     : attacking
@@ -101,15 +100,15 @@ function FighterHead({ image, name, align, large = false, attacking, dead, flash
   const imgStyle: React.CSSProperties = { animation: animName, width: size, height: size }
 
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div className="flex flex-col items-center gap-1.5 shrink-0">
       <div style={{ position: 'relative' }}>
         {floatNum && (
           <div key={floatNum.id} style={{
-            position: 'absolute', top: large ? '-14px' : '-6px', left: '50%',
+            position: 'absolute', top: '-14px', left: '50%',
             animation: 'float-damage 1s ease-out forwards',
             zIndex: 50, pointerEvents: 'none',
             fontWeight: 'bold', fontFamily: 'var(--font-cinzel, Georgia)',
-            fontSize: floatNum.isCrit ? (large ? '20px' : '17px') : (large ? '15px' : '13px'),
+            fontSize: floatNum.isCrit ? '18px' : '14px',
             color: floatNum.isCrit ? '#ff4444' : floatNum.isCounter ? '#aabb88' : '#ffaa44',
             textShadow: '0 1px 4px rgba(0,0,0,1)', whiteSpace: 'nowrap',
           }}>
@@ -117,17 +116,17 @@ function FighterHead({ image, name, align, large = false, attacking, dead, flash
           </div>
         )}
         {isUrl(image)
-          ? <img src={image} alt={name}
-              style={{ ...imgStyle, borderRadius: large ? '8px' : '50%', objectFit: 'cover',
-                border: `${large ? 3 : 2}px solid #5a4028`,
-                boxShadow: large ? '0 4px 16px rgba(0,0,0,0.9)' : '0 2px 6px rgba(0,0,0,0.8)' }} />
-          : <div style={{ ...imgStyle, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: large ? '56px' : '32px', lineHeight: 1 }}>{image}</div>
+          ? <img src={image} alt={name} style={{
+              ...imgStyle, borderRadius: '8px', objectFit: 'cover',
+              border: '3px solid #5a4028', boxShadow: '0 4px 16px rgba(0,0,0,0.9)',
+            }} />
+          : <div style={{ ...imgStyle, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: `${size * 0.65}px`, lineHeight: 1 }}>{image}</div>
         }
         {flash && (
           <div style={{
-            position: 'absolute', inset: 0, borderRadius: large ? '8px' : '50%',
-            background: 'rgba(255, 50, 50, 0.55)',
+            position: 'absolute', inset: 0, borderRadius: '8px',
+            background: 'rgba(255,50,50,0.55)',
             animation: 'hit-flash 0.35s ease-out forwards',
             pointerEvents: 'none',
           }} />
@@ -135,9 +134,9 @@ function FighterHead({ image, name, align, large = false, attacking, dead, flash
       </div>
       <span style={{
         color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)',
-        fontSize: large ? '11px' : '10px', fontWeight: 'bold',
+        fontSize: '11px', fontWeight: 'bold',
         textShadow: '0 1px 4px rgba(0,0,0,1)',
-        maxWidth: large ? '100px' : '80px', overflow: 'hidden',
+        maxWidth: `${size + 20}px`, overflow: 'hidden',
         textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center',
       }}>
         {name}
@@ -154,8 +153,6 @@ export default function BattleViewer({
   const [localResult, setLocalResult] = useState<Record<string, unknown>>(() => battleData.result as Record<string, unknown>)
   const [visibleCount, setVisibleCount] = useState(0)
   const [showOutcome, setShowOutcome] = useState(false)
-
-  const [speed, setSpeed] = useState<'normal' | 'fast' | 'paused'>('normal')
   const [suspense, setSuspense] = useState(false)
   const [done, setDone] = useState(false)
 
@@ -221,23 +218,6 @@ export default function BattleViewer({
     if (event.hpB <= 0) setDeadB(true)
   }, [visibleCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const advance = useCallback(() => {
-    setVisibleCount(v => Math.min(v + 1, localEvents.length))
-  }, [localEvents.length])
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.code !== 'Space') return
-      e.preventDefault()
-      if (suspense) { setSuspense(false); return }
-      if (phase === 'interRound') return
-      if (speed === 'paused') { setSpeed('normal'); return }
-      advance()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [advance, speed, suspense, phase])
-
   const currentEvent = localEvents[visibleCount - 1]
   const hpA = currentEvent?.hpA ?? localEvents[0]?.hpA ?? fighterA.hp
   const hpB = currentEvent?.hpB ?? localEvents[0]?.hpB ?? 100
@@ -258,8 +238,9 @@ export default function BattleViewer({
     prevHpBRef.current = hpB
   }, [hpB])
 
+  // Auto-advance — no manual controls
   useEffect(() => {
-    if (phase !== 'playing' || speed === 'paused' || suspense || done) return
+    if (phase !== 'playing' || suspense || done) return
 
     const displayRoundEnd = getDisplayRoundEndIdx(localEvents, currentDisplayRound)
 
@@ -280,20 +261,21 @@ export default function BattleViewer({
     if (!nextEvent) return
 
     const isSuspenseEvent = isTerminalEvent(nextEvent) && visibleCount > 0
-    const delay = isSuspenseEvent ? SPEEDS[speed] * 1.1 : SPEEDS[speed]
-
     const timer = setTimeout(() => {
       if (isSuspenseEvent) setSuspense(true)
       else setVisibleCount(v => Math.min(v + 1, localEvents.length))
-    }, delay)
+    }, SPEED)
     return () => clearTimeout(timer)
-  }, [phase, speed, visibleCount, suspense, done, localEvents, currentDisplayRound])
+  }, [phase, visibleCount, suspense, done, localEvents, currentDisplayRound])
 
   useEffect(() => {
     if (!suspense) return
-    const timer = setTimeout(() => { setSuspense(false); advance() }, 1600)
+    const timer = setTimeout(() => {
+      setSuspense(false)
+      setVisibleCount(v => Math.min(v + 1, localEvents.length))
+    }, SUSPENSE_HOLD)
     return () => clearTimeout(timer)
-  }, [suspense, advance])
+  }, [suspense, localEvents.length])
 
   async function continueToNextRound() {
     if (recomputing) return
@@ -334,14 +316,13 @@ export default function BattleViewer({
   const hpPctA = Math.round((hpA / maxHpA) * 100)
   const hpPctB = Math.round((hpB / maxHpB) * 100)
   const userIsA = userSide === 'a'
-  const userHpPct = userIsA ? hpPctA : hpPctB
-  const userHp    = userIsA ? hpA    : hpB
-  const userMaxHp = userIsA ? maxHpA : maxHpB
-  const oppHpPct  = userIsA ? hpPctB : hpPctA
-  const oppHp     = userIsA ? hpB    : hpA
-  const oppMaxHp  = userIsA ? maxHpB : maxHpA
-  const userFlash = userIsA ? flashA : flashB
-  const oppFlash  = userIsA ? flashB : flashA
+  const endHpA = localEvents[visibleCount - 1]?.hpA ?? fighterA.hp
+  const endHpB = localEvents[visibleCount - 1]?.hpB ?? maxHpB
+  const dmgDealtUser    = userIsA ? (roundStartHp.b - endHpB) : (roundStartHp.a - endHpA)
+  const dmgReceivedUser = userIsA ? (roundStartHp.a - endHpA) : (roundStartHp.b - endHpB)
+  const userAhead = userIsA ? endHpA > endHpB : endHpB > endHpA
+
+  const cinzel = 'var(--font-cinzel, Georgia)'
 
   if (showOutcome) {
     const won = localResult?.winner === userSide
@@ -364,15 +345,6 @@ export default function BattleViewer({
     )
   }
 
-  // Inter-round summary
-  const endHpA = localEvents[visibleCount - 1]?.hpA ?? fighterA.hp
-  const endHpB = localEvents[visibleCount - 1]?.hpB ?? maxHpB
-  const dmgDealtUser    = userIsA ? (roundStartHp.b - endHpB) : (roundStartHp.a - endHpA)
-  const dmgReceivedUser = userIsA ? (roundStartHp.a - endHpA) : (roundStartHp.b - endHpB)
-  const userAhead = userIsA ? endHpA > endHpB : endHpB > endHpA
-
-  const cinzel = 'var(--font-cinzel, Georgia)'
-
   return (
     <div className="flex flex-col max-w-2xl mx-auto w-full" style={{
       height: '100dvh',
@@ -389,13 +361,12 @@ export default function BattleViewer({
         <div className="flex-1 flex flex-col gap-1 pr-2">
           <div className="flex justify-between items-baseline">
             <span style={{ color: '#d4a843', fontFamily: cinzel, fontSize: '11px', fontWeight: 'bold',
-              textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+              textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '130px' }}>
               {fighterA.name}
             </span>
             <span style={{ color: '#6a5030', fontSize: '10px', fontFamily: 'monospace' }}>{hpA}/{maxHpA}</span>
           </div>
-          <div className="hud-bar" style={{ height: '18px',
-            boxShadow: flashA ? '0 0 12px rgba(255,80,80,0.6)' : undefined }}>
+          <div className="hud-bar" style={{ height: '18px', boxShadow: flashA ? '0 0 12px rgba(255,80,80,0.6)' : undefined }}>
             <div style={{
               height: '100%', width: `${hpPctA}%`,
               background: flashA ? 'linear-gradient(to bottom,#ff6060,#ff2020)' : hpBarColor(hpPctA),
@@ -413,17 +384,16 @@ export default function BattleViewer({
           </span>
         </div>
 
-        {/* Fighter B — mirrored so bar drains right-to-left */}
+        {/* Fighter B — mirrored bar fills right-to-left */}
         <div className="flex-1 flex flex-col gap-1 pl-2">
           <div className="flex justify-between items-baseline">
             <span style={{ color: '#6a5030', fontSize: '10px', fontFamily: 'monospace' }}>{hpB}/{maxHpB}</span>
             <span style={{ color: '#d4a843', fontFamily: cinzel, fontSize: '11px', fontWeight: 'bold',
-              textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '120px', textAlign: 'right' }}>
+              textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '130px', textAlign: 'right' }}>
               {fighterBName}
             </span>
           </div>
-          <div className="hud-bar" style={{ height: '18px', transform: 'scaleX(-1)',
-            boxShadow: flashB ? '0 0 12px rgba(255,80,80,0.6)' : undefined }}>
+          <div className="hud-bar" style={{ height: '18px', transform: 'scaleX(-1)', boxShadow: flashB ? '0 0 12px rgba(255,80,80,0.6)' : undefined }}>
             <div style={{
               height: '100%', width: `${hpPctB}%`,
               background: flashB ? 'linear-gradient(to bottom,#ff6060,#ff2020)' : hpBarColor(hpPctB),
@@ -434,48 +404,32 @@ export default function BattleViewer({
         </div>
       </div>
 
-      {/* ── ARENA: portraits + event text overlay ── */}
+      {/* ── ARENA: portraits + text all on one horizontal eyeline ── */}
       <div
-        className="flex-1 flex flex-col"
+        className="flex-1 flex items-center justify-between gap-3 px-5"
         style={{ minHeight: 0, animation: shake ? 'arena-shake 0.46s ease-out' : 'none' }}>
 
-        {/* Portraits — vertically centered in open arena space */}
-        <div className="flex-1 flex items-center justify-between px-8">
-          <FighterHead image={fighterA.image} name={fighterA.name} align="left" large
-            attacking={attackingA} dead={deadA} flash={flashA} floatNum={floatA} />
+        <FighterHead image={fighterA.image} name={fighterA.name} align="left" size={72}
+          attacking={attackingA} dead={deadA} flash={flashA} floatNum={floatA} />
 
-          <span style={{
-            fontFamily: cinzel, fontSize: '26px', fontWeight: 900,
-            color: 'rgba(160,120,60,0.18)', textShadow: '0 2px 8px rgba(0,0,0,0.8)',
-            userSelect: 'none', pointerEvents: 'none',
-          }}>VS</span>
-
-          <FighterHead image={fighterBImage} name={fighterBName} align="right" large
-            attacking={attackingB} dead={deadB} flash={flashB} floatNum={floatB} />
-        </div>
-
-        {/* Pokémon-style event message — single line, fades in on each new event */}
-        <div className="px-5 pb-4">
+        {/* Center: event text, vertically centered with portraits */}
+        <div className="flex-1 flex items-center justify-center">
           {suspense ? (
-            <div style={{
-              background: 'rgba(6,4,2,0.82)', backdropFilter: 'blur(4px)',
-              border: '1px solid rgba(90,64,40,0.45)', borderRadius: '6px',
-              padding: '0.75rem 1.25rem', textAlign: 'center',
-            }}>
-              <span className="animate-pulse" style={{ color: '#4a3820', letterSpacing: '0.4em', fontSize: '1rem' }}>. . .</span>
-            </div>
+            <p className="animate-pulse text-center" style={{ color: '#6a5030', letterSpacing: '0.5em', fontSize: '1.1rem' }}>
+              . . .
+            </p>
           ) : currentEvent ? (
-            <div key={visibleCount} className="fade-in" style={{
-              background: 'rgba(6,4,2,0.82)', backdropFilter: 'blur(4px)',
-              border: `1px solid ${currentEvent.type === 'crit' ? 'rgba(255,120,40,0.5)' : currentEvent.type === 'death' || currentEvent.type === 'outcome' ? 'rgba(180,60,60,0.5)' : 'rgba(90,64,40,0.45)'}`,
-              borderRadius: '6px', padding: '0.75rem 1.25rem', textAlign: 'center',
-              boxShadow: currentEvent.type === 'crit' ? '0 0 16px rgba(255,120,40,0.2)' : 'none',
+            <div key={visibleCount} className="fade-in w-full" style={{
+              background: 'rgba(6,4,2,0.78)', backdropFilter: 'blur(6px)',
+              border: `1px solid ${currentEvent.type === 'crit' ? 'rgba(255,120,40,0.6)' : currentEvent.type === 'death' || currentEvent.type === 'outcome' ? 'rgba(180,60,60,0.5)' : 'rgba(90,64,40,0.5)'}`,
+              borderRadius: '8px', padding: '0.875rem 1rem', textAlign: 'center',
+              boxShadow: currentEvent.type === 'crit' ? '0 0 20px rgba(255,120,40,0.25)' : '0 2px 12px rgba(0,0,0,0.6)',
             }}>
               <p style={{
                 color: EVENT_COLORS[currentEvent.type] || '#e8d5b0',
                 fontStyle: currentEvent.type === 'flavor' || currentEvent.type === 'intro' ? 'italic' : 'normal',
                 fontWeight: currentEvent.type === 'crit' || currentEvent.type === 'outcome' || currentEvent.type === 'passive' || currentEvent.type === 'death' ? 'bold' : 'normal',
-                fontSize: '0.9rem', lineHeight: 1.5,
+                fontSize: '0.9rem', lineHeight: 1.55,
               }}>
                 {currentEvent.type === 'crit' && '💥 '}
                 {currentEvent.type === 'death' && '☠️ '}
@@ -487,77 +441,61 @@ export default function BattleViewer({
             </div>
           ) : null}
         </div>
+
+        <FighterHead image={fighterBImage} name={fighterBName} align="right" size={72}
+          attacking={attackingB} dead={deadB} flash={flashB} floatNum={floatB} />
       </div>
 
-      {/* ── BOTTOM: Controls only ── */}
-      <div className="shrink-0 px-4 pb-4 pt-3"
-        style={{ background: 'rgba(6,4,2,0.88)', backdropFilter: 'blur(6px)', borderTop: '1px solid rgba(90,64,40,0.35)' }}>
-        {phase === 'interRound' ? (
-          <div className="space-y-3 fade-in">
-            <p className="text-xs font-bold text-center" style={{ color: '#d4a843', fontFamily: cinzel, letterSpacing: '0.06em' }}>
-              — Round {currentDisplayRound} Complete —
-            </p>
+      {/* ── BOTTOM: only shown when action needed ── */}
+      {(phase === 'interRound' || done) && (
+        <div className="shrink-0 px-4 pb-4 pt-3 fade-in"
+          style={{ background: 'rgba(6,4,2,0.9)', backdropFilter: 'blur(6px)', borderTop: '1px solid rgba(90,64,40,0.35)' }}>
+          {phase === 'interRound' ? (
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-center" style={{ color: '#d4a843', fontFamily: cinzel, letterSpacing: '0.06em' }}>
+                — Round {currentDisplayRound} Complete —
+              </p>
 
-            <div className="flex gap-2 text-xs">
-              <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: dmgDealtUser > dmgReceivedUser ? '#0e1e08' : '#1a0e08', border: '1px solid #2a1e10' }}>
-                <p style={{ color: '#5abf6a' }}>+{Math.max(0, dmgDealtUser)} dealt</p>
+              <div className="flex gap-2 text-xs">
+                <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: dmgDealtUser > dmgReceivedUser ? '#0e1e08' : '#1a0e08', border: '1px solid #2a1e10' }}>
+                  <p style={{ color: '#5abf6a' }}>+{Math.max(0, dmgDealtUser)} dealt</p>
+                </div>
+                <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#1a0808', border: '1px solid #2a1e10' }}>
+                  <p style={{ color: '#bf5a5a' }}>−{Math.max(0, dmgReceivedUser)} received</p>
+                </div>
+                <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#0a0806', border: '1px solid #2a1e10' }}>
+                  <p style={{ color: userAhead ? '#5abf6a' : '#bf5a5a' }}>{userAhead ? 'Ahead' : 'Behind'}</p>
+                </div>
               </div>
-              <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#1a0808', border: '1px solid #2a1e10' }}>
-                <p style={{ color: '#bf5a5a' }}>−{Math.max(0, dmgReceivedUser)} received</p>
-              </div>
-              <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#0a0806', border: '1px solid #2a1e10' }}>
-                <p style={{ color: userAhead ? '#5abf6a' : '#bf5a5a' }}>{userAhead ? 'Ahead' : 'Behind'}</p>
-              </div>
-            </div>
 
-            {daringOptions && mobId && (
-              <div>
-                <label className="block text-xs font-bold mb-1" style={{ color: '#a08050', fontFamily: cinzel, letterSpacing: '0.06em' }}>
-                  ADJUST DARING
-                </label>
-                <select value={activeDaring} onChange={e => setActiveDaring(e.target.value)}
-                  className="game-input text-sm" disabled={recomputing}>
-                  {daringOptions.map(d => (
-                    <option key={d.key} value={d.key}>{d.label} — {d.description}</option>
-                  ))}
-                </select>
-                {activeDaring !== committedDaring && (
-                  <p className="text-xs mt-1 animate-pulse" style={{ color: '#d4a843' }}>Change takes effect next round.</p>
-                )}
-              </div>
-            )}
+              {daringOptions && mobId && (
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: '#a08050', fontFamily: cinzel, letterSpacing: '0.06em' }}>
+                    ADJUST DARING
+                  </label>
+                  <select value={activeDaring} onChange={e => setActiveDaring(e.target.value)}
+                    className="game-input text-sm" disabled={recomputing}>
+                    {daringOptions.map(d => (
+                      <option key={d.key} value={d.key}>{d.label} — {d.description}</option>
+                    ))}
+                  </select>
+                  {activeDaring !== committedDaring && (
+                    <p className="text-xs mt-1 animate-pulse" style={{ color: '#d4a843' }}>Change takes effect next round.</p>
+                  )}
+                </div>
+              )}
 
-            <button className="btn-primary w-full" onClick={continueToNextRound} disabled={recomputing}>
-              {recomputing ? 'Recalculating...' : 'Continue →'}
-            </button>
-          </div>
-        ) : done ? (
-          <button className="btn-primary w-full fade-in" onClick={() => setShowOutcome(true)}>
-            See Results →
-          </button>
-        ) : (
-          <div className="flex items-center gap-2">
-            {(['paused', 'normal', 'fast'] as const).map(s => (
-              <button key={s} onClick={() => setSpeed(s)}
-                className="flex-1 text-xs py-2 rounded font-bold transition-all"
-                style={{
-                  background: speed === s ? 'linear-gradient(to bottom, #e0ba40, #a87018)' : 'rgba(20,14,6,0.9)',
-                  color: speed === s ? '#160c00' : '#6a5030',
-                  border: `1px solid ${speed === s ? '#c8a040' : '#3a2810'}`,
-                  fontFamily: cinzel, letterSpacing: '0.04em',
-                }}>
-                {s === 'paused' ? '⏸' : s === 'normal' ? '▶ Play' : '⏩ Fast'}
+              <button className="btn-primary w-full" onClick={continueToNextRound} disabled={recomputing}>
+                {recomputing ? 'Recalculating...' : 'Continue →'}
               </button>
-            ))}
-            <button
-              className="px-3 py-2 rounded text-xs"
-              style={{ background: 'rgba(20,14,6,0.9)', color: '#6a5030', border: '1px solid #3a2810' }}
-              onClick={advance}>
-              Skip
+            </div>
+          ) : (
+            <button className="btn-primary w-full" onClick={() => setShowOutcome(true)}>
+              See Results →
             </button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
