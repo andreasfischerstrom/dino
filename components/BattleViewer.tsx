@@ -171,7 +171,6 @@ export default function BattleViewer({
   const [flashB, setFlashB] = useState(false)
   const prevHpARef = useRef<number | null>(null)
   const prevHpBRef = useRef<number | null>(null)
-  const logBottomRef = useRef<HTMLDivElement>(null)
 
   const [attackingA, setAttackingA] = useState(false)
   const [attackingB, setAttackingB] = useState(false)
@@ -225,10 +224,6 @@ export default function BattleViewer({
   const advance = useCallback(() => {
     setVisibleCount(v => Math.min(v + 1, localEvents.length))
   }, [localEvents.length])
-
-  useEffect(() => {
-    logBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [visibleCount, suspense, phase])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -369,9 +364,6 @@ export default function BattleViewer({
     )
   }
 
-  // Last 6 events for compact log (no banners)
-  const recentEvents = localEvents.slice(Math.max(0, visibleCount - 6), visibleCount)
-
   // Inter-round summary
   const endHpA = localEvents[visibleCount - 1]?.hpA ?? fighterA.hp
   const endHpB = localEvents[visibleCount - 1]?.hpB ?? maxHpB
@@ -384,16 +376,16 @@ export default function BattleViewer({
   return (
     <div className="flex flex-col max-w-2xl mx-auto w-full" style={{
       height: '100dvh',
-      backgroundImage: 'linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.65)), url(/images/arena-bg.png)',
+      backgroundImage: 'linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0.55)), url(/images/arena-bg.png)',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
     }}>
 
       {/* ── TOP: Fighting-game HP strip ── */}
-      <div className="shrink-0 flex items-stretch gap-0 px-3 pt-3 pb-2"
+      <div className="shrink-0 flex items-stretch px-3 pt-3 pb-2"
         style={{ background: 'rgba(6,4,2,0.88)', backdropFilter: 'blur(6px)', borderBottom: '1px solid rgba(90,64,40,0.4)' }}>
 
-        {/* Fighter A (user side if a) */}
+        {/* Fighter A */}
         <div className="flex-1 flex flex-col gap-1 pr-2">
           <div className="flex justify-between items-baseline">
             <span style={{ color: '#d4a843', fontFamily: cinzel, fontSize: '11px', fontWeight: 'bold',
@@ -421,7 +413,7 @@ export default function BattleViewer({
           </span>
         </div>
 
-        {/* Fighter B — bar fills right-to-left (mirrored container) */}
+        {/* Fighter B — mirrored so bar drains right-to-left */}
         <div className="flex-1 flex flex-col gap-1 pl-2">
           <div className="flex justify-between items-baseline">
             <span style={{ color: '#6a5030', fontSize: '10px', fontFamily: 'monospace' }}>{hpB}/{maxHpB}</span>
@@ -430,7 +422,6 @@ export default function BattleViewer({
               {fighterBName}
             </span>
           </div>
-          {/* scaleX(-1) makes the bar fill from the right side visually */}
           <div className="hud-bar" style={{ height: '18px', transform: 'scaleX(-1)',
             boxShadow: flashB ? '0 0 12px rgba(255,80,80,0.6)' : undefined }}>
             <div style={{
@@ -443,130 +434,129 @@ export default function BattleViewer({
         </div>
       </div>
 
-      {/* ── MIDDLE: Arena — large portraits ── */}
+      {/* ── ARENA: portraits + event text overlay ── */}
       <div
-        className="flex-1 flex items-end justify-between px-6 pb-5"
-        style={{
-          minHeight: 0,
-          animation: shake ? 'arena-shake 0.46s ease-out' : 'none',
-        }}>
-        <FighterHead image={fighterA.image} name={fighterA.name} align="left" large
-          attacking={attackingA} dead={deadA} flash={flashA} floatNum={floatA} />
+        className="flex-1 flex flex-col"
+        style={{ minHeight: 0, animation: shake ? 'arena-shake 0.46s ease-out' : 'none' }}>
 
-        {/* VS badge (faint, center) */}
-        <div className="self-center pointer-events-none select-none">
+        {/* Portraits — vertically centered in open arena space */}
+        <div className="flex-1 flex items-center justify-between px-8">
+          <FighterHead image={fighterA.image} name={fighterA.name} align="left" large
+            attacking={attackingA} dead={deadA} flash={flashA} floatNum={floatA} />
+
           <span style={{
-            fontFamily: cinzel, fontSize: '28px', fontWeight: 900, letterSpacing: '0.12em',
-            color: 'rgba(160,120,60,0.22)',
-            textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+            fontFamily: cinzel, fontSize: '26px', fontWeight: 900,
+            color: 'rgba(160,120,60,0.18)', textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+            userSelect: 'none', pointerEvents: 'none',
           }}>VS</span>
+
+          <FighterHead image={fighterBImage} name={fighterBName} align="right" large
+            attacking={attackingB} dead={deadB} flash={flashB} floatNum={floatB} />
         </div>
 
-        <FighterHead image={fighterBImage} name={fighterBName} align="right" large
-          attacking={attackingB} dead={deadB} flash={flashB} floatNum={floatB} />
+        {/* Pokémon-style event message — single line, fades in on each new event */}
+        <div className="px-5 pb-4">
+          {suspense ? (
+            <div style={{
+              background: 'rgba(6,4,2,0.82)', backdropFilter: 'blur(4px)',
+              border: '1px solid rgba(90,64,40,0.45)', borderRadius: '6px',
+              padding: '0.75rem 1.25rem', textAlign: 'center',
+            }}>
+              <span className="animate-pulse" style={{ color: '#4a3820', letterSpacing: '0.4em', fontSize: '1rem' }}>. . .</span>
+            </div>
+          ) : currentEvent ? (
+            <div key={visibleCount} className="fade-in" style={{
+              background: 'rgba(6,4,2,0.82)', backdropFilter: 'blur(4px)',
+              border: `1px solid ${currentEvent.type === 'crit' ? 'rgba(255,120,40,0.5)' : currentEvent.type === 'death' || currentEvent.type === 'outcome' ? 'rgba(180,60,60,0.5)' : 'rgba(90,64,40,0.45)'}`,
+              borderRadius: '6px', padding: '0.75rem 1.25rem', textAlign: 'center',
+              boxShadow: currentEvent.type === 'crit' ? '0 0 16px rgba(255,120,40,0.2)' : 'none',
+            }}>
+              <p style={{
+                color: EVENT_COLORS[currentEvent.type] || '#e8d5b0',
+                fontStyle: currentEvent.type === 'flavor' || currentEvent.type === 'intro' ? 'italic' : 'normal',
+                fontWeight: currentEvent.type === 'crit' || currentEvent.type === 'outcome' || currentEvent.type === 'passive' || currentEvent.type === 'death' ? 'bold' : 'normal',
+                fontSize: '0.9rem', lineHeight: 1.5,
+              }}>
+                {currentEvent.type === 'crit' && '💥 '}
+                {currentEvent.type === 'death' && '☠️ '}
+                {currentEvent.type === 'surrender' && '🏳️ '}
+                {currentEvent.type === 'outcome' && '🏆 '}
+                {currentEvent.type === 'counter' && '↩️ '}
+                {currentEvent.text}
+              </p>
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      {/* ── BOTTOM: Compact event log + controls ── */}
-      <div style={{ background: 'rgba(6,4,2,0.9)', backdropFilter: 'blur(6px)', borderTop: '1px solid rgba(90,64,40,0.35)' }}>
+      {/* ── BOTTOM: Controls only ── */}
+      <div className="shrink-0 px-4 pb-4 pt-3"
+        style={{ background: 'rgba(6,4,2,0.88)', backdropFilter: 'blur(6px)', borderTop: '1px solid rgba(90,64,40,0.35)' }}>
+        {phase === 'interRound' ? (
+          <div className="space-y-3 fade-in">
+            <p className="text-xs font-bold text-center" style={{ color: '#d4a843', fontFamily: cinzel, letterSpacing: '0.06em' }}>
+              — Round {currentDisplayRound} Complete —
+            </p>
 
-        {/* Event log — last 6 lines */}
-        <div className="px-4 pt-3 pb-2 space-y-1" style={{ minHeight: '80px' }}>
-          {recentEvents.map((event, i) => {
-            const age = recentEvents.length - 1 - i
-            const opacity = age === 0 ? 1 : age <= 2 ? 0.6 : 0.3
-            return (
-              <p key={visibleCount - recentEvents.length + i}
-                className="text-xs leading-snug fade-in"
-                style={{
-                  color: EVENT_COLORS[event.type] || '#e8d5b0',
-                  fontStyle: event.type === 'flavor' || event.type === 'intro' ? 'italic' : 'normal',
-                  fontWeight: event.type === 'crit' || event.type === 'outcome' || event.type === 'passive' ? 'bold' : 'normal',
-                  opacity,
-                  transition: 'opacity 0.5s ease',
-                }}>
-                {event.type === 'crit' && '💥 '}
-                {event.type === 'death' && '☠️ '}
-                {event.type === 'surrender' && '🏳️ '}
-                {event.type === 'outcome' && '🏆 '}
-                {event.type === 'counter' && '↩️ '}
-                {event.text}
-              </p>
-            )
-          })}
-          {suspense && (
-            <p className="text-xs animate-pulse" style={{ color: '#6a5030', letterSpacing: '0.3em' }}>. . .</p>
-          )}
-          <div ref={logBottomRef} />
-        </div>
-
-        {/* Controls */}
-        <div className="px-4 pb-4 pt-1">
-          {phase === 'interRound' ? (
-            <div className="space-y-3 fade-in">
-              <p className="text-xs font-bold text-center" style={{ color: '#d4a843', fontFamily: cinzel, letterSpacing: '0.06em' }}>
-                — Round {currentDisplayRound} Complete —
-              </p>
-
-              <div className="flex gap-2 text-xs">
-                <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: dmgDealtUser > dmgReceivedUser ? '#0e1e08' : '#1a0e08', border: '1px solid #2a1e10' }}>
-                  <p style={{ color: '#5abf6a' }}>+{Math.max(0, dmgDealtUser)} dealt</p>
-                </div>
-                <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#1a0808', border: '1px solid #2a1e10' }}>
-                  <p style={{ color: '#bf5a5a' }}>−{Math.max(0, dmgReceivedUser)} received</p>
-                </div>
-                <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#0a0806', border: '1px solid #2a1e10' }}>
-                  <p style={{ color: userAhead ? '#5abf6a' : '#bf5a5a' }}>{userAhead ? 'Ahead' : 'Behind'}</p>
-                </div>
+            <div className="flex gap-2 text-xs">
+              <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: dmgDealtUser > dmgReceivedUser ? '#0e1e08' : '#1a0e08', border: '1px solid #2a1e10' }}>
+                <p style={{ color: '#5abf6a' }}>+{Math.max(0, dmgDealtUser)} dealt</p>
               </div>
-
-              {daringOptions && mobId && (
-                <div>
-                  <label className="block text-xs font-bold mb-1" style={{ color: '#a08050', fontFamily: cinzel, letterSpacing: '0.06em' }}>
-                    ADJUST DARING
-                  </label>
-                  <select value={activeDaring} onChange={e => setActiveDaring(e.target.value)}
-                    className="game-input text-sm" disabled={recomputing}>
-                    {daringOptions.map(d => (
-                      <option key={d.key} value={d.key}>{d.label} — {d.description}</option>
-                    ))}
-                  </select>
-                  {activeDaring !== committedDaring && (
-                    <p className="text-xs mt-1 animate-pulse" style={{ color: '#d4a843' }}>Change takes effect next round.</p>
-                  )}
-                </div>
-              )}
-
-              <button className="btn-primary w-full" onClick={continueToNextRound} disabled={recomputing}>
-                {recomputing ? 'Recalculating...' : 'Continue →'}
-              </button>
+              <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#1a0808', border: '1px solid #2a1e10' }}>
+                <p style={{ color: '#bf5a5a' }}>−{Math.max(0, dmgReceivedUser)} received</p>
+              </div>
+              <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#0a0806', border: '1px solid #2a1e10' }}>
+                <p style={{ color: userAhead ? '#5abf6a' : '#bf5a5a' }}>{userAhead ? 'Ahead' : 'Behind'}</p>
+              </div>
             </div>
-          ) : done ? (
-            <button className="btn-primary w-full fade-in" onClick={() => setShowOutcome(true)}>
-              See Results →
+
+            {daringOptions && mobId && (
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: '#a08050', fontFamily: cinzel, letterSpacing: '0.06em' }}>
+                  ADJUST DARING
+                </label>
+                <select value={activeDaring} onChange={e => setActiveDaring(e.target.value)}
+                  className="game-input text-sm" disabled={recomputing}>
+                  {daringOptions.map(d => (
+                    <option key={d.key} value={d.key}>{d.label} — {d.description}</option>
+                  ))}
+                </select>
+                {activeDaring !== committedDaring && (
+                  <p className="text-xs mt-1 animate-pulse" style={{ color: '#d4a843' }}>Change takes effect next round.</p>
+                )}
+              </div>
+            )}
+
+            <button className="btn-primary w-full" onClick={continueToNextRound} disabled={recomputing}>
+              {recomputing ? 'Recalculating...' : 'Continue →'}
             </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              {(['paused', 'normal', 'fast'] as const).map(s => (
-                <button key={s} onClick={() => setSpeed(s)}
-                  className="flex-1 text-xs py-2 rounded font-bold transition-all"
-                  style={{
-                    background: speed === s ? 'linear-gradient(to bottom, #e0ba40, #a87018)' : 'rgba(26,18,8,0.8)',
-                    color: speed === s ? '#160c00' : '#6a5030',
-                    border: `1px solid ${speed === s ? '#c8a040' : '#3a2810'}`,
-                    fontFamily: cinzel, letterSpacing: '0.04em',
-                  }}>
-                  {s === 'paused' ? '⏸' : s === 'normal' ? '▶ Play' : '⏩ Fast'}
-                </button>
-              ))}
-              <button
-                className="px-3 py-2 rounded text-xs"
-                style={{ background: 'rgba(26,18,8,0.8)', color: '#6a5030', border: '1px solid #3a2810' }}
-                onClick={advance}>
-                Skip
+          </div>
+        ) : done ? (
+          <button className="btn-primary w-full fade-in" onClick={() => setShowOutcome(true)}>
+            See Results →
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            {(['paused', 'normal', 'fast'] as const).map(s => (
+              <button key={s} onClick={() => setSpeed(s)}
+                className="flex-1 text-xs py-2 rounded font-bold transition-all"
+                style={{
+                  background: speed === s ? 'linear-gradient(to bottom, #e0ba40, #a87018)' : 'rgba(20,14,6,0.9)',
+                  color: speed === s ? '#160c00' : '#6a5030',
+                  border: `1px solid ${speed === s ? '#c8a040' : '#3a2810'}`,
+                  fontFamily: cinzel, letterSpacing: '0.04em',
+                }}>
+                {s === 'paused' ? '⏸' : s === 'normal' ? '▶ Play' : '⏩ Fast'}
               </button>
-            </div>
-          )}
-        </div>
+            ))}
+            <button
+              className="px-3 py-2 rounded text-xs"
+              style={{ background: 'rgba(20,14,6,0.9)', color: '#6a5030', border: '1px solid #3a2810' }}
+              onClick={advance}>
+              Skip
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
