@@ -51,7 +51,7 @@ const EVENT_COLORS: Record<string, string> = {
   passive:   '#d4a843',
 }
 
-const SPEEDS: Record<'normal' | 'fast', number> = { normal: 1300, fast: 420 }
+const SPEEDS: Record<'normal' | 'fast', number> = { normal: 2800, fast: 1000 }
 const DISPLAY_ROUND_SIZE = 3
 
 function getDisplayRoundEndIdx(events: BattleEvent[], displayRound: number): number {
