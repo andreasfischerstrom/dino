@@ -442,13 +442,13 @@ export default function BattleViewer({
   return (
     <div className="flex flex-col px-4 py-4 max-w-2xl mx-auto w-full" style={{
       height: '100dvh',
-      backgroundImage: 'url(/images/arena-bg.png)',
+      backgroundImage: 'linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.7)), url(/images/arena-bg.png)',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
     }}>
       {/* Fighter HP bars */}
       <div className="shrink-0 flex items-center gap-3 mb-3 panel"
-        style={{ padding: '0.75rem', animation: shake ? 'arena-shake 0.46s ease-out' : 'none' }}>
+        style={{ padding: '0.75rem', animation: shake ? 'arena-shake 0.46s ease-out' : 'none', background: 'rgba(14,10,6,0.82)', backdropFilter: 'blur(2px)' }}>
         <FighterHead image={fighterA.image} name={fighterA.name} align="left"
           attacking={attackingA} dead={deadA} flash={flashA} floatNum={floatA} />
         <div className="flex-1">
@@ -465,7 +465,7 @@ export default function BattleViewer({
       </div>
 
       {/* Event log */}
-      <div className="flex-1 panel mb-3 overflow-y-auto scrollbar-hide space-y-3" style={{ minHeight: 0 }}>
+      <div className="flex-1 panel mb-3 overflow-y-auto scrollbar-hide space-y-3" style={{ minHeight: 0, background: 'rgba(14,10,6,0.78)', backdropFilter: 'blur(2px)' }}>
         {displayItems.map((item, i) => {
           if (item.kind === 'banner') {
             return (
@@ -507,7 +507,7 @@ export default function BattleViewer({
       <div className="shrink-0">
       {phase === 'interRound' ? (
         /* Inter-round pause panel */
-        <div className="panel fade-in space-y-4" style={{ borderTop: '2px solid #5a4028' }}>
+        <div className="panel fade-in space-y-4" style={{ borderTop: '2px solid #5a4028', background: 'rgba(14,10,6,0.82)', backdropFilter: 'blur(2px)' }}>
           <p className="text-sm font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>
             — Round {currentDisplayRound} Complete —
           </p>
