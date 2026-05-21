@@ -30,7 +30,6 @@ interface Props {
   fighterBImage: string
   onComplete: () => void
   userSide?: 'a' | 'b'
-  // Mob fight props for mid-battle daring adjustment
   mobId?: string
   initialDaring?: string
   surrenderAt?: number
@@ -53,11 +52,7 @@ const EVENT_COLORS: Record<string, string> = {
 }
 
 const SPEEDS: Record<'normal' | 'fast', number> = { normal: 1300, fast: 420 }
-const DISPLAY_ROUND_SIZE = 3  // engine rounds per display round
-
-function getDisplayRound(engineRound: number) {
-  return engineRound === 0 ? 1 : Math.ceil(engineRound / DISPLAY_ROUND_SIZE)
-}
+const DISPLAY_ROUND_SIZE = 3
 
 function getDisplayRoundEndIdx(events: BattleEvent[], displayRound: number): number {
   const maxEngineRound = displayRound * DISPLAY_ROUND_SIZE
@@ -85,29 +80,36 @@ function triggerAnim(set: (v: boolean) => void) {
   setTimeout(() => set(false), 460)
 }
 
-function FighterHead({ image, name, align, attacking, dead, flash, floatNum }: {
+function hpBarColor(pct: number) {
+  if (pct > 50) return 'linear-gradient(to bottom, #d03030 0%, #921818 60%, #6a0f0f 100%)'
+  if (pct > 25) return 'linear-gradient(to bottom, #d07020 0%, #924010 60%, #6a2808 100%)'
+  return 'linear-gradient(to bottom, #ff4444 0%, #cc2020 60%, #991010 100%)'
+}
+
+function FighterHead({ image, name, align, large = false, attacking, dead, flash, floatNum }: {
   image: string; name: string; align: 'left' | 'right'
-  attacking: boolean; dead: boolean; flash: boolean
+  large?: boolean; attacking: boolean; dead: boolean; flash: boolean
   floatNum: FloatNum | null
 }) {
+  const size = large ? 88 : 48
   const animName = dead
     ? 'dino-death 0.8s ease-out forwards'
     : attacking
     ? `${align === 'left' ? 'dino-attack-left' : 'dino-attack-right'} 0.46s ease-out`
     : 'dino-idle 3s ease-in-out infinite'
 
-  const imgStyle: React.CSSProperties = { animation: animName }
+  const imgStyle: React.CSSProperties = { animation: animName, width: size, height: size }
 
   return (
-    <div className="flex flex-col items-center gap-1" style={{ minWidth: 56 }}>
+    <div className="flex flex-col items-center gap-1.5">
       <div style={{ position: 'relative' }}>
         {floatNum && (
           <div key={floatNum.id} style={{
-            position: 'absolute', top: '-6px', left: '50%',
+            position: 'absolute', top: large ? '-14px' : '-6px', left: '50%',
             animation: 'float-damage 1s ease-out forwards',
             zIndex: 50, pointerEvents: 'none',
             fontWeight: 'bold', fontFamily: 'var(--font-cinzel, Georgia)',
-            fontSize: floatNum.isCrit ? '17px' : '13px',
+            fontSize: floatNum.isCrit ? (large ? '20px' : '17px') : (large ? '15px' : '13px'),
             color: floatNum.isCrit ? '#ff4444' : floatNum.isCounter ? '#aabb88' : '#ffaa44',
             textShadow: '0 1px 4px rgba(0,0,0,1)', whiteSpace: 'nowrap',
           }}>
@@ -115,50 +117,31 @@ function FighterHead({ image, name, align, attacking, dead, flash, floatNum }: {
           </div>
         )}
         {isUrl(image)
-          ? <img src={image} alt={name} className="w-12 h-12 rounded-full object-cover"
-              style={{ ...imgStyle, border: '2px solid #5a4028', boxShadow: '0 2px 6px rgba(0,0,0,0.8)' }} />
-          : <div className="text-4xl leading-none" style={imgStyle}>{image}</div>
+          ? <img src={image} alt={name}
+              style={{ ...imgStyle, borderRadius: large ? '8px' : '50%', objectFit: 'cover',
+                border: `${large ? 3 : 2}px solid #5a4028`,
+                boxShadow: large ? '0 4px 16px rgba(0,0,0,0.9)' : '0 2px 6px rgba(0,0,0,0.8)' }} />
+          : <div style={{ ...imgStyle, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: large ? '56px' : '32px', lineHeight: 1 }}>{image}</div>
         }
         {flash && (
           <div style={{
-            position: 'absolute', inset: 0, borderRadius: '50%',
+            position: 'absolute', inset: 0, borderRadius: large ? '8px' : '50%',
             background: 'rgba(255, 50, 50, 0.55)',
             animation: 'hit-flash 0.35s ease-out forwards',
             pointerEvents: 'none',
           }} />
         )}
       </div>
-      <span className="text-xs font-bold truncate max-w-[80px]"
-        style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>
+      <span style={{
+        color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)',
+        fontSize: large ? '11px' : '10px', fontWeight: 'bold',
+        textShadow: '0 1px 4px rgba(0,0,0,1)',
+        maxWidth: large ? '100px' : '80px', overflow: 'hidden',
+        textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center',
+      }}>
         {name}
       </span>
-    </div>
-  )
-}
-
-function hpBarColor(pct: number) {
-  if (pct > 50) return 'linear-gradient(to bottom, #d03030 0%, #921818 60%, #6a0f0f 100%)'
-  if (pct > 25) return 'linear-gradient(to bottom, #d07020 0%, #924010 60%, #6a2808 100%)'
-  return 'linear-gradient(to bottom, #ff4444 0%, #cc2020 60%, #991010 100%)'
-}
-
-function HpBar({ hpPct, hp, maxHp, flash }: { hpPct: number; hp: number; maxHp: number; flash: boolean }) {
-  return (
-    <div className="flex-1">
-      <div className="hud-bar mb-0.5" style={{
-        flex: 'none', width: '100%',
-        boxShadow: flash ? '0 0 10px rgba(255,80,80,0.7)' : 'none',
-        transition: 'box-shadow 0.1s ease',
-      }}>
-        <div style={{
-          height: '100%', width: `${hpPct}%`,
-          background: flash ? 'linear-gradient(to bottom, #ff6060 0%, #ff2020 100%)' : hpBarColor(hpPct),
-          borderRadius: '2px',
-          transition: 'width 0.5s ease, background 0.3s ease',
-          boxShadow: 'inset 0 1px 0 rgba(255,160,160,0.25)',
-        }} />
-      </div>
-      <div className="text-xs text-center" style={{ color: '#a08050' }}>{hp}/{maxHp}</div>
     </div>
   )
 }
@@ -172,12 +155,10 @@ export default function BattleViewer({
   const [visibleCount, setVisibleCount] = useState(0)
   const [showOutcome, setShowOutcome] = useState(false)
 
-  // Playback
   const [speed, setSpeed] = useState<'normal' | 'fast' | 'paused'>('normal')
   const [suspense, setSuspense] = useState(false)
   const [done, setDone] = useState(false)
 
-  // Inter-round state
   type Phase = 'playing' | 'interRound'
   const [phase, setPhase] = useState<Phase>('playing')
   const [currentDisplayRound, setCurrentDisplayRound] = useState(1)
@@ -186,14 +167,12 @@ export default function BattleViewer({
   const [recomputing, setRecomputing] = useState(false)
   const [roundStartHp, setRoundStartHp] = useState({ a: fighterA.hp, b: localEvents[0]?.maxHpB ?? 100 })
 
-  // HP flash
   const [flashA, setFlashA] = useState(false)
   const [flashB, setFlashB] = useState(false)
   const prevHpARef = useRef<number | null>(null)
   const prevHpBRef = useRef<number | null>(null)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const logBottomRef = useRef<HTMLDivElement>(null)
 
-  // Portrait animations
   const [attackingA, setAttackingA] = useState(false)
   const [attackingB, setAttackingB] = useState(false)
   const [deadA, setDeadA] = useState(false)
@@ -247,18 +226,16 @@ export default function BattleViewer({
     setVisibleCount(v => Math.min(v + 1, localEvents.length))
   }, [localEvents.length])
 
-  // Auto-scroll
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    logBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [visibleCount, suspense, phase])
 
-  // Space bar
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.code !== 'Space') return
       e.preventDefault()
       if (suspense) { setSuspense(false); return }
-      if (phase === 'interRound') return  // space does nothing during pause
+      if (phase === 'interRound') return
       if (speed === 'paused') { setSpeed('normal'); return }
       advance()
     }
@@ -266,7 +243,6 @@ export default function BattleViewer({
     return () => window.removeEventListener('keydown', handler)
   }, [advance, speed, suspense, phase])
 
-  // HP flash detection
   const currentEvent = localEvents[visibleCount - 1]
   const hpA = currentEvent?.hpA ?? localEvents[0]?.hpA ?? fighterA.hp
   const hpB = currentEvent?.hpB ?? localEvents[0]?.hpB ?? 100
@@ -287,22 +263,18 @@ export default function BattleViewer({
     prevHpBRef.current = hpB
   }, [hpB])
 
-  // Auto-play within a display round
   useEffect(() => {
     if (phase !== 'playing' || speed === 'paused' || suspense || done) return
 
     const displayRoundEnd = getDisplayRoundEndIdx(localEvents, currentDisplayRound)
 
-    // Reached end of current display round
     if (displayRoundEnd >= 0 && visibleCount > displayRoundEnd) {
       const lastEvent = localEvents[displayRoundEnd]
       if (isTerminalEvent(lastEvent)) {
         setDone(true)
       } else if (activeManagement) {
-        // Pause and wait for user action
         setPhase('interRound')
       } else {
-        // No active management — continue automatically to next display round
         setRoundStartHp({ a: lastEvent.hpA, b: lastEvent.hpB })
         setCurrentDisplayRound(d => d + 1)
       }
@@ -322,13 +294,11 @@ export default function BattleViewer({
     return () => clearTimeout(timer)
   }, [phase, speed, visibleCount, suspense, done, localEvents, currentDisplayRound])
 
-  // Suspense → reveal
   useEffect(() => {
     if (!suspense) return
     const timer = setTimeout(() => { setSuspense(false); advance() }, 1600)
     return () => clearTimeout(timer)
   }, [suspense, advance])
-
 
   async function continueToNextRound() {
     if (recomputing) return
@@ -342,16 +312,11 @@ export default function BattleViewer({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            mobId,
-            daring: activeDaring,
-            surrenderAt,
-            hpA: lastShownEvent.hpA,
-            hpB: lastShownEvent.hpB,
+            mobId, daring: activeDaring, surrenderAt,
+            hpA: lastShownEvent.hpA, hpB: lastShownEvent.hpB,
             fromRound: nextEngineRound,
-            originalXp: fighterA.xp,
-            originalBones: fighterA.bones,
-            originalLevel: fighterA.level,
-            originalStatPoints: fighterA.statPoints,
+            originalXp: fighterA.xp, originalBones: fighterA.bones,
+            originalLevel: fighterA.level, originalStatPoints: fighterA.statPoints,
             previousWon: localResult?.winner === userSide,
           }),
         })
@@ -362,41 +327,13 @@ export default function BattleViewer({
           setLocalResult(json.result)
           setCommittedDaring(activeDaring)
         }
-      } catch {
-        // if recompute fails, continue with existing events
-      }
+      } catch { /* continue with existing events */ }
       setRecomputing(false)
     }
 
-    // Save end-of-round HP as start HP for next round
-    if (lastShownEvent) {
-      setRoundStartHp({ a: lastShownEvent.hpA, b: lastShownEvent.hpB })
-    }
+    if (lastShownEvent) setRoundStartHp({ a: lastShownEvent.hpA, b: lastShownEvent.hpB })
     setCurrentDisplayRound(d => d + 1)
     setPhase('playing')
-  }
-
-  // Build display items with round banners
-  type DisplayItem =
-    | { kind: 'banner'; round: number }
-    | { kind: 'event'; event: BattleEvent; index: number }
-
-  const displayItems: DisplayItem[] = []
-  let lastEngineRound = -1
-  for (let i = 0; i < visibleCount; i++) {
-    const event = localEvents[i]
-    if (event.round > 0 && event.round !== lastEngineRound) {
-      displayItems.push({ kind: 'banner', round: event.round })
-      lastEngineRound = event.round
-    }
-    displayItems.push({ kind: 'event', event, index: i })
-  }
-
-  const getOpacity = (eventIndex: number) => {
-    const dist = visibleCount - 1 - eventIndex
-    if (dist <= 2) return 1
-    if (dist <= 5) return 0.55
-    return 0.28
   }
 
   const hpPctA = Math.round((hpA / maxHpA) * 100)
@@ -432,161 +369,204 @@ export default function BattleViewer({
     )
   }
 
-  // Inter-round summary values
+  // Last 6 events for compact log (no banners)
+  const recentEvents = localEvents.slice(Math.max(0, visibleCount - 6), visibleCount)
+
+  // Inter-round summary
   const endHpA = localEvents[visibleCount - 1]?.hpA ?? fighterA.hp
   const endHpB = localEvents[visibleCount - 1]?.hpB ?? maxHpB
-  const dmgDealtUser   = userIsA ? (roundStartHp.b - endHpB) : (roundStartHp.a - endHpA)
+  const dmgDealtUser    = userIsA ? (roundStartHp.b - endHpB) : (roundStartHp.a - endHpA)
   const dmgReceivedUser = userIsA ? (roundStartHp.a - endHpA) : (roundStartHp.b - endHpB)
   const userAhead = userIsA ? endHpA > endHpB : endHpB > endHpA
 
+  const cinzel = 'var(--font-cinzel, Georgia)'
+
   return (
-    <div className="flex flex-col px-4 py-4 max-w-2xl mx-auto w-full" style={{
+    <div className="flex flex-col max-w-2xl mx-auto w-full" style={{
       height: '100dvh',
-      backgroundImage: 'linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.7)), url(/images/arena-bg.png)',
+      backgroundImage: 'linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.65)), url(/images/arena-bg.png)',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
     }}>
-      {/* Fighter HP bars */}
-      <div className="shrink-0 flex items-center gap-3 mb-3 panel"
-        style={{ padding: '0.75rem', animation: shake ? 'arena-shake 0.46s ease-out' : 'none', background: 'rgba(14,10,6,0.82)', backdropFilter: 'blur(2px)' }}>
-        <FighterHead image={fighterA.image} name={fighterA.name} align="left"
-          attacking={attackingA} dead={deadA} flash={flashA} floatNum={floatA} />
-        <div className="flex-1">
-          <div className="flex gap-3 items-center">
-            <HpBar hpPct={userHpPct} hp={userHp} maxHp={userMaxHp} flash={userFlash} />
-            <div className="text-xs font-bold shrink-0" style={{
-              color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.08em',
-            }}>VS</div>
-            <HpBar hpPct={oppHpPct} hp={oppHp} maxHp={oppMaxHp} flash={oppFlash} />
+
+      {/* ── TOP: Fighting-game HP strip ── */}
+      <div className="shrink-0 flex items-stretch gap-0 px-3 pt-3 pb-2"
+        style={{ background: 'rgba(6,4,2,0.88)', backdropFilter: 'blur(6px)', borderBottom: '1px solid rgba(90,64,40,0.4)' }}>
+
+        {/* Fighter A (user side if a) */}
+        <div className="flex-1 flex flex-col gap-1 pr-2">
+          <div className="flex justify-between items-baseline">
+            <span style={{ color: '#d4a843', fontFamily: cinzel, fontSize: '11px', fontWeight: 'bold',
+              textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+              {fighterA.name}
+            </span>
+            <span style={{ color: '#6a5030', fontSize: '10px', fontFamily: 'monospace' }}>{hpA}/{maxHpA}</span>
+          </div>
+          <div className="hud-bar" style={{ height: '18px',
+            boxShadow: flashA ? '0 0 12px rgba(255,80,80,0.6)' : undefined }}>
+            <div style={{
+              height: '100%', width: `${hpPctA}%`,
+              background: flashA ? 'linear-gradient(to bottom,#ff6060,#ff2020)' : hpBarColor(hpPctA),
+              borderRadius: '2px', transition: 'width 0.5s ease, background 0.3s ease',
+              boxShadow: 'inset 0 1px 0 rgba(255,160,160,0.25)',
+            }} />
           </div>
         </div>
-        <FighterHead image={fighterBImage} name={fighterBName} align="right"
+
+        {/* Round counter */}
+        <div className="shrink-0 flex flex-col items-center justify-center px-3">
+          <span style={{ color: '#4a3820', fontFamily: cinzel, fontSize: '9px', letterSpacing: '0.1em' }}>RND</span>
+          <span style={{ color: '#8a7040', fontFamily: cinzel, fontSize: '18px', fontWeight: 'bold', lineHeight: 1 }}>
+            {currentDisplayRound}
+          </span>
+        </div>
+
+        {/* Fighter B — bar fills right-to-left (mirrored container) */}
+        <div className="flex-1 flex flex-col gap-1 pl-2">
+          <div className="flex justify-between items-baseline">
+            <span style={{ color: '#6a5030', fontSize: '10px', fontFamily: 'monospace' }}>{hpB}/{maxHpB}</span>
+            <span style={{ color: '#d4a843', fontFamily: cinzel, fontSize: '11px', fontWeight: 'bold',
+              textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '120px', textAlign: 'right' }}>
+              {fighterBName}
+            </span>
+          </div>
+          {/* scaleX(-1) makes the bar fill from the right side visually */}
+          <div className="hud-bar" style={{ height: '18px', transform: 'scaleX(-1)',
+            boxShadow: flashB ? '0 0 12px rgba(255,80,80,0.6)' : undefined }}>
+            <div style={{
+              height: '100%', width: `${hpPctB}%`,
+              background: flashB ? 'linear-gradient(to bottom,#ff6060,#ff2020)' : hpBarColor(hpPctB),
+              borderRadius: '2px', transition: 'width 0.5s ease, background 0.3s ease',
+              boxShadow: 'inset 0 1px 0 rgba(255,160,160,0.25)',
+            }} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── MIDDLE: Arena — large portraits ── */}
+      <div
+        className="flex-1 flex items-end justify-between px-6 pb-5"
+        style={{
+          minHeight: 0,
+          animation: shake ? 'arena-shake 0.46s ease-out' : 'none',
+        }}>
+        <FighterHead image={fighterA.image} name={fighterA.name} align="left" large
+          attacking={attackingA} dead={deadA} flash={flashA} floatNum={floatA} />
+
+        {/* VS badge (faint, center) */}
+        <div className="self-center pointer-events-none select-none">
+          <span style={{
+            fontFamily: cinzel, fontSize: '28px', fontWeight: 900, letterSpacing: '0.12em',
+            color: 'rgba(160,120,60,0.22)',
+            textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+          }}>VS</span>
+        </div>
+
+        <FighterHead image={fighterBImage} name={fighterBName} align="right" large
           attacking={attackingB} dead={deadB} flash={flashB} floatNum={floatB} />
       </div>
 
-      {/* Event log */}
-      <div className="flex-1 panel mb-3 overflow-y-auto scrollbar-hide space-y-3" style={{ minHeight: 0, background: 'rgba(14,10,6,0.78)', backdropFilter: 'blur(2px)' }}>
-        {displayItems.map((item, i) => {
-          if (item.kind === 'banner') {
+      {/* ── BOTTOM: Compact event log + controls ── */}
+      <div style={{ background: 'rgba(6,4,2,0.9)', backdropFilter: 'blur(6px)', borderTop: '1px solid rgba(90,64,40,0.35)' }}>
+
+        {/* Event log — last 6 lines */}
+        <div className="px-4 pt-3 pb-2 space-y-1" style={{ minHeight: '80px' }}>
+          {recentEvents.map((event, i) => {
+            const age = recentEvents.length - 1 - i
+            const opacity = age === 0 ? 1 : age <= 2 ? 0.6 : 0.3
             return (
-              <div key={`banner-${item.round}`} className="flex items-center gap-3 py-1 fade-in">
-                <div className="flex-1 h-px" style={{ background: '#3a2810' }} />
-                <span className="text-xs font-bold shrink-0" style={{
-                  color: '#6a5030', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.12em',
-                }}>ROUND {item.round}</span>
-                <div className="flex-1 h-px" style={{ background: '#3a2810' }} />
-              </div>
-            )
-          }
-          const { event, index } = item
-          return (
-            <p key={index} className="battle-line text-sm leading-relaxed fade-in"
-              style={{
-                color: EVENT_COLORS[event.type] || '#e8d5b0',
-                fontStyle: event.type === 'flavor' || event.type === 'intro' ? 'italic' : 'normal',
-                fontWeight: event.type === 'crit' || event.type === 'outcome' || event.type === 'passive' ? 'bold' : 'normal',
-                opacity: getOpacity(index),
-                transition: 'opacity 0.6s ease',
-              }}>
-              {event.type === 'crit' && '💥 '}
-              {event.type === 'death' && '☠️ '}
-              {event.type === 'surrender' && '🏳️ '}
-              {event.type === 'outcome' && '🏆 '}
-              {event.type === 'counter' && '↩️ '}
-              {event.text}
-            </p>
-          )
-        })}
-        {suspense && (
-          <p className="text-sm animate-pulse" style={{ color: '#6a5030', letterSpacing: '0.3em' }}>. . .</p>
-        )}
-        <div ref={bottomRef} />
-      </div>
-
-      {/* Controls */}
-      <div className="shrink-0">
-      {phase === 'interRound' ? (
-        /* Inter-round pause panel */
-        <div className="panel fade-in space-y-4" style={{ borderTop: '2px solid #5a4028', background: 'rgba(14,10,6,0.82)', backdropFilter: 'blur(2px)' }}>
-          <p className="text-sm font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>
-            — Round {currentDisplayRound} Complete —
-          </p>
-
-          {/* Round summary */}
-          <div className="flex gap-4 text-xs">
-            <div className="flex-1 p-2 rounded text-center" style={{ background: dmgDealtUser > dmgReceivedUser ? '#0e1e08' : '#1a0e08', border: '1px solid #2a1e10' }}>
-              <p style={{ color: '#5abf6a' }}>+{Math.max(0, dmgDealtUser)} dealt</p>
-            </div>
-            <div className="flex-1 p-2 rounded text-center" style={{ background: '#1a0808', border: '1px solid #2a1e10' }}>
-              <p style={{ color: '#bf5a5a' }}>−{Math.max(0, dmgReceivedUser)} received</p>
-            </div>
-            <div className="flex-1 p-2 rounded text-center" style={{ background: '#0a0806', border: '1px solid #2a1e10' }}>
-              <p style={{ color: userAhead ? '#5abf6a' : '#bf5a5a' }}>
-                {userAhead ? 'You\'re ahead' : 'Behind'}
+              <p key={visibleCount - recentEvents.length + i}
+                className="text-xs leading-snug fade-in"
+                style={{
+                  color: EVENT_COLORS[event.type] || '#e8d5b0',
+                  fontStyle: event.type === 'flavor' || event.type === 'intro' ? 'italic' : 'normal',
+                  fontWeight: event.type === 'crit' || event.type === 'outcome' || event.type === 'passive' ? 'bold' : 'normal',
+                  opacity,
+                  transition: 'opacity 0.5s ease',
+                }}>
+                {event.type === 'crit' && '💥 '}
+                {event.type === 'death' && '☠️ '}
+                {event.type === 'surrender' && '🏳️ '}
+                {event.type === 'outcome' && '🏆 '}
+                {event.type === 'counter' && '↩️ '}
+                {event.text}
               </p>
-            </div>
-          </div>
+            )
+          })}
+          {suspense && (
+            <p className="text-xs animate-pulse" style={{ color: '#6a5030', letterSpacing: '0.3em' }}>. . .</p>
+          )}
+          <div ref={logBottomRef} />
+        </div>
 
-          {/* Daring adjustment (mob fights only) */}
-          {daringOptions && mobId && (
-            <div>
-              <label className="block text-xs font-bold mb-1.5" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>
-                ADJUST DARING FOR NEXT ROUND
-              </label>
-              <select
-                value={activeDaring}
-                onChange={e => setActiveDaring(e.target.value)}
-                className="game-input text-sm"
-                disabled={recomputing}>
-                {daringOptions.map(d => (
-                  <option key={d.key} value={d.key}>{d.label} — {d.description}</option>
-                ))}
-              </select>
-              {activeDaring !== committedDaring && (
-                <p className="text-xs mt-1 animate-pulse" style={{ color: '#d4a843' }}>
-                  Daring change will take effect next round.
-                </p>
+        {/* Controls */}
+        <div className="px-4 pb-4 pt-1">
+          {phase === 'interRound' ? (
+            <div className="space-y-3 fade-in">
+              <p className="text-xs font-bold text-center" style={{ color: '#d4a843', fontFamily: cinzel, letterSpacing: '0.06em' }}>
+                — Round {currentDisplayRound} Complete —
+              </p>
+
+              <div className="flex gap-2 text-xs">
+                <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: dmgDealtUser > dmgReceivedUser ? '#0e1e08' : '#1a0e08', border: '1px solid #2a1e10' }}>
+                  <p style={{ color: '#5abf6a' }}>+{Math.max(0, dmgDealtUser)} dealt</p>
+                </div>
+                <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#1a0808', border: '1px solid #2a1e10' }}>
+                  <p style={{ color: '#bf5a5a' }}>−{Math.max(0, dmgReceivedUser)} received</p>
+                </div>
+                <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#0a0806', border: '1px solid #2a1e10' }}>
+                  <p style={{ color: userAhead ? '#5abf6a' : '#bf5a5a' }}>{userAhead ? 'Ahead' : 'Behind'}</p>
+                </div>
+              </div>
+
+              {daringOptions && mobId && (
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{ color: '#a08050', fontFamily: cinzel, letterSpacing: '0.06em' }}>
+                    ADJUST DARING
+                  </label>
+                  <select value={activeDaring} onChange={e => setActiveDaring(e.target.value)}
+                    className="game-input text-sm" disabled={recomputing}>
+                    {daringOptions.map(d => (
+                      <option key={d.key} value={d.key}>{d.label} — {d.description}</option>
+                    ))}
+                  </select>
+                  {activeDaring !== committedDaring && (
+                    <p className="text-xs mt-1 animate-pulse" style={{ color: '#d4a843' }}>Change takes effect next round.</p>
+                  )}
+                </div>
               )}
+
+              <button className="btn-primary w-full" onClick={continueToNextRound} disabled={recomputing}>
+                {recomputing ? 'Recalculating...' : 'Continue →'}
+              </button>
+            </div>
+          ) : done ? (
+            <button className="btn-primary w-full fade-in" onClick={() => setShowOutcome(true)}>
+              See Results →
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              {(['paused', 'normal', 'fast'] as const).map(s => (
+                <button key={s} onClick={() => setSpeed(s)}
+                  className="flex-1 text-xs py-2 rounded font-bold transition-all"
+                  style={{
+                    background: speed === s ? 'linear-gradient(to bottom, #e0ba40, #a87018)' : 'rgba(26,18,8,0.8)',
+                    color: speed === s ? '#160c00' : '#6a5030',
+                    border: `1px solid ${speed === s ? '#c8a040' : '#3a2810'}`,
+                    fontFamily: cinzel, letterSpacing: '0.04em',
+                  }}>
+                  {s === 'paused' ? '⏸' : s === 'normal' ? '▶ Play' : '⏩ Fast'}
+                </button>
+              ))}
+              <button
+                className="px-3 py-2 rounded text-xs"
+                style={{ background: 'rgba(26,18,8,0.8)', color: '#6a5030', border: '1px solid #3a2810' }}
+                onClick={advance}>
+                Skip
+              </button>
             </div>
           )}
-
-          <button
-            className="btn-primary w-full"
-            onClick={continueToNextRound}
-            disabled={recomputing}>
-            {recomputing ? 'Recalculating...' : 'Continue →'}
-          </button>
         </div>
-      ) : done ? (
-        <button className="btn-primary w-full fade-in" onClick={() => setShowOutcome(true)}>
-          See Results →
-        </button>
-      ) : (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            {(['paused', 'normal', 'fast'] as const).map(s => (
-              <button key={s} onClick={() => setSpeed(s)}
-                className="flex-1 text-sm py-2 rounded font-bold transition-all"
-                style={{
-                  background: speed === s ? 'linear-gradient(to bottom, #e0ba40, #a87018)' : '#1a1208',
-                  color: speed === s ? '#160c00' : '#6a5030',
-                  border: `1px solid ${speed === s ? '#c8a040' : '#3a2810'}`,
-                  fontFamily: 'var(--font-cinzel, Georgia)',
-                  letterSpacing: '0.04em',
-                }}>
-                {s === 'paused' ? '⏸' : s === 'normal' ? '▶ Normal' : '⏩ Fast'}
-              </button>
-            ))}
-            <button
-              className="px-4 py-2 rounded text-sm"
-              style={{ background: '#1a1208', color: '#6a5030', border: '1px solid #3a2810' }}
-              onClick={advance}>
-              Skip
-            </button>
-          </div>
-          <p className="text-xs text-center" style={{ color: '#4a3820' }}>Space to skip</p>
-        </div>
-      )}
       </div>
     </div>
   )
