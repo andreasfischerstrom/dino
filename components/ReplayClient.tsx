@@ -24,14 +24,20 @@ export default function ReplayClient({
   opponentName, opponentImage, userSide, viewerSurvived, opponentWasChallenger,
 }: Props) {
   const [watching, setWatching] = useState(false)
+  const [dismissing, setDismissing] = useState(false)
 
-  async function handleComplete() {
+  async function markSeenAndGo() {
     await fetch('/api/battle/mark-seen', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ battleId }),
     })
     window.location.href = viewerSurvived ? '/town' : '/obituary'
+  }
+
+  async function dismiss() {
+    setDismissing(true)
+    await markSeenAndGo()
   }
 
   const cinzel = 'var(--font-cinzel, Georgia)'
@@ -61,7 +67,7 @@ export default function ReplayClient({
         fighterBName={fighterBName}
         fighterBImage={fighterBImage}
         userSide={userSide}
-        onComplete={handleComplete}
+        onComplete={markSeenAndGo}
         viewerSnapshot={viewerSnapshot}
       />
     )
@@ -95,6 +101,14 @@ export default function ReplayClient({
 
       <button className="btn-primary px-10 py-3 text-base fade-in" onClick={() => setWatching(true)}>
         Watch the fight
+      </button>
+
+      <button
+        className="mt-4 fade-in text-sm"
+        style={{ color: '#5a4a30', background: 'none', border: 'none', cursor: 'pointer' }}
+        disabled={dismissing}
+        onClick={dismiss}>
+        {dismissing ? 'Going to town…' : 'Skip → Go to Town'}
       </button>
     </div>
   )
