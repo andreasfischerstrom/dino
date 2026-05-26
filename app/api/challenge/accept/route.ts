@@ -140,7 +140,37 @@ export async function POST(req: Request) {
   // Close challenge
   await supabase.from('challenges').update({ status: 'completed' }).eq('id', challengeId)
 
-  // Save battle log
+  // Save battle log with full result snapshot for replay
+  const battleResult = {
+    winner: battle.winner,
+    a: {
+      hpBefore: attacker.hp,
+      hpAfter: Math.min(aNewHp, aNewMaxHp),
+      maxHp: aMaxHp,
+      xpBefore: attacker.xp,
+      xpAfter: aProgress.xp,
+      xpGained: aXpGain,
+      bonesBefore: attacker.bones,
+      bonesAfter: aNewBones,
+      bonesDelta: aNewBones - attacker.bones,
+      leveledUp: aProgress.level > attacker.level,
+      survived: battle.aAlive,
+    },
+    b: {
+      hpBefore: defender.hp,
+      hpAfter: Math.min(bNewHp, bNewMaxHp),
+      maxHp: bMaxHp,
+      xpBefore: defender.xp,
+      xpAfter: bProgress.xp,
+      xpGained: bXpGain,
+      bonesBefore: defender.bones,
+      bonesAfter: bNewBones,
+      bonesDelta: bNewBones - defender.bones,
+      leveledUp: bProgress.level > defender.level,
+      survived: battle.bAlive,
+    },
+  }
+
   await supabase.from('battles').insert({
     challenger_id: attacker.id,
     challenged_id: defender.id,
@@ -148,6 +178,9 @@ export async function POST(req: Request) {
     events: battle.events,
     challenger_survived: battle.aAlive,
     challenged_survived: battle.bAlive,
+    battle_result: battleResult,
+    challenger_seen: false,  // challenger needs to watch the replay
+    challenged_seen: true,   // defender is watching it live right now
   })
 
   return NextResponse.json({

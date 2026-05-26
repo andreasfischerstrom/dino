@@ -23,6 +23,18 @@ export default async function TownPage() {
     .single()
 
   if (!character) redirect('/create-character')
+
+  // Check for unseen battle replays before anything else
+  const { data: unseenBattle } = await supabase
+    .from('battles')
+    .select('id, challenger_id, challenged_id')
+    .or(`and(challenger_id.eq.${character.id},challenger_seen.eq.false),and(challenged_id.eq.${character.id},challenged_seen.eq.false)`)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (unseenBattle) redirect(`/replay/${unseenBattle.id}`)
+
   if (!character.alive) redirect('/obituary')
 
   if (character.hp < character.max_hp) {

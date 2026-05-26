@@ -35,6 +35,7 @@ interface Props {
   surrenderAt?: number
   daringOptions?: DaringOption[]
   activeManagement?: boolean
+  viewerSnapshot?: CharacterSnapshot  // overrides fighterA for the outcome screen (replay use)
 }
 
 const EVENT_COLORS: Record<string, string> = {
@@ -148,6 +149,7 @@ function FighterHead({ image, name, align, size = 72, attacking, dead, flash, fl
 export default function BattleViewer({
   battleData, fighterA, fighterBName, fighterBImage, onComplete,
   userSide = 'a', mobId, initialDaring, surrenderAt = 20, daringOptions, activeManagement = false,
+  viewerSnapshot,
 }: Props) {
   const [localEvents, setLocalEvents] = useState<BattleEvent[]>(() => battleData.events as BattleEvent[])
   const [localResult, setLocalResult] = useState<Record<string, unknown>>(() => battleData.result as Record<string, unknown>)
@@ -325,21 +327,22 @@ export default function BattleViewer({
   const cinzel = 'var(--font-cinzel, Georgia)'
 
   if (showOutcome) {
+    const viewer = viewerSnapshot ?? fighterA
     const won = localResult?.winner === userSide
     const aliveKey = userIsA ? 'attackerAlive' : 'defenderAlive'
     const survived = won || (localResult?.[aliveKey] as boolean | undefined) !== false
     const xpGained = (localResult?.xpGained as number) ?? 0
     const bonesGained = (localResult?.bonesGained as number) ?? 0
-    const newHp = (localResult?.newHp as number) ?? fighterA.hp
+    const newHp = (localResult?.newHp as number) ?? viewer.hp
     const leveledUp = !!(localResult?.leveledUp)
     return (
       <BattleOutcome
         won={won} survived={survived}
-        fighterName={fighterA.name} fighterImage={fighterA.image}
-        hpBefore={fighterA.hp} hpAfter={newHp} maxHp={fighterA.maxHp}
-        xpBefore={fighterA.xp} xpAfter={fighterA.xp + xpGained}
-        xpForNextLevel={fighterA.xpForNextLevel}
-        bonesBefore={fighterA.bones} bonesAfter={fighterA.bones + bonesGained}
+        fighterName={viewer.name} fighterImage={viewer.image}
+        hpBefore={viewer.hp} hpAfter={newHp} maxHp={viewer.maxHp}
+        xpBefore={viewer.xp} xpAfter={viewer.xp + xpGained}
+        xpForNextLevel={viewer.xpForNextLevel}
+        bonesBefore={viewer.bones} bonesAfter={viewer.bones + bonesGained}
         leveledUp={leveledUp} onContinue={onComplete}
       />
     )

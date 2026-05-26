@@ -30,6 +30,17 @@ export default async function ObituaryPage() {
   if (!character) redirect('/create-character')
   if (character.alive) redirect('/town')
 
+  // Check for unseen replays — watch your death before the obituary
+  const { data: unseenBattle } = await supabase
+    .from('battles')
+    .select('id')
+    .or(`and(challenger_id.eq.${character.id},challenger_seen.eq.false),and(challenged_id.eq.${character.id},challenged_seen.eq.false)`)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (unseenBattle) redirect(`/replay/${unseenBattle.id}`)
+
   const sp = SPECIES.find(s => s.id === character.species)
   const obitLine = OBITUARY_LINES[Math.floor(Math.random() * OBITUARY_LINES.length)]
 
