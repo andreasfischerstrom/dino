@@ -318,6 +318,15 @@ export default function BattleViewer({
   const hpPctA = Math.round((hpA / maxHpA) * 100)
   const hpPctB = Math.round((hpB / maxHpB) * 100)
   const userIsA = userSide === 'a'
+
+  // Left side of screen always = event fighter A (challenger in PvP).
+  // fighterA prop = the viewer, fighterBName = the opponent — so swap names
+  // when the viewer is actually the defender (userSide='b').
+  const leftName  = userIsA ? fighterA.name  : fighterBName
+  const leftImage = userIsA ? fighterA.image : fighterBImage
+  const rightName  = userIsA ? fighterBName  : fighterA.name
+  const rightImage = userIsA ? fighterBImage : fighterA.image
+
   const endHpA = localEvents[visibleCount - 1]?.hpA ?? fighterA.hp
   const endHpB = localEvents[visibleCount - 1]?.hpB ?? maxHpB
   const dmgDealtUser    = userIsA ? (roundStartHp.b - endHpB) : (roundStartHp.a - endHpA)
@@ -360,12 +369,12 @@ export default function BattleViewer({
       <div className="shrink-0 flex items-stretch px-3 pt-3 pb-2"
         style={{ background: 'rgba(6,4,2,0.88)', backdropFilter: 'blur(6px)', borderBottom: '1px solid rgba(90,64,40,0.4)' }}>
 
-        {/* Fighter A */}
+        {/* Left = event fighter A (challenger). Name swapped by userSide above. */}
         <div className="flex-1 flex flex-col gap-1 pr-2">
           <div className="flex justify-between items-baseline">
             <span style={{ color: '#d4a843', fontFamily: cinzel, fontSize: '11px', fontWeight: 'bold',
               textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '130px' }}>
-              {fighterA.name}
+              {leftName}
             </span>
             <span style={{ color: '#6a5030', fontSize: '10px', fontFamily: 'monospace' }}>{hpA}/{maxHpA}</span>
           </div>
@@ -387,13 +396,13 @@ export default function BattleViewer({
           </span>
         </div>
 
-        {/* Fighter B — mirrored bar fills right-to-left */}
+        {/* Right = event fighter B (defender). Name swapped by userSide above. */}
         <div className="flex-1 flex flex-col gap-1 pl-2">
           <div className="flex justify-between items-baseline">
             <span style={{ color: '#6a5030', fontSize: '10px', fontFamily: 'monospace' }}>{hpB}/{maxHpB}</span>
             <span style={{ color: '#d4a843', fontFamily: cinzel, fontSize: '11px', fontWeight: 'bold',
               textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '130px', textAlign: 'right' }}>
-              {fighterBName}
+              {rightName}
             </span>
           </div>
           <div className="hud-bar" style={{ height: '18px', transform: 'scaleX(-1)', boxShadow: flashB ? '0 0 12px rgba(255,80,80,0.6)' : undefined }}>
@@ -412,7 +421,7 @@ export default function BattleViewer({
         className="flex-1 flex items-center justify-between gap-3 px-5"
         style={{ minHeight: 0, animation: shake ? 'arena-shake 0.46s ease-out' : 'none' }}>
 
-        <FighterHead image={fighterA.image} name={fighterA.name} align="left" size={72}
+        <FighterHead image={leftImage} name={leftName} align="left" size={72}
           attacking={attackingA} dead={deadA} flash={flashA} floatNum={floatA} />
 
         {/* Center: event text, vertically centered with portraits */}
@@ -445,7 +454,7 @@ export default function BattleViewer({
           ) : null}
         </div>
 
-        <FighterHead image={fighterBImage} name={fighterBName} align="right" size={72}
+        <FighterHead image={rightImage} name={rightName} align="right" size={72}
           attacking={attackingB} dead={deadB} flash={flashB} floatNum={floatB} />
       </div>
 
