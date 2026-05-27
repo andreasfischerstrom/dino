@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { SPECIES, STATS, GEAR } from '@/lib/game-data'
+import { SPECIES, STATS, GEAR, STAT_MAX } from '@/lib/game-data'
 import DeleteCharacterButton from '@/components/DeleteCharacterButton'
 
 export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -25,10 +25,18 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
 
   const { data: battles } = await supabase
     .from('battles')
-    .select('id, winner_id, challenger_id, challenged_id, challenger_survived, challenged_survived, created_at')
+    .select('id, winner_id, challenger_id, challenged_id, challenger_survived, challenged_survived, battle_result, created_at')
     .or(`challenger_id.eq.${id},challenged_id.eq.${id}`)
     .order('created_at', { ascending: false })
     .limit(10)
+
+  const opponentIds = [...new Set((battles || []).map((b: Record<string, unknown>) =>
+    b.challenger_id === id ? b.challenged_id : b.challenger_id
+  ))] as string[]
+  const { data: opponents } = opponentIds.length
+    ? await supabase.from('characters').select('id, name, level, species').in('id', opponentIds)
+    : { data: [] }
+  const opponentMap = Object.fromEntries((opponents || []).map((c: Record<string, unknown>) => [c.id, c]))
 
   const sp = SPECIES.find(s => s.id === character.species)
   const hpPct = Math.round((character.hp / character.max_hp) * 100)
@@ -89,7 +97,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                   <span className="text-sm w-4">{stat.emoji}</span>
                   <span className="text-xs w-20" style={{ color: '#8a7a5a' }}>{stat.label}</span>
                   <div className="flex-1 stat-bar">
-                    <div className="stat-bar-fill" style={{ width: `${Math.min(100, val * 7)}%` }} />
+                    <div className="stat-bar-fill" style={{ width: `${Math.min(100, (val / STAT_MAX) * 100)}%` }} />
                   </div>
                   <span className="text-xs w-4 text-right font-bold" style={{ color: '#c8a84b' }}>{val}</span>
                 </div>
@@ -119,21 +127,63 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
       {battles && battles.length > 0 && (
         <div className="panel">
           <h2 className="font-bold mb-3" style={{ color: '#c8a84b' }}>Recent Battles</h2>
-          <div className="space-y-2">
+          <div className="space-y-0">
             {battles.map((b: Record<string, unknown>) => {
               const isChallenger = b.challenger_id === id
               const won = b.winner_id === id
               const survived = isChallenger ? b.challenger_survived : b.challenged_survived
+              const side = isChallenger ? 'a' : 'b'
+              const result = b.battle_result as Record<string, unknown> | null
+              const sideResult = result?.[side] as Record<string, unknown> | undefined
+              const opponentId = (isChallenger ? b.challenged_id : b.challenger_id) as string
+              const opponent = opponentMap[opponentId] as Record<string, unknown> | undefined
+              const opSp = SPECIES.find(s => s.id === opponent?.species)
+              const xpGained = sideResult?.xpGained as number | undefined
+              const bonesDelta = sideResult?.bonesDelta as number | undefined
+              const hpBefore = sideResult?.hpBefore as number | undefined
+              const hpAfter = sideResult?.hpAfter as number | undefined
+              const maxHp = sideResult?.maxHp as number | undefined
+
               return (
-                <div key={b.id as string} className="flex items-center justify-between py-2 text-sm"
-                  style={{ borderBottom: '1px solid #1a1410' }}>
-                  <span style={{ color: won ? '#6abf6a' : '#bf6a6a' }}>
-                    {won ? '✅ Win' : b.winner_id ? '❌ Loss' : '🤝 Draw'}
-                    {!survived && ' (fatal)'}
-                  </span>
-                  <span className="text-xs" style={{ color: '#5a4a3a' }}>
-                    {new Date(b.created_at as string).toLocaleDateString()}
-                  </span>
+                <div key={b.id as string} className="py-3" style={{ borderBottom: '1px solid #1a1410' }}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold" style={{ color: won ? '#6abf6a' : b.winner_id ? '#bf6a6a' : '#a08050' }}>
+                        {won ? '✅ Win' : b.winner_id ? '❌ Loss' : '🤝 Draw'}
+                        {!survived && <span style={{ color: '#8b2020' }}> · Fatal</span>}
+                      </span>
+                      {opponent && (
+                        <span className="text-sm" style={{ color: '#8a7a5a' }}>
+                          vs {opSp?.emoji} <span style={{ color: '#c8a84b' }}>{opponent.name as string}</span>
+                          <span style={{ color: '#5a4a3a' }}> (Lvl {opponent.level as number})</span>
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs" style={{ color: '#5a4a3a' }}>
+                      {new Date(b.created_at as string).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  {sideResult && (
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs mt-1" style={{ color: '#6a5a3a' }}>
+                      {hpBefore !== undefined && hpAfter !== undefined && maxHp !== undefined && (
+                        <span>❤ {hpBefore} → {hpAfter}/{maxHp}</span>
+                      )}
+                      {xpGained !== undefined && (
+                        <span style={{ color: xpGained > 0 ? '#4a8f5a' : '#6a5a3a' }}>
+                          ✦ {xpGained > 0 ? `+${xpGained}` : xpGained} XP
+                        </span>
+                      )}
+                      {bonesDelta !== undefined && (
+                        <span style={{ color: bonesDelta > 0 ? '#a08050' : '#7a5a3a' }}>
+                          🦴 {bonesDelta > 0 ? `+${bonesDelta}` : bonesDelta} bones
+                        </span>
+                      )}
+                      {!!sideResult.leveledUp && (
+                        <span style={{ color: '#d4a843' }}>⬆ Leveled up!</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}
