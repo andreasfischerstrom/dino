@@ -4,14 +4,15 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { TOWNS, SPECIES } from '@/lib/game-data'
+import { Icon } from '@iconify/react'
 
 const HIDDEN_ON = ['/login', '/create-character', '/auth']
 
 const BASE_TABS = [
-  { href: '/town',   labelKey: null,     staticLabel: 'Home', icon: '🏰' },
-  { href: '/arena',  labelKey: 'arena',  staticLabel: null,   icon: '🏟️' },
-  { href: '/tavern', labelKey: 'tavern', staticLabel: null,   icon: '🍺' },
-  { href: '/map',    labelKey: null,     staticLabel: 'Map',  icon: '🗺️' },
+  { href: '/town',   labelKey: null,     staticLabel: 'Home', icon: 'game-icons:castle' },
+  { href: '/arena',  labelKey: 'arena',  staticLabel: null,   icon: 'game-icons:crossed-swords' },
+  { href: '/tavern', labelKey: 'tavern', staticLabel: null,   icon: 'game-icons:tavern-sign' },
+  { href: '/map',    labelKey: null,     staticLabel: 'Map',  icon: 'game-icons:compass' },
 ] as const
 
 interface NavData {
@@ -54,11 +55,12 @@ function HpBar({ hp, maxHp, width }: { hp: number; maxHp: number; width?: number
   const pct = Math.round((hp / maxHp) * 100)
   return (
     <div style={{ width: width ?? '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginBottom: '2px' }}>
+        <Icon icon="game-icons:heart-organ" width={9} height={9} style={{ color: HP_COLOR, flexShrink: 0 }} />
+        <span style={{ fontSize: '8px', color: '#4a3820', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.02em' }}>{hp}/{maxHp}</span>
+      </div>
       <div style={{ height: '4px', background: '#1a1208', borderRadius: '2px', overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${pct}%`, background: HP_COLOR, borderRadius: '2px', transition: 'width 0.4s' }} />
-      </div>
-      <div style={{ fontSize: '8px', color: '#4a3820', marginTop: '2px', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.02em' }}>
-        {hp}/{maxHp}
       </div>
     </div>
   )
@@ -215,8 +217,9 @@ export default function NavBar() {
             <>
               <Avatar imageUrl={data.imageUrl} speciesImage={data.speciesImage} speciesEmoji={data.speciesEmoji} level={data.level} />
               <HpBar hp={data.hp} maxHp={data.maxHp} width={72} />
-              <span style={{ fontSize: '13px', color: '#a08858', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.04em' }}>
-                🦴 {data.bones.toLocaleString()}
+              <span style={{ fontSize: '13px', color: '#a08858', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Icon icon="game-icons:crossed-bones" width={14} height={14} />
+                {data.bones.toLocaleString()}
               </span>
             </>
           )}
@@ -247,8 +250,9 @@ export default function NavBar() {
             <div style={{ flex: 1, minWidth: '60px' }}>
               <HpBar hp={data.hp} maxHp={data.maxHp} />
             </div>
-            <span style={{ fontSize: '11px', color: '#a08858', fontFamily: 'var(--font-cinzel, Georgia)', flexShrink: 0 }}>
-              🦴 {data.bones.toLocaleString()}
+            <span style={{ fontSize: '11px', color: '#a08858', fontFamily: 'var(--font-cinzel, Georgia)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Icon icon="game-icons:crossed-bones" width={13} height={13} />
+              {data.bones.toLocaleString()}
             </span>
           </>
         )}
@@ -285,8 +289,8 @@ export default function NavBar() {
                     borderRadius: '0 0 2px 2px',
                   }} />
                 )}
-                <span style={{ fontSize: '20px', lineHeight: 1, position: 'relative' }}>
-                  {tab.icon}
+                <span style={{ fontSize: '20px', lineHeight: 1, position: 'relative', display: 'flex' }}>
+                  <Icon icon={tab.icon} width={22} height={22} />
                   {hasBadge && (
                     <span style={{
                       position: 'absolute', top: '-3px', right: '-5px',
