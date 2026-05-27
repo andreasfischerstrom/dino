@@ -55,7 +55,7 @@ export default async function ArenaPage() {
   const townMobs = MOBS.filter(m => (m.town ?? 1) === currentTown)
   const dailyBoss = generateDailyBoss(todayUTC(), character.level)
   const foughtToday = alreadyFoughtToday(character.last_daily_at ?? null)
-  const defaultTab = (incomingChallenges?.length ?? 0) > 0 ? 'challenges' : 'fight'
+  const defaultTab = (incomingChallenges?.length ?? 0) > 0 ? 'duels' : 'fight'
 
   return (
     <ArenaClient
@@ -70,7 +70,7 @@ export default async function ArenaPage() {
       dailyBoss={dailyBoss}
       foughtToday={foughtToday}
       locationName={townDef.locations.arena}
-      defaultTab={defaultTab as 'fight' | 'challenges'}
+      defaultTab={defaultTab as 'fight' | 'duels'}
     />
   )
 }

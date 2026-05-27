@@ -5,7 +5,7 @@ import { Mob, GearTemplate, Species, DaringOption, xpForLevel } from '@/lib/game
 import { DailyBoss } from '@/lib/daily-boss'
 import BattleViewer from './BattleViewer'
 
-type Tab = 'fight' | 'challenges'
+type Tab = 'fight' | 'duels'
 
 interface Props {
   character: Record<string, unknown>
@@ -46,7 +46,7 @@ export default function ArenaClient({
   species, daringOptions, dailyBoss, foughtToday,
   locationName, defaultTab = 'fight',
 }: Props) {
-  const [tab, setTab] = useState<Tab>(defaultTab)
+  const [tab, setTab] = useState<Tab>(defaultTab || 'fight')
 
   // Shared settings
   const [daring, setDaring] = useState(character.daring as string || 'measured')
@@ -62,7 +62,9 @@ export default function ArenaClient({
   const [fightLoading, setFightLoading] = useState(false)
   const [activeManagement, setActiveManagement] = useState(false)
 
-  // Challenges tab
+  const [showDailyTrial, setShowDailyTrial] = useState(false)
+
+  // Duels tab
   const [search, setSearch] = useState('')
   const [challengeTarget, setChallengeTarget] = useState<Record<string, unknown> | null>(null)
   const [challengeLoading, setChallengeLoading] = useState(false)
@@ -188,9 +190,9 @@ export default function ArenaClient({
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-6 p-1 rounded-lg" style={{ background: '#0e0a06', border: '1px solid #2a1e10' }}>
-        {(['fight', 'challenges'] as Tab[]).map(t => {
+        {(['fight', 'duels'] as Tab[]).map(t => {
           const active = tab === t
-          const badge = t === 'challenges' && incomingChallenges.length > 0 ? incomingChallenges.length : 0
+          const badge = t === 'duels' && incomingChallenges.length > 0 ? incomingChallenges.length : 0
           return (
             <button
               key={t}
@@ -212,7 +214,7 @@ export default function ArenaClient({
                 transition: 'all 0.15s',
               }}
             >
-              {t === 'fight' ? 'Fight' : 'Challenges'}
+              {t === 'fight' ? 'Beasts' : 'Duels'}
               {badge > 0 && (
                 <span style={{
                   position: 'absolute', top: '-4px', right: '-4px',
@@ -232,12 +234,86 @@ export default function ArenaClient({
 
       {error && <div className="alert-error mb-4">{error}</div>}
 
-      {/* ── Fight Tab ── */}
+      {/* ── Beasts Tab ── */}
       {tab === 'fight' && (
         <>
-          <p className="mb-6 text-sm" style={{ color: '#a08050', fontStyle: 'italic' }}>
-            Train against the local wildlife. Gain XP and bones. Try not to think too hard about what they do with the bodies.
-          </p>
+          {/* Daily Trial — collapsed by default */}
+          <div className="mb-5 rounded-lg overflow-hidden" style={{
+            border: `1px solid ${!foughtToday ? '#6a4a18' : '#2a1e10'}`,
+            boxShadow: !foughtToday ? '0 0 20px rgba(212,168,67,0.06)' : 'none',
+          }}>
+            <button
+              onClick={() => setShowDailyTrial(s => !s)}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left"
+              style={{
+                background: !foughtToday
+                  ? 'linear-gradient(135deg, #1e1608 0%, #160f06 100%)'
+                  : '#110e08',
+                borderBottom: showDailyTrial ? '1px solid #2a1e10' : 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <span className="text-lg">🏆</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-xs tracking-widest uppercase" style={{
+                  color: !foughtToday ? '#d4a843' : '#5a4830',
+                  fontFamily: 'var(--font-cinzel, Georgia)',
+                  letterSpacing: '0.1em',
+                }}>Daily Trial</p>
+                <p className="text-xs" style={{ color: !foughtToday ? '#8a6838' : '#3a2e18' }}>
+                  {foughtToday ? 'Complete — resets in ' : `${dailyBoss.fullName} · fight to the death`}
+                  {foughtToday && <Countdown />}
+                </p>
+              </div>
+              {!foughtToday && (
+                <span className="text-xs px-2 py-0.5 rounded font-bold shrink-0" style={{
+                  background: '#2a1a08', color: '#d4a843', border: '1px solid #5a3a10',
+                }}>Available</span>
+              )}
+              <span className="text-xs shrink-0" style={{ color: '#4a3820' }}>{showDailyTrial ? '▲' : '▼'}</span>
+            </button>
+
+            {showDailyTrial && (
+              <div className="p-5" style={{ background: 'linear-gradient(180deg, #140f06 0%, #0d0a05 100%)' }}>
+                <div className="flex gap-4 mb-4">
+                  <div className="text-5xl shrink-0 flex items-center justify-center w-16 h-16 rounded-lg" style={{ background: '#1a1208', border: '1px solid #3a2810' }}>
+                    {dailyBoss.speciesEmoji}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-lg leading-tight mb-0.5" style={{ color: '#e8c870', fontFamily: 'var(--font-cinzel, Georgia)', textShadow: '0 0 20px rgba(212,168,67,0.3)' }}>{dailyBoss.fullName}</p>
+                    <p className="text-xs mb-2" style={{ color: '#8a6a38' }}>Level {dailyBoss.level} {dailyBoss.speciesName}</p>
+                    <p className="text-sm italic" style={{ color: '#7a6040', lineHeight: '1.5' }}>&ldquo;{dailyBoss.flavor}&rdquo;</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {[
+                    { label: 'Win XP', value: `+${xpReward.toLocaleString()}`, color: '#5abf6a', bg: '#0a1a0a' },
+                    { label: 'Bones (clean win)', value: `up to +${Math.floor(bonesReward * 1.5)}`, color: '#d4a843', bg: '#1a1208' },
+                    { label: 'On loss', value: 'You die.', color: '#bf5a5a', bg: '#1a0808' },
+                  ].map(r => (
+                    <div key={r.label} className="rounded p-2.5 text-center" style={{ background: r.bg, border: '1px solid #2a1e0e' }}>
+                      <p className="text-xs mb-1" style={{ color: '#6a5030' }}>{r.label}</p>
+                      <p className="text-xs font-bold" style={{ color: r.color }}>{r.value}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 text-xs mb-4 p-3 rounded" style={{ background: '#100d06', border: '1px solid #2a1e0e', color: '#6a5030' }}>
+                  <span>⚠️</span>
+                  <span>You fight at Bold daring. No surrender. If your HP reaches zero, your character dies permanently.</span>
+                </div>
+                {foughtToday ? (
+                  <div className="text-center py-3 rounded" style={{ background: '#0e0c06', border: '1px solid #2a1e0e' }}>
+                    <p className="text-sm" style={{ color: '#5a4a28' }}>Trial complete for today. Come back tomorrow.</p>
+                  </div>
+                ) : (
+                  <button onClick={fightDaily} disabled={dailyLoading} className="w-full py-3 rounded font-bold text-sm transition-all" style={{ background: dailyLoading ? '#1a1208' : 'linear-gradient(135deg, #5a3a08 0%, #3a2408 100%)', border: '1px solid #8a6020', color: dailyLoading ? '#6a5030' : '#e8c870', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em', boxShadow: dailyLoading ? 'none' : '0 0 20px rgba(212,168,67,0.15)', cursor: 'pointer' }}>
+                    {dailyLoading ? 'Entering the arena...' : 'Enter the Trial ⚔️'}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="space-y-3">
             {mobs.map(mob => {
               const locked = mob.level > charLevel + 3
@@ -354,62 +430,9 @@ export default function ArenaClient({
         </>
       )}
 
-      {/* ── Challenges Tab ── */}
-      {tab === 'challenges' && (
+      {/* ── Duels Tab ── */}
+      {tab === 'duels' && (
         <>
-          {/* Daily Trial */}
-          <div className="mb-8 rounded-lg overflow-hidden" style={{ border: '1px solid #6a4a18', boxShadow: '0 0 40px rgba(212,168,67,0.08)' }}>
-            <div className="px-5 py-3 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #2a1e08 0%, #1a1206 100%)', borderBottom: '1px solid #5a3a10' }}>
-              <span className="text-xl">🏆</span>
-              <div>
-                <p className="font-bold text-sm tracking-widest uppercase" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.12em' }}>The Daily Trial</p>
-                <p className="text-xs" style={{ color: '#7a5a28' }}>One chance. No surrender. Fight to the death.</p>
-              </div>
-              {foughtToday && (
-                <span className="ml-auto text-xs px-2 py-1 rounded" style={{ background: '#1a1208', color: '#6a5030', border: '1px solid #3a2810' }}>
-                  Resets in <Countdown />
-                </span>
-              )}
-            </div>
-            <div className="p-5" style={{ background: 'linear-gradient(180deg, #140f06 0%, #0d0a05 100%)' }}>
-              <div className="flex gap-4 mb-4">
-                <div className="text-5xl shrink-0 flex items-center justify-center w-16 h-16 rounded-lg" style={{ background: '#1a1208', border: '1px solid #3a2810' }}>
-                  {dailyBoss.speciesEmoji}
-                </div>
-                <div className="flex-1">
-                  <p className="font-bold text-lg leading-tight mb-0.5" style={{ color: '#e8c870', fontFamily: 'var(--font-cinzel, Georgia)', textShadow: '0 0 20px rgba(212,168,67,0.3)' }}>{dailyBoss.fullName}</p>
-                  <p className="text-xs mb-2" style={{ color: '#8a6a38' }}>Level {dailyBoss.level} {dailyBoss.speciesName}</p>
-                  <p className="text-sm italic" style={{ color: '#7a6040', lineHeight: '1.5' }}>"{dailyBoss.flavor}"</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                {[
-                  { label: 'Win XP', value: `+${xpReward.toLocaleString()}`, color: '#5abf6a', bg: '#0a1a0a' },
-                  { label: 'Bones (clean win)', value: `up to +${Math.floor(bonesReward * 1.5)}`, color: '#d4a843', bg: '#1a1208' },
-                  { label: 'On loss', value: 'You die.', color: '#bf5a5a', bg: '#1a0808' },
-                ].map(r => (
-                  <div key={r.label} className="rounded p-2.5 text-center" style={{ background: r.bg, border: '1px solid #2a1e0e' }}>
-                    <p className="text-xs mb-1" style={{ color: '#6a5030' }}>{r.label}</p>
-                    <p className="text-xs font-bold" style={{ color: r.color }}>{r.value}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2 text-xs mb-4 p-3 rounded" style={{ background: '#100d06', border: '1px solid #2a1e0e', color: '#6a5030' }}>
-                <span>⚠️</span>
-                <span>You fight at Bold daring. No surrender. If your HP reaches zero, your character dies permanently.</span>
-              </div>
-              {foughtToday ? (
-                <div className="text-center py-3 rounded" style={{ background: '#0e0c06', border: '1px solid #2a1e0e' }}>
-                  <p className="text-sm" style={{ color: '#5a4a28' }}>Trial complete for today. You either won gloriously or you&apos;re reading this from the afterlife.</p>
-                </div>
-              ) : (
-                <button onClick={fightDaily} disabled={dailyLoading} className="w-full py-3 rounded font-bold text-sm transition-all" style={{ background: dailyLoading ? '#1a1208' : 'linear-gradient(135deg, #5a3a08 0%, #3a2408 100%)', border: '1px solid #8a6020', color: dailyLoading ? '#6a5030' : '#e8c870', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em', boxShadow: dailyLoading ? 'none' : '0 0 20px rgba(212,168,67,0.15)', cursor: 'pointer' }}>
-                  {dailyLoading ? 'Entering the arena...' : 'Enter the Trial ⚔️'}
-                </button>
-              )}
-            </div>
-          </div>
-
           {/* Incoming challenges */}
           {incomingChallenges.length > 0 && (
             <div className="mb-8">
