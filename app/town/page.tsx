@@ -243,6 +243,7 @@ export default async function TownPage() {
   }
 
   const currentTown = (character.current_town as number) ?? 1
+  const townDef = TOWNS.find(t => t.id === currentTown) ?? TOWNS[0]
   const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
 
   const [
@@ -384,6 +385,38 @@ export default async function TownPage() {
           </div>
         </Link>
       )}
+
+      {/* Location cards */}
+      <div className="mt-4 grid grid-cols-3 gap-3">
+        {[
+          { href: '/arena',  label: townDef.locations.arena,  icon: '🏟️', desc: 'Fight mobs & players' },
+          { href: '/tavern', label: townDef.locations.tavern, icon: '🍺', desc: 'Quests & healing' },
+          { href: '/shop',   label: townDef.locations.gear,   icon: '🛡️', desc: 'Buy gear' },
+        ].map(loc => (
+          <Link key={loc.href} href={loc.href} style={{ textDecoration: 'none' }}>
+            <div style={{
+              background: '#100c06',
+              border: '1px solid #2a1e10',
+              borderRadius: '8px',
+              padding: '12px 10px',
+              textAlign: 'center',
+              transition: 'border-color 0.15s',
+            }}>
+              <div style={{ fontSize: '22px', marginBottom: '4px' }}>{loc.icon}</div>
+              <p style={{
+                color: '#d4a843',
+                fontFamily: 'var(--font-cinzel, Georgia)',
+                fontSize: '10px',
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                marginBottom: '2px',
+              }}>{loc.label}</p>
+              <p style={{ color: '#6a5840', fontSize: '10px' }}>{loc.desc}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
 
       {/* Events — always visible */}
       <div className="mt-4 panel">

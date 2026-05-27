@@ -8,12 +8,10 @@ import { TOWNS } from '@/lib/game-data'
 const HIDDEN_ON = ['/login', '/create-character', '/auth']
 
 const BASE_TABS = [
-  { href: '/town',      labelKey: null,       staticLabel: 'Home',   icon: '🏰' },
-  { href: '/training',  labelKey: 'training',  staticLabel: null,    icon: '⚔️' },
-  { href: '/arena',     labelKey: 'arena',     staticLabel: null,    icon: '🏟️' },
-  { href: '/tavern',    labelKey: 'tavern',    staticLabel: null,    icon: '🍺' },
-  { href: '/shop',      labelKey: 'gear',      staticLabel: null,    icon: '🛡️' },
-  { href: '/map',       labelKey: null,       staticLabel: 'Map',   icon: '🗺️' },
+  { href: '/town',   labelKey: null,    staticLabel: 'Home', icon: '🏰' },
+  { href: '/arena',  labelKey: 'arena', staticLabel: null,   icon: '🏟️' },
+  { href: '/tavern', labelKey: 'tavern', staticLabel: null,  icon: '🍺' },
+  { href: '/map',    labelKey: null,    staticLabel: 'Map',  icon: '🗺️' },
 ] as const
 
 interface NavData {
