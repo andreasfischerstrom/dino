@@ -72,6 +72,7 @@ function SignOutBtn() {
 export default function NavBar() {
   const pathname = usePathname()
   const [data, setData] = useState<NavData | null>(null)
+  const [hoveredTab, setHoveredTab] = useState<string | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -123,27 +124,48 @@ export default function NavBar() {
         </Link>
 
         {/* Center nav links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flex: 1, justifyContent: 'center' }}>
           {tabs.map(tab => {
             const active = pathname === tab.href || (tab.href !== '/town' && pathname.startsWith(tab.href))
+            const hovered = hoveredTab === tab.href
             const isArena = tab.href === '/arena'
             return (
-              <Link key={tab.href} href={tab.href} style={{
-                position: 'relative',
-                padding: '5px 13px',
-                borderRadius: '6px',
-                fontSize: '11px',
-                fontFamily: 'var(--font-cinzel, Georgia)',
-                letterSpacing: '0.07em',
-                textTransform: 'uppercase',
-                fontWeight: active ? 700 : 400,
-                color: active ? '#d4a843' : '#a08050',
-                background: active ? 'rgba(212,168,67,0.07)' : 'transparent',
-                textDecoration: 'none',
-                transition: 'color 0.15s, background 0.15s',
-                whiteSpace: 'nowrap',
-                borderBottom: active ? '1px solid rgba(212,168,67,0.4)' : '1px solid transparent',
-              }}>
+              <Link
+                key={tab.href}
+                href={tab.href}
+                onMouseEnter={() => setHoveredTab(tab.href)}
+                onMouseLeave={() => setHoveredTab(null)}
+                style={{
+                  position: 'relative',
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontFamily: 'var(--font-cinzel, Georgia)',
+                  letterSpacing: '0.07em',
+                  textTransform: 'uppercase',
+                  fontWeight: active ? 700 : 400,
+                  color: active ? '#d4a843' : hovered ? '#c8924a' : '#7a6040',
+                  background: active
+                    ? 'rgba(212,168,67,0.10)'
+                    : hovered
+                      ? 'rgba(212,168,67,0.05)'
+                      : 'transparent',
+                  border: active
+                    ? '1px solid rgba(212,168,67,0.22)'
+                    : '1px solid transparent',
+                  boxShadow: active
+                    ? '0 0 16px rgba(212,168,67,0.08), inset 0 1px 0 rgba(212,168,67,0.06)'
+                    : 'none',
+                  textShadow: active
+                    ? '0 0 14px rgba(212,168,67,0.35)'
+                    : hovered
+                      ? '0 0 10px rgba(212,168,67,0.18)'
+                      : 'none',
+                  textDecoration: 'none',
+                  transition: 'color 0.18s, background 0.18s, border-color 0.18s, box-shadow 0.18s, text-shadow 0.18s',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {tab.label}
                 {isArena && data && data.challengeCount > 0 && (
                   <ChallengeBadge count={data.challengeCount} />
