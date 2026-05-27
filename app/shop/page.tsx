@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { GEAR } from '@/lib/game-data'
+import { GEAR, TOWNS } from '@/lib/game-data'
 import { generateDailyMarket } from '@/lib/black-market'
 import ShopClient from '@/components/ShopClient'
 
@@ -23,6 +23,11 @@ export default async function ShopPage() {
     .from('inventory')
     .select('gear_id, equipped')
     .eq('character_id', character.id)
+
+  const currentTown = (character.current_town as number) ?? 1
+  const townDef = TOWNS.find(t => t.id === currentTown) ?? TOWNS[0]
+  const ownedIds = new Set((inventory || []).map((i: { gear_id: string }) => i.gear_id))
+  const townGear = GEAR.filter(g => (g.town ?? 1) === currentTown || ownedIds.has(g.id))
 
   const today = new Date().toISOString().slice(0, 10)
   const tier = character.level >= 13 ? 3 : character.level >= 6 ? 2 : 1
@@ -46,9 +51,11 @@ export default async function ShopPage() {
   return (
     <ShopClient
       character={character}
-      gear={GEAR}
+      gear={townGear}
       inventory={inventory || []}
       blackMarketItem={blackMarketItem}
+      locationName={townDef.locations.gear}
+      keeperName={townDef.tavernKeeper}
     />
   )
 }

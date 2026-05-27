@@ -9,9 +9,11 @@ interface Props {
   gear: GearTemplate[]
   inventory: { gear_id: string; equipped: boolean }[]
   blackMarketItem: BlackMarketItem
+  locationName: string
+  keeperName: string
 }
 
-export default function ShopClient({ character, gear, inventory, blackMarketItem }: Props) {
+export default function ShopClient({ character, gear, inventory, blackMarketItem, locationName, keeperName }: Props) {
   const [tab, setTab] = useState<'shop' | 'inventory'>('shop')
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -80,11 +82,11 @@ export default function ShopClient({ character, gear, inventory, blackMarketItem
     <div className="min-h-screen px-4 py-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-2">
         <Link href="/town" className="btn-ghost text-sm">← Town</Link>
-        <h1 className="text-3xl page-title flex-1">Grubclaw's Smithy</h1>
+        <h1 className="text-3xl page-title flex-1">{locationName}</h1>
         <span className="text-sm font-bold shrink-0" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>🦴 {bones}</span>
       </div>
       <p className="text-sm mb-6" style={{ color: '#a08050', fontStyle: 'italic' }}>
-        "Quality not guaranteed. Refunds not offered. Grubclaw has three fingers and zero patience."
+        &quot;Quality not guaranteed. Refunds not offered. {keeperName} has zero patience.&quot;
       </p>
 
       {/* ── Black Market ── */}

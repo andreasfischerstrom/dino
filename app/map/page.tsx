@@ -2,31 +2,30 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import TavernClient from '@/components/TavernClient'
 import { TOWNS } from '@/lib/game-data'
+import MapClient from '@/components/MapClient'
 
-export default async function TavernPage() {
+export default async function MapPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const { data: character } = await supabase
     .from('characters')
-    .select('*')
+    .select('id, level, current_town, alive')
     .eq('user_id', user.id)
     .single()
 
   if (!character) redirect('/create-character')
+  if (!character.alive) redirect('/obituary')
 
   const currentTown = (character.current_town as number) ?? 1
-  const townDef = TOWNS.find(t => t.id === currentTown) ?? TOWNS[0]
 
-  const { data: investment } = await supabase
-    .from('investments')
-    .select('*')
-    .eq('character_id', character.id)
-    .eq('collected', false)
-    .single()
-
-  return <TavernClient character={character} investment={investment ?? null} locationName={townDef.locations.tavern} keeperName={townDef.tavernKeeper} />
+  return (
+    <MapClient
+      towns={TOWNS}
+      currentTown={currentTown}
+      characterLevel={character.level as number}
+    />
+  )
 }

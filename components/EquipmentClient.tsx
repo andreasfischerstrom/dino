@@ -16,9 +16,10 @@ interface Props {
   character: Record<string, unknown>
   gear: GearTemplate[]
   inventory: { gear_id: string; equipped: boolean }[]
+  shopName: string
 }
 
-export default function EquipmentClient({ character, gear, inventory }: Props) {
+export default function EquipmentClient({ character, gear, inventory, shopName }: Props) {
   const [equippedIds, setEquippedIds] = useState<string[]>(
     inventory.filter(i => i.equipped).map(i => i.gear_id)
   )
@@ -87,7 +88,7 @@ export default function EquipmentClient({ character, gear, inventory }: Props) {
       </div>
       <p className="text-sm mb-6" style={{ color: '#a08050' }}>
         Six slots. One item each. Click a slot to swap what's equipped.
-        Buy more gear at <Link href="/shop" style={{ color: '#c8a84b' }}>Grubclaw's Smithy</Link>.
+        Buy more gear at <Link href="/shop" style={{ color: '#c8a84b' }}>{shopName}</Link>.
       </p>
 
       {error && <p className="mb-4 text-sm" style={{ color: '#bf4040' }}>{error}</p>}
@@ -249,7 +250,7 @@ export default function EquipmentClient({ character, gear, inventory }: Props) {
       })()}
 
       <div className="mt-6 text-center">
-        <Link href="/shop" className="btn-ghost text-sm">🔨 Visit Grubclaw's Smithy to buy more gear</Link>
+        <Link href="/shop" className="btn-ghost text-sm">🔨 Visit {shopName} to buy more gear</Link>
       </div>
     </div>
   )

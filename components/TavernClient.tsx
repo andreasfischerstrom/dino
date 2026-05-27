@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import Link from 'next/link'
-import { TAVERN_QUESTS, TAVERN_ITEMS, TavernItem, TavernItemEffect, StatKey } from '@/lib/game-data'
+import { TAVERN_QUESTS, TAVERN_ITEMS, TavernItem, TavernItemEffect, StatKey, TavernQuest } from '@/lib/game-data'
 
 const RUMORS = [
   "A Spinosaurus named 'Dave' has gone undefeated for three weeks. Nobody knows how Dave does it. Dave won't say.",
@@ -34,7 +34,7 @@ function describeEffects(effects: TavernItemEffect[], maxHp: number, hp: number)
 
 type DiceOutcome = 'win' | 'loss' | 'cheat_win' | 'cheat_caught' | 'draw' | null
 
-export default function TavernClient({ character, investment }: { character: Record<string, unknown>; investment: Record<string, unknown> | null }) {
+export default function TavernClient({ character, investment, locationName, keeperName }: { character: Record<string, unknown>; investment: Record<string, unknown> | null; locationName: string; keeperName: string }) {
   const [tab, setTab] = useState<'shop' | 'heal' | 'dice' | 'invest' | 'quest'>('shop')
   const [bones, setBones] = useState(character.bones as number)
   const [hp, setHp] = useState(character.hp as number)
@@ -62,11 +62,14 @@ export default function TavernClient({ character, investment }: { character: Rec
   const [showOutcome, setShowOutcome] = useState(false)
   const timeouts = useRef<ReturnType<typeof setTimeout>[]>([])
 
-  const [quest] = useState(() => {
-    if (Math.random() > 0.70) return null
-    return TAVERN_QUESTS[Math.floor(Math.random() * TAVERN_QUESTS.length)]
+  const currentTown = (character.current_town as number) ?? 1
+  const townQuests = TAVERN_QUESTS.filter(q => (q.town ?? 1) === currentTown)
+  const [quest] = useState<TavernQuest | null>(() => {
+    if (Math.random() > 0.75) return null
+    const pool = townQuests.length > 0 ? townQuests : TAVERN_QUESTS
+    return pool[Math.floor(Math.random() * pool.length)]
   })
-  const [questOutcome, setQuestOutcome] = useState<string | null>(null)
+  const [questOutcome, setQuestOutcome] = useState<{ text: string; bonesDelta: number; hpDelta: number; xpDelta: number } | null>(null)
   const [questDone, setQuestDone] = useState(false)
 
   const hpMissing = maxHp - hp
@@ -120,21 +123,31 @@ export default function TavernClient({ character, investment }: { character: Rec
     setLoading(null)
   }
 
-  async function handleQuest(accepted: boolean) {
+  async function handleQuest(choiceIndex: number) {
     if (!quest || questDone) return
     setLoading('quest')
     const res = await fetch('/api/tavern/quest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questId: quest.id, accepted }),
+      body: JSON.stringify({ questId: quest.id, choiceIndex }),
     })
     const json = await res.json()
     if (!res.ok) { setMessage(json.error || 'Something went wrong.'); setLoading(null); return }
-    setQuestOutcome(accepted ? quest.acceptOutcome : quest.declineOutcome)
+    setQuestOutcome({ text: json.outcomeText, bonesDelta: json.bonesDelta ?? 0, hpDelta: json.hpDelta ?? 0, xpDelta: json.xpDelta ?? 0 })
     setQuestDone(true)
     if (json.newBones !== undefined) setBones(json.newBones)
     if (json.newHp !== undefined) setHp(Math.min(maxHp, Math.max(1, json.newHp)))
     setLoading(null)
+  }
+
+  function getContextHint(q: TavernQuest): string | null {
+    if (!q.contextHint) return null
+    const hint = q.contextHint
+    if (hint.lowHp && hp / maxHp < 0.4) return hint.text
+    if (hint.stat && hint.statThreshold !== undefined) {
+      if ((charStats[hint.stat] || 0) >= hint.statThreshold) return hint.text
+    }
+    return null
   }
 
   const DIE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅']
@@ -222,7 +235,7 @@ export default function TavernClient({ character, investment }: { character: Rec
     <div className="min-h-screen px-4 py-8 max-w-2xl mx-auto">
       <div className="flex items-center gap-4 mb-4">
         <Link href="/town" className="btn-ghost text-sm">← Town</Link>
-        <h1 className="text-3xl page-title">Tar Pit Tavern</h1>
+        <h1 className="text-3xl page-title">{locationName}</h1>
         <span className="ml-auto text-sm font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>🦴 {bones}</span>
       </div>
       <p className="text-sm mb-4" style={{ color: '#a08050', fontStyle: 'italic' }}>
@@ -530,7 +543,7 @@ export default function TavernClient({ character, investment }: { character: Rec
       {tab === 'invest' && (
         <div className="panel space-y-5">
           <div>
-            <p className="font-bold mb-0.5" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>Tar Pit Investments</p>
+            <p className="font-bold mb-0.5" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{locationName} Investments</p>
             <p className="text-xs" style={{ color: '#a08050' }}>
               Lock your bones for 24 hours. Collect 120% back. Risk: you might die while your money's tied up.
             </p>
@@ -615,7 +628,7 @@ export default function TavernClient({ character, investment }: { character: Rec
           )}
 
           <p className="text-xs" style={{ color: '#5a4a30', borderTop: '1px solid #2a1e0e', paddingTop: '0.75rem' }}>
-            One active investment at a time. The Tar Pit charges no fees. The Tar Pit also assumes no liability.
+            One active investment at a time. {locationName} charges no fees. {locationName} also assumes no liability.
           </p>
         </div>
       )}
@@ -632,38 +645,46 @@ export default function TavernClient({ character, investment }: { character: Rec
               <p className="font-bold mb-3" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>⚡ A Situation Has Developed</p>
               {!questDone ? (
                 <>
-                  <p className="text-sm mb-4" style={{ color: '#e8d5b0' }}>{quest.prompt}</p>
-                  <div className="flex gap-3">
-                    <button className="btn-primary flex-1 text-sm" disabled={loading === 'quest'} onClick={() => handleQuest(true)}>
-                      {quest.acceptLabel}
-                    </button>
-                    <button className="btn-ghost flex-1 text-sm" disabled={loading === 'quest'} onClick={() => handleQuest(false)}>
-                      {quest.declineLabel}
-                    </button>
+                  <p className="text-sm mb-3 leading-relaxed" style={{ color: '#e8d5b0' }}>{quest.prompt}</p>
+                  {getContextHint(quest) && (
+                    <p className="text-xs mb-4 italic" style={{ color: '#8a9060', borderLeft: '2px solid #4a5030', paddingLeft: '10px' }}>
+                      {getContextHint(quest)}
+                    </p>
+                  )}
+                  <div className="space-y-2">
+                    {quest.choices.map((choice, i) => (
+                      <button
+                        key={i}
+                        className={i === 0 ? 'btn-primary w-full text-sm text-left' : 'btn-ghost w-full text-sm text-left'}
+                        disabled={loading === 'quest'}
+                        onClick={() => handleQuest(i)}
+                        style={{ justifyContent: 'flex-start' }}
+                      >
+                        {loading === 'quest' ? '...' : choice.label}
+                      </button>
+                    ))}
                   </div>
                 </>
-              ) : (
+              ) : questOutcome && (
                 <div className="fade-in space-y-3">
-                  <p className="text-sm italic" style={{ color: '#a08050' }}>{questOutcome}</p>
-                  {(quest.bonesDelta || quest.hpDelta || quest.xpDelta) && (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {quest.bonesDelta != null && quest.bonesDelta !== 0 && (
-                        <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: quest.bonesDelta > 0 ? '#0e2410' : '#2a0808', color: quest.bonesDelta > 0 ? '#5abf6a' : '#bf5a5a', border: `1px solid ${quest.bonesDelta > 0 ? '#2a6428' : '#6a2828'}` }}>
-                          🦴 {quest.bonesDelta > 0 ? `+${quest.bonesDelta}` : quest.bonesDelta} bones
-                        </span>
-                      )}
-                      {quest.hpDelta != null && quest.hpDelta !== 0 && (
-                        <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: quest.hpDelta > 0 ? '#0e2410' : '#2a0808', color: quest.hpDelta > 0 ? '#5abf6a' : '#bf5a5a', border: `1px solid ${quest.hpDelta > 0 ? '#2a6428' : '#6a2828'}` }}>
-                          ❤ {quest.hpDelta > 0 ? `+${quest.hpDelta}` : quest.hpDelta} HP
-                        </span>
-                      )}
-                      {quest.xpDelta != null && quest.xpDelta > 0 && (
-                        <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>
-                          ✦ +{quest.xpDelta} XP
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  <p className="text-sm italic leading-relaxed" style={{ color: '#a08050' }}>{questOutcome.text}</p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {questOutcome.bonesDelta !== 0 && (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: questOutcome.bonesDelta > 0 ? '#0e2410' : '#2a0808', color: questOutcome.bonesDelta > 0 ? '#5abf6a' : '#bf5a5a', border: `1px solid ${questOutcome.bonesDelta > 0 ? '#2a6428' : '#6a2828'}` }}>
+                        🦴 {questOutcome.bonesDelta > 0 ? `+${questOutcome.bonesDelta}` : questOutcome.bonesDelta} bones
+                      </span>
+                    )}
+                    {questOutcome.hpDelta !== 0 && (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: questOutcome.hpDelta > 0 ? '#0e2410' : '#2a0808', color: questOutcome.hpDelta > 0 ? '#5abf6a' : '#bf5a5a', border: `1px solid ${questOutcome.hpDelta > 0 ? '#2a6428' : '#6a2828'}` }}>
+                        ❤ {questOutcome.hpDelta > 0 ? `+${questOutcome.hpDelta}` : questOutcome.hpDelta} HP
+                      </span>
+                    )}
+                    {questOutcome.xpDelta > 0 && (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>
+                        ✦ +{questOutcome.xpDelta} XP
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

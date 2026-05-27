@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { MOBS, GEAR, SPECIES, DARING_OPTIONS } from '@/lib/game-data'
+import { MOBS, GEAR, SPECIES, DARING_OPTIONS, TOWNS } from '@/lib/game-data'
 import TrainingClient from '@/components/TrainingClient'
 
 export default async function TrainingPage() {
@@ -26,13 +26,18 @@ export default async function TrainingPage() {
 
   const equippedGear = (inventory || []).map((i: { gear_id: string }) => GEAR.find(g => g.id === i.gear_id)).filter(Boolean)
 
+  const currentTown = (character.current_town as number) ?? 1
+  const townDef = TOWNS.find(t => t.id === currentTown) ?? TOWNS[0]
+  const townMobs = MOBS.filter(m => (m.town ?? 1) === currentTown)
+
   return (
     <TrainingClient
       character={character}
       equippedGear={equippedGear}
-      mobs={MOBS}
+      mobs={townMobs}
       species={SPECIES}
       daringOptions={DARING_OPTIONS}
+      locationName={townDef.locations.training}
     />
   )
 }

@@ -10,9 +10,10 @@ interface Props {
   mobs: Mob[]
   species: Species[]
   daringOptions: DaringOption[]
+  locationName: string
 }
 
-export default function TrainingClient({ character, equippedGear, mobs, species, daringOptions }: Props) {
+export default function TrainingClient({ character, equippedGear, mobs, species, daringOptions, locationName }: Props) {
   const [fighting, setFighting] = useState(false)
   const [battleData, setBattleData] = useState<Record<string, unknown> | null>(null)
   const [selectedMob, setSelectedMob] = useState<Mob | null>(null)
@@ -79,7 +80,7 @@ export default function TrainingClient({ character, equippedGear, mobs, species,
     <div className="min-h-screen px-4 py-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <Link href="/town" className="btn-ghost text-sm">← Town</Link>
-        <h1 className="text-3xl page-title">The Bone Pit</h1>
+        <h1 className="text-3xl page-title">{locationName}</h1>
       </div>
       <p className="mb-6 text-sm" style={{ color: '#a08050', fontStyle: 'italic' }}>
         Train against the local wildlife. Gain XP and bones. Try not to think too hard about what they do with the bodies.

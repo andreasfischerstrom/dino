@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { SPECIES, STATS, GEAR_SLOTS, xpForLevel, maxHp } from '@/lib/game-data'
+import { SPECIES, STATS, GEAR_SLOTS, TOWNS, xpForLevel, maxHp } from '@/lib/game-data'
 import { getEquippedGear, computeGearBonus } from '@/lib/stats'
 import SignOutButton from '@/components/SignOutButton'
 import CharacterCard from '@/components/CharacterCard'
@@ -242,6 +242,7 @@ export default async function TownPage() {
     character.hp = syncedHp
   }
 
+  const currentTown = (character.current_town as number) ?? 1
   const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
 
   const [
@@ -264,6 +265,7 @@ export default async function TownPage() {
       .from('characters')
       .select('id, name, species, created_at')
       .gt('created_at', twoDaysAgo)
+      .eq('current_town', currentTown)
       .order('created_at', { ascending: false })
       .limit(5),
   ])
@@ -279,6 +281,9 @@ export default async function TownPage() {
   const charMap = Object.fromEntries((feedChars || []).map(c => [c.id, { name: c.name as string }]))
 
   const feed = buildFeed(feedBattles, charMap, newArrivals || [], character.id as string)
+
+  const nextTown = TOWNS.find(t => t.id === currentTown + 1)
+  const canUnlockNextTown = nextTown && character.level >= nextTown.levelReq
 
   const species = SPECIES.find(s => s.id === character.species)
   const xpCurrent = xpForLevel(character.level)
@@ -355,6 +360,29 @@ export default async function TownPage() {
         }}>
           ⚠️ HP critically low ({hpPct}%). Visit the Tavern before challenging anyone.
         </div>
+      )}
+
+      {/* New town unlock prompt */}
+      {canUnlockNextTown && (
+        <Link href="/map" style={{ textDecoration: 'none', display: 'block' }}>
+          <div className="mt-4 p-3 rounded" style={{
+            background: 'linear-gradient(135deg, #1a0e06 0%, #120a04 100%)',
+            border: '1px solid #7a4818',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
+          }}>
+            <p className="text-sm font-bold mb-1" style={{
+              color: '#d4a843',
+              fontFamily: 'var(--font-cinzel, Georgia)',
+              letterSpacing: '0.04em',
+            }}>
+              {nextTown.keeperEmoji} {nextTown.name} awaits
+            </p>
+            <p className="text-xs" style={{ color: '#a07040' }}>
+              You have outgrown this pit. Word has reached you of {nextTown.subtitle} — further east, harder, better rewarded.{' '}
+              <span style={{ color: '#d4a843' }}>Open the map →</span>
+            </p>
+          </div>
+        </Link>
       )}
 
       {/* Events — always visible */}

@@ -14,6 +14,7 @@ interface Props {
   daringOptions: DaringOption[]
   dailyBoss: DailyBoss
   foughtToday: boolean
+  locationName: string
 }
 
 function Countdown() {
@@ -36,7 +37,7 @@ function Countdown() {
 
 export default function ArenaClient({
   character, others, incomingChallenges, outgoingChallenges,
-  species, daringOptions, dailyBoss, foughtToday,
+  species, daringOptions, dailyBoss, foughtToday, locationName,
 }: Props) {
   const [daring, setDaring] = useState(character.daring as string || 'measured')
   const [surrenderAt, setSurrenderAt] = useState(character.surrender_at as number ?? 20)
@@ -138,7 +139,7 @@ export default function ArenaClient({
     <div className="min-h-screen px-4 py-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
         <Link href="/town" className="btn-ghost text-sm">← Town</Link>
-        <h1 className="text-3xl page-title">The Colosseum</h1>
+        <h1 className="text-3xl page-title">{locationName}</h1>
       </div>
 
       {error && <div className="alert-error mb-6">{error}</div>}

@@ -44,6 +44,9 @@ export async function POST(req: Request) {
   if (!character) return NextResponse.json({ error: 'No character found' }, { status: 400 })
   if (!character.alive) return NextResponse.json({ error: 'Your character is dead. This is permanent.' }, { status: 400 })
 
+  const currentTown = (character.current_town as number) ?? 1
+  if ((mob.town ?? 1) !== currentTown) return NextResponse.json({ error: 'That creature is not in your town' }, { status: 400 })
+
   const { data: inventory } = await supabase
     .from('inventory')
     .select('gear_id')

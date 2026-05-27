@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { SPECIES, DARING_OPTIONS } from '@/lib/game-data'
+import { SPECIES, DARING_OPTIONS, TOWNS } from '@/lib/game-data'
 import { generateDailyBoss, alreadyFoughtToday, todayUTC } from '@/lib/daily-boss'
 import ArenaClient from '@/components/ArenaClient'
 
@@ -20,10 +20,14 @@ export default async function ArenaPage() {
   if (!character) redirect('/create-character')
   if (!character.alive) redirect('/obituary')
 
+  const currentTown = (character.current_town as number) ?? 1
+  const townDef = TOWNS.find(t => t.id === currentTown) ?? TOWNS[0]
+
   const { data: others } = await supabase
     .from('characters')
     .select('id, name, species, level, wins, losses, kills, daring, surrender_at')
     .eq('alive', true)
+    .eq('current_town', currentTown)
     .neq('user_id', user.id)
     .order('level', { ascending: false })
     .limit(20)
@@ -53,6 +57,7 @@ export default async function ArenaPage() {
       daringOptions={DARING_OPTIONS}
       dailyBoss={dailyBoss}
       foughtToday={foughtToday}
+      locationName={townDef.locations.arena}
     />
   )
 }
