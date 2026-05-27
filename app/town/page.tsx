@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { Icon } from '@iconify/react'
 import { SPECIES, TOWNS, maxHp } from '@/lib/game-data'
 import { getEquippedGear, computeGearBonus } from '@/lib/stats'
 import { alreadyFoughtToday, generateDailyBoss, todayUTC } from '@/lib/daily-boss'
@@ -68,7 +69,7 @@ function buildFeed(
           `${mob} made an example of ${challName} in the Bone Pit`,
           `${challName} entered the Bone Pit. ${mob} made sure they didn't leave`,
         ], seed)
-        entries.push({ key: seed + '-death', icon: '☠️', text, fatal: true, createdAt: b.created_at as string, mine })
+        entries.push({ key: seed + '-death', icon: 'game-icons:skull-crossed-bones', text, fatal: true, createdAt: b.created_at as string, mine })
       } else if (winnerId === challId) {
         if (leveledUp && newLevel) {
           const text = pick([
@@ -76,7 +77,7 @@ function buildFeed(
             `Level ${newLevel}. ${challName} is getting dangerous`,
             `${challName} carved through ${mob} and emerged stronger — level ${newLevel}`,
           ], seed)
-          entries.push({ key: seed + '-lvl', icon: '⬆️', text, notable: true, createdAt: b.created_at as string, mine })
+          entries.push({ key: seed + '-lvl', icon: 'game-icons:upgrade', text, notable: true, createdAt: b.created_at as string, mine })
         } else {
           const text = pick([
             `${challName} put ${mob} down in the Bone Pit`,
@@ -84,7 +85,7 @@ function buildFeed(
             `${challName} left ${mob} in a heap and walked out grinning`,
             `Another ${mob} felled. ${challName} barely broke a sweat`,
           ], seed)
-          entries.push({ key: seed, icon: '⚔️', text, createdAt: b.created_at as string, mine })
+          entries.push({ key: seed, icon: 'game-icons:crossed-swords', text, createdAt: b.created_at as string, mine })
         }
       } else {
         const text = pick([
@@ -92,7 +93,7 @@ function buildFeed(
           `${mob} sent ${challName} running. A tactical withdrawal, apparently`,
           `${challName} escaped ${mob} with their life. Barely`,
         ], seed)
-        entries.push({ key: seed, icon: '🛡️', text, createdAt: b.created_at as string, mine })
+        entries.push({ key: seed, icon: 'game-icons:shield-bash', text, createdAt: b.created_at as string, mine })
       }
     } else {
       // PvP
@@ -105,7 +106,7 @@ function buildFeed(
           `Neither ${challName} nor ${challedName} would yield. The crowd left unsatisfied`,
           `${challName} vs ${challedName} — no winner, no glory`,
         ], seed)
-        entries.push({ key: seed, icon: '🤝', text, createdAt: b.created_at as string, mine: mine || challedMine })
+        entries.push({ key: seed, icon: 'game-icons:laurels', text, createdAt: b.created_at as string, mine: mine || challedMine })
       } else {
         const winnerName = charMap[winnerId]?.name ?? 'A fighter'
         const loserId = winnerId === challId ? challedId : challId
@@ -119,7 +120,7 @@ function buildFeed(
             `${loserName} is dead. ${winnerName} made sure of it`,
             `The Colosseum claims another — ${loserName} fell to ${winnerName}`,
           ], seed)
-          entries.push({ key: seed, icon: '💀', text, fatal: true, createdAt: b.created_at as string, mine: wMine })
+          entries.push({ key: seed, icon: 'game-icons:death-skull', text, fatal: true, createdAt: b.created_at as string, mine: wMine })
         } else {
           const text = pick([
             `${winnerName} put ${loserName} in the dirt`,
@@ -127,7 +128,7 @@ function buildFeed(
             `The Colosseum roared as ${winnerName} bested ${loserName}`,
             `${winnerName} vs ${loserName} — no contest`,
           ], seed)
-          entries.push({ key: seed, icon: '⚔️', text, createdAt: b.created_at as string, mine: wMine })
+          entries.push({ key: seed, icon: 'game-icons:crossed-swords', text, createdAt: b.created_at as string, mine: wMine })
         }
       }
     }
@@ -136,13 +137,12 @@ function buildFeed(
   // New arrivals
   for (const c of newArrivals) {
     if (c.id === myId) continue
-    const sp = SPECIES.find(s => s.id === c.species)
     const text = pick([
-      `${sp?.emoji ?? ''} ${c.name} has arrived. Another fighter enters the fray`,
-      `A new ${sp?.name ?? 'creature'} named ${c.name} just walked through the gates`,
+      `${c.name} has arrived. Another fighter enters the fray`,
+      `A new challenger named ${c.name} just walked through the gates`,
       `${c.name} is here. The pit grows more crowded`,
     ], c.id)
-    entries.push({ key: 'arrival-' + c.id, icon: '🦕', text, createdAt: c.created_at, notable: true })
+    entries.push({ key: 'arrival-' + c.id, icon: 'game-icons:dinosaur-rex', text, createdAt: c.created_at, notable: true })
   }
 
   // Sort by time, newest first, take top 10
@@ -344,9 +344,9 @@ export default async function TownPage() {
         {/* Location cards */}
         <div className="grid grid-cols-3" style={{ background: '#0c0905', borderTop: '1px solid #2a1e10' }}>
           {[
-            { href: '/arena',  label: townDef.locations.arena,  icon: '🏟️', desc: 'Fight mobs & players' },
-            { href: '/tavern', label: townDef.locations.tavern, icon: '🍺', desc: 'Quests & healing' },
-            { href: '/shop',   label: townDef.locations.gear,   icon: '🛡️', desc: 'Buy gear' },
+            { href: '/arena',  label: townDef.locations.arena,  icon: 'game-icons:crossed-swords', desc: 'Fight mobs & players' },
+            { href: '/tavern', label: townDef.locations.tavern, icon: 'game-icons:tavern-sign',    desc: 'Quests & healing' },
+            { href: '/shop',   label: townDef.locations.gear,   icon: 'game-icons:anvil',          desc: 'Buy gear' },
           ].map((loc, i) => (
             <Link key={loc.href} href={loc.href} style={{ textDecoration: 'none' }}>
               <div style={{
@@ -355,7 +355,9 @@ export default async function TownPage() {
                 borderRight: i < 2 ? '1px solid #1e1610' : 'none',
                 transition: 'background 0.15s',
               }}>
-                <div style={{ fontSize: '22px', marginBottom: '6px' }}>{loc.icon}</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px', color: '#c8a050' }}>
+                  <Icon icon={loc.icon} width={26} height={26} />
+                </div>
                 <p style={{
                   color: '#c8a050',
                   fontFamily: 'var(--font-cinzel, Georgia)',
@@ -389,7 +391,10 @@ export default async function TownPage() {
           color: '#c06060',
           boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
         }}>
-          ⚠️ HP critically low ({hpPct}%). Visit the Tavern before challenging anyone.
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Icon icon="game-icons:skull-crossed-bones" width={16} height={16} style={{ flexShrink: 0 }} />
+          HP critically low ({hpPct}%). Visit the Tavern before challenging anyone.
+        </span>
         </div>
       )}
 
@@ -406,11 +411,14 @@ export default async function TownPage() {
               fontFamily: 'var(--font-cinzel, Georgia)',
               letterSpacing: '0.04em',
             }}>
-              {nextTown.keeperEmoji} {nextTown.name} awaits
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Icon icon="game-icons:compass" width={14} height={14} />
+                {nextTown.name} awaits
+              </span>
             </p>
             <p className="text-xs" style={{ color: '#a07040' }}>
               You have outgrown this pit. Word has reached you of {nextTown.subtitle} — further east, harder, better rewarded.{' '}
-              <span style={{ color: '#d4a843' }}>Open the map →</span>
+              <span style={{ color: '#d4a843', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>Open the map <Icon icon="lucide:chevron-right" width={12} height={12} /></span>
             </p>
           </div>
         </Link>
@@ -435,7 +443,7 @@ export default async function TownPage() {
                   <div className="flex items-center gap-3 px-3 py-2.5 rounded" style={{
                     background: '#1a0e06', border: '1px solid #5a2e10',
                   }}>
-                    <span style={{ fontSize: '18px', flexShrink: 0 }}>⚔️</span>
+                    <Icon icon="game-icons:crossed-swords" width={20} height={20} style={{ flexShrink: 0, color: '#c07040' }} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold" style={{ color: '#e8d5b0' }}>
                         {sp?.emoji} {challenger?.name as string ?? 'Someone'}{' '}
@@ -443,7 +451,7 @@ export default async function TownPage() {
                       </p>
                       <p className="text-xs" style={{ color: '#a07848' }}>Lvl {challenger?.level as number} · Accept or decline in the Colosseum</p>
                     </div>
-                    <span style={{ color: '#d4a843', fontSize: '12px', flexShrink: 0 }}>→</span>
+                    <Icon icon="lucide:chevron-right" width={14} height={14} style={{ color: '#d4a843', flexShrink: 0 }} />
                   </div>
                 </Link>
               )
@@ -452,7 +460,7 @@ export default async function TownPage() {
             <div className="flex items-center gap-3 px-3 py-2.5 rounded" style={{
               border: '1px solid #2a2018',
             }}>
-              <span style={{ fontSize: '18px', flexShrink: 0, opacity: 0.35 }}>⚔️</span>
+              <Icon icon="game-icons:crossed-swords" width={20} height={20} style={{ flexShrink: 0, color: '#4a3820', opacity: 0.5 }} />
               <p className="text-sm" style={{ color: '#6a5840' }}>No challenges pending</p>
             </div>
           )}
@@ -462,19 +470,19 @@ export default async function TownPage() {
               <div className="flex items-center gap-3 px-3 py-2.5 rounded" style={{
                 background: '#0e1a0a', border: '1px solid #3a5018',
               }}>
-                <span style={{ fontSize: '18px', flexShrink: 0 }}>🏆</span>
+                <Icon icon="game-icons:trophy-cup" width={20} height={20} style={{ flexShrink: 0, color: '#d4a843' }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold" style={{ color: '#e8d5b0' }}>Daily trial ready</p>
                   <p className="text-xs" style={{ color: '#7aaa48' }}>{dailyBoss.fullName} awaits · Fight in the Colosseum</p>
                 </div>
-                <span style={{ color: '#d4a843', fontSize: '12px', flexShrink: 0 }}>→</span>
+                <Icon icon="lucide:chevron-right" width={14} height={14} style={{ color: '#d4a843', flexShrink: 0 }} />
               </div>
             </Link>
           ) : (
             <div className="flex items-center gap-3 px-3 py-2.5 rounded" style={{
               border: '1px solid #2a2018',
             }}>
-              <span style={{ fontSize: '18px', flexShrink: 0, opacity: 0.35 }}>🏆</span>
+              <Icon icon="game-icons:trophy-cup" width={20} height={20} style={{ flexShrink: 0, color: '#4a3820', opacity: 0.5 }} />
               <p className="text-sm" style={{ color: '#6a5840' }}>Daily trial complete · Come back tomorrow</p>
             </div>
           )}
@@ -499,14 +507,8 @@ export default async function TownPage() {
               <div key={entry.key} className="flex items-start gap-3 py-2.5" style={{
                 borderTop: i > 0 ? '1px solid #110d08' : 'none',
               }}>
-                <span style={{
-                  fontSize: '13px',
-                  lineHeight: '21px',
-                  flexShrink: 0,
-                  width: '20px',
-                  textAlign: 'center',
-                }}>
-                  {entry.icon}
+                <span style={{ flexShrink: 0, width: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '2px' }}>
+                  <Icon icon={entry.icon} width={15} height={15} />
                 </span>
                 <p className="flex-1 text-sm leading-relaxed" style={{
                   color: entry.mine

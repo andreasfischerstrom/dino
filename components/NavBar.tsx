@@ -56,7 +56,7 @@ function HpBar({ hp, maxHp, width }: { hp: number; maxHp: number; width?: number
   return (
     <div style={{ width: width ?? '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginBottom: '2px' }}>
-        <Icon icon="game-icons:heart-organ" width={9} height={9} style={{ color: HP_COLOR, flexShrink: 0 }} />
+        <Icon icon="lucide:heart" width={9} height={9} style={{ color: HP_COLOR, flexShrink: 0 }} />
         <span style={{ fontSize: '8px', color: '#4a3820', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.02em' }}>{hp}/{maxHp}</span>
       </div>
       <div style={{ height: '4px', background: '#1a1208', borderRadius: '2px', overflow: 'hidden' }}>
@@ -154,7 +154,7 @@ export default function NavBar() {
     <>
       {/* Desktop top bar — md and above */}
       <nav className="hidden md:flex items-center px-6 gap-6" style={{
-        position: 'fixed', top: 0, left: 0, right: 0, height: '64px', zIndex: 40,
+        position: 'fixed', top: 0, left: 0, right: 0, height: '72px', zIndex: 40,
         background: 'rgba(8,6,4,0.97)',
         borderBottom: '1px solid #2a1e10',
         backdropFilter: 'blur(12px)',
@@ -215,8 +215,8 @@ export default function NavBar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
           {data !== null && (
             <>
-              <Avatar imageUrl={data.imageUrl} speciesImage={data.speciesImage} speciesEmoji={data.speciesEmoji} level={data.level} />
-              <HpBar hp={data.hp} maxHp={data.maxHp} width={72} />
+              <Avatar imageUrl={data.imageUrl} speciesImage={data.speciesImage} speciesEmoji={data.speciesEmoji} level={data.level} size={34} />
+              <HpBar hp={data.hp} maxHp={data.maxHp} width={80} />
               <span style={{ fontSize: '13px', color: '#a08858', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <Icon icon="game-icons:crossed-bones" width={14} height={14} />
                 {data.bones.toLocaleString()}
@@ -239,7 +239,7 @@ export default function NavBar() {
       }}>
         {data !== null && (
           <>
-            <Avatar imageUrl={data.imageUrl} speciesImage={data.speciesImage} speciesEmoji={data.speciesEmoji} level={data.level} />
+            <Avatar imageUrl={data.imageUrl} speciesImage={data.speciesImage} speciesEmoji={data.speciesEmoji} level={data.level} size={34} />
             <div style={{ minWidth: 0 }}>
               <p style={{
                 fontSize: '12px', color: '#c8a870', fontWeight: 700,

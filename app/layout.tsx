@@ -41,7 +41,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`h-full ${cinzel.variable} ${cinzelDeco.variable} ${crimson.variable}`}>
-      <body className="min-h-full pb-20 pt-16 md:pb-0 md:pt-16">
+      <body className="min-h-full pb-20 pt-[72px] md:pb-0 md:pt-[72px]">
         <TownBackground />
         {children}
         <NavBar />
