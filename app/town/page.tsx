@@ -386,36 +386,87 @@ export default async function TownPage() {
         </Link>
       )}
 
-      {/* Location cards */}
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        {[
-          { href: '/arena',  label: townDef.locations.arena,  icon: '🏟️', desc: 'Fight mobs & players' },
-          { href: '/tavern', label: townDef.locations.tavern, icon: '🍺', desc: 'Quests & healing' },
-          { href: '/shop',   label: townDef.locations.gear,   icon: '🛡️', desc: 'Buy gear' },
-        ].map(loc => (
-          <Link key={loc.href} href={loc.href} style={{ textDecoration: 'none' }}>
-            <div style={{
-              background: '#100c06',
-              border: '1px solid #2a1e10',
-              borderRadius: '8px',
-              padding: '12px 10px',
-              textAlign: 'center',
-              transition: 'border-color 0.15s',
-            }}>
-              <div style={{ fontSize: '22px', marginBottom: '4px' }}>{loc.icon}</div>
-              <p style={{
-                color: '#d4a843',
-                fontFamily: 'var(--font-cinzel, Georgia)',
-                fontSize: '10px',
-                fontWeight: 700,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-                marginBottom: '2px',
-              }}>{loc.label}</p>
-              <p style={{ color: '#6a5840', fontSize: '10px' }}>{loc.desc}</p>
-            </div>
-          </Link>
-        ))}
+      {/* Town banner + location cards */}
+      <div className="mt-4 rounded-xl overflow-hidden" style={{
+        border: '1px solid #3a2810',
+        boxShadow: '0 4px 32px rgba(0,0,0,0.7)',
+      }}>
+        {/* Banner header */}
+        <div style={{
+          position: 'relative',
+          height: '110px',
+          overflow: 'hidden',
+        }}>
+          <img
+            src={townDef.banner}
+            alt={townDef.name}
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center 30%',
+              filter: 'brightness(0.45) saturate(0.8)',
+            }}
+          />
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(8,5,2,0.85) 100%)',
+          }} />
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            gap: '4px',
+          }}>
+            <p style={{
+              fontFamily: 'var(--font-cinzel-deco, var(--font-cinzel, Georgia))',
+              color: '#e8c870',
+              fontSize: '20px',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              textShadow: '0 2px 16px rgba(0,0,0,0.9), 0 0 32px rgba(212,168,67,0.3)',
+              lineHeight: 1,
+            }}>{townDef.name}</p>
+            <p style={{
+              color: '#8a6a38',
+              fontSize: '11px',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              fontFamily: 'var(--font-cinzel, Georgia)',
+              textShadow: '0 1px 6px rgba(0,0,0,0.8)',
+            }}>{townDef.subtitle}</p>
+          </div>
+        </div>
+
+        {/* Location cards */}
+        <div className="grid grid-cols-3" style={{ background: '#0c0905', borderTop: '1px solid #2a1e10' }}>
+          {[
+            { href: '/arena',  label: townDef.locations.arena,  icon: '🏟️', desc: 'Fight mobs & players' },
+            { href: '/tavern', label: townDef.locations.tavern, icon: '🍺', desc: 'Quests & healing' },
+            { href: '/shop',   label: townDef.locations.gear,   icon: '🛡️', desc: 'Buy gear' },
+          ].map((loc, i) => (
+            <Link key={loc.href} href={loc.href} style={{ textDecoration: 'none' }}>
+              <div style={{
+                padding: '14px 10px',
+                textAlign: 'center',
+                borderRight: i < 2 ? '1px solid #1e1610' : 'none',
+                transition: 'background 0.15s',
+              }}>
+                <div style={{ fontSize: '22px', marginBottom: '6px' }}>{loc.icon}</div>
+                <p style={{
+                  color: '#c8a050',
+                  fontFamily: 'var(--font-cinzel, Georgia)',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  marginBottom: '3px',
+                }}>{loc.label}</p>
+                <p style={{ color: '#5a4830', fontSize: '10px' }}>{loc.desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Events — always visible */}
