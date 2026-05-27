@@ -410,10 +410,10 @@ export default function BattleViewer({
   }
 
   return (
-    <div className="w-full min-h-dvh flex flex-col items-center justify-center" style={{ background: '#06040280' }}>
+    <div style={{ position: 'fixed', inset: 0, background: '#060402', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
     <div className="flex flex-col w-full max-w-2xl" style={{
-      height: '100dvh',
-      maxHeight: 'min(100dvh, 640px)',
+      height: '100%',
+      maxHeight: '640px',
       backgroundImage: 'linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0.55)), url(/images/arena-bg.png)',
       backgroundSize: 'cover',
       backgroundPosition: 'center',

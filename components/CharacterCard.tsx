@@ -1,7 +1,8 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { GearSlot, STAT_MAX } from '@/lib/game-data'
+import { createClient } from '@/lib/supabase/client'
 
 const SLOT_IMAGES: Record<GearSlot, string> = {
   jaws:      '/images/equipment/fang.png',
@@ -74,27 +75,52 @@ export default function CharacterCard({
   const [localStatPoints, setLocalStatPoints] = useState(statPoints)
   const [localStats, setLocalStats] = useState(stats)
   const [spending, setSpending] = useState<string | null>(null)
+  const [hpBase, setHpBase] = useState(hp)
   const [liveHp, setLiveHp] = useState(hp)
   const [hoveredStat, setHoveredStat] = useState<string | null>(null)
+  const liveHpRef = useRef(hp)
 
+  // Regen ticker — restarts whenever hpBase changes (e.g. after a remote battle)
   useEffect(() => {
-    if (!lastRegenAt || !regenPerMinute || hp >= maxHp) return
+    if (!lastRegenAt || !regenPerMinute || hpBase >= maxHp) return
     const msPerHp = 60000 / regenPerMinute
     const elapsed = Date.now() - new Date(lastRegenAt).getTime()
     const msUntilNext = msPerHp - (elapsed % msPerHp)
 
-    let currentHp = hp
+    let currentHp = hpBase
     let timeout: ReturnType<typeof setTimeout>
 
     function tick() {
       currentHp = Math.min(maxHp, currentHp + 1)
+      liveHpRef.current = currentHp
       setLiveHp(currentHp)
       if (currentHp < maxHp) timeout = setTimeout(tick, msPerHp)
     }
 
     timeout = setTimeout(tick, msUntilNext)
     return () => clearTimeout(timeout)
-  }, [hp, maxHp, lastRegenAt, regenPerMinute])
+  }, [hpBase, maxHp, lastRegenAt, regenPerMinute])
+
+  // Realtime: sync HP drops from other devices/sessions
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase.channel(`char-hp-${characterId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'characters',
+        filter: `id=eq.${characterId}`,
+      }, (payload) => {
+        const newHp = (payload.new as Record<string, unknown>).hp as number
+        if (typeof newHp === 'number' && newHp !== liveHpRef.current) {
+          liveHpRef.current = newHp
+          setHpBase(newHp)
+          setLiveHp(newHp)
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [characterId])
 
   const hpPct = Math.round((liveHp / maxHp) * 100)
   const xpSpan = xpForNext - xpCurrent
