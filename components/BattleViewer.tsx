@@ -198,12 +198,7 @@ export default function BattleViewer({
     setTimeout(() => set(null), 1050)
   }
 
-  // Trigger fight animations when a new event becomes visible
-  useEffect(() => {
-    if (visibleCount === 0) return
-    const event = localEvents[visibleCount - 1]
-    if (!event) return
-
+  function triggerEventAnimations(event: BattleEvent) {
     if (event.type === 'attack' || event.type === 'crit') {
       const dmg = parseDamage(event.text)
       if (event.attacker === 'a') {
@@ -218,7 +213,6 @@ export default function BattleViewer({
         setTimeout(() => setShake(false), 500)
       }
     }
-
     if (event.type === 'counter') {
       const dmg = parseDamage(event.text)
       if (event.attacker === 'b') {
@@ -229,10 +223,9 @@ export default function BattleViewer({
         if (dmg) showFloat(setFloatB, dmg, false, true)
       }
     }
-
     if (event.hpA <= 0) setDeadA(true)
     if (event.hpB <= 0) setDeadB(true)
-  }, [visibleCount]) // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   // Typewriter: start typing when the current event changes
   useEffect(() => {
@@ -255,6 +248,7 @@ export default function BattleViewer({
       } else {
         setIsTyping(false)
         setWaitingForTap(true)
+        triggerEventAnimations(event)
       }
     }
 
@@ -285,7 +279,10 @@ export default function BattleViewer({
   function completeTyping() {
     if (typeTimerRef.current) clearTimeout(typeTimerRef.current)
     const event = localEvents[visibleCount - 1]
-    if (event) setTypedText(event.text)
+    if (event) {
+      setTypedText(event.text)
+      triggerEventAnimations(event)
+    }
     setIsTyping(false)
     setWaitingForTap(true)
   }
