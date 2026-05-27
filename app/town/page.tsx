@@ -3,9 +3,8 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { SPECIES, STATS, GEAR_SLOTS, TOWNS, xpForLevel, maxHp } from '@/lib/game-data'
+import { SPECIES, TOWNS, maxHp } from '@/lib/game-data'
 import { getEquippedGear, computeGearBonus } from '@/lib/stats'
-import CharacterCard from '@/components/CharacterCard'
 import { alreadyFoughtToday, generateDailyBoss, todayUTC } from '@/lib/daily-boss'
 
 const regenPerMinute = (maxHp: number) => maxHp / 60
@@ -284,37 +283,15 @@ export default async function TownPage() {
 
   const nextTown = TOWNS.find(t => t.id === currentTown + 1)
   const canUnlockNextTown = nextTown && character.level >= nextTown.levelReq
-
-  const species = SPECIES.find(s => s.id === character.species)
-  const xpCurrent = xpForLevel(character.level)
-  const xpForNext = xpForLevel(character.level + 1)
   const hpPct = Math.round((character.hp / character.max_hp) * 100)
-
-  const statRows = STATS.map(stat => {
-    const base = (character.stats as Record<string, number>)[stat.key] || 0
-    const gear = gearBonus[stat.key] || 0
-    const buff = buffs.filter(b => b.stat === stat.key).reduce((s, b) => s + b.bonus, 0)
-    return { key: stat.key, label: stat.label, emoji: stat.emoji, description: stat.description, base, gear, buff, total: base + gear + buff }
-  })
-
-  const slotItems = GEAR_SLOTS.map(s => ({
-    key: s.key,
-    label: s.label,
-    emoji: s.emoji,
-    item: equippedGear.find(g => g.slot === s.key)
-      ? { name: equippedGear.find(g => g.slot === s.key)!.name, emoji: equippedGear.find(g => g.slot === s.key)!.emoji }
-      : null,
-  }))
-
   const challenges = incomingChallenges || []
 
   return (
     <div className="min-h-screen px-4 py-6 max-w-4xl mx-auto">
 
       {/* Town banner + location cards — top of page */}
-      <div className="rounded-t-xl overflow-hidden" style={{
+      <div className="rounded-xl overflow-hidden mb-4" style={{
         border: '1px solid #3a2810',
-        borderBottom: 'none',
         boxShadow: '0 4px 32px rgba(0,0,0,0.7)',
       }}>
         {/* Banner header */}
@@ -404,38 +381,6 @@ export default async function TownPage() {
           {returnLine}
         </p>
       )}
-
-      <CharacterCard
-        name={character.name}
-        image={character.image_url ?? species?.image ?? null}
-        speciesEmoji={species?.emoji ?? '🦕'}
-        speciesName={species?.name ?? ''}
-        level={character.level}
-        hp={character.hp}
-        maxHp={character.max_hp}
-        xp={character.xp}
-        xpCurrent={xpCurrent}
-        xpForNext={xpForNext}
-        statPoints={character.stat_points || 0}
-        characterId={character.id}
-        kills={character.kills}
-        wins={character.wins}
-        losses={character.losses}
-        bones={character.bones}
-        stats={statRows}
-        slots={slotItems}
-        buffs={buffs}
-        passiveName={species?.passive?.name}
-        passiveDescription={species?.passive?.description}
-        lastRegenAt={character.last_regen_at ?? character.created_at}
-        regenPerMinute={regenPerMinute(character.max_hp)}
-        style={{
-          borderTop: '1px solid #3a2810',
-          borderTopLeftRadius: 0,
-          borderTopRightRadius: 0,
-          marginBottom: 0,
-        }}
-      />
 
       {hpPct < 30 && (
         <div className="mt-4 p-3 rounded text-sm" style={{

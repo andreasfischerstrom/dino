@@ -22,22 +22,19 @@ interface NavData {
   maxHp: number
   name: string
   imageUrl: string | null
+  speciesImage: string | null
   level: number
   speciesEmoji: string
 }
 
-function hpColor(hp: number, maxHp: number) {
-  const pct = hp / maxHp
-  if (pct > 0.6) return '#4a9a3a'
-  if (pct > 0.3) return '#c8a020'
-  return '#b83a3a'
-}
+const HP_COLOR = '#c04040'
 
-function Avatar({ imageUrl, speciesEmoji, level, size = 28 }: { imageUrl: string | null; speciesEmoji: string; level: number; size?: number }) {
+function Avatar({ imageUrl, speciesImage, speciesEmoji, level, size = 28 }: { imageUrl: string | null; speciesImage: string | null; speciesEmoji: string; level: number; size?: number }) {
+  const src = imageUrl || speciesImage
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-      {imageUrl
-        ? <img src={imageUrl} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', border: '1px solid #4a3520', display: 'block' }} />
+      {src
+        ? <img src={src} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', border: '1px solid #4a3520', display: 'block' }} />
         : <div style={{ width: size, height: size, borderRadius: '50%', background: '#1a1208', border: '1px solid #4a3520', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.5 }}>{speciesEmoji}</div>
       }
       <span style={{
@@ -55,11 +52,10 @@ function Avatar({ imageUrl, speciesEmoji, level, size = 28 }: { imageUrl: string
 
 function HpBar({ hp, maxHp, width }: { hp: number; maxHp: number; width?: number }) {
   const pct = Math.round((hp / maxHp) * 100)
-  const color = hpColor(hp, maxHp)
   return (
     <div style={{ width: width ?? '100%' }}>
       <div style={{ height: '4px', background: '#1a1208', borderRadius: '2px', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: '2px', transition: 'width 0.4s' }} />
+        <div style={{ height: '100%', width: `${pct}%`, background: HP_COLOR, borderRadius: '2px', transition: 'width 0.4s' }} />
       </div>
       <div style={{ fontSize: '8px', color: '#4a3820', marginTop: '2px', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.02em' }}>
         {hp}/{maxHp}
@@ -136,6 +132,7 @@ export default function NavBar() {
         maxHp: char.max_hp as number,
         name: char.name as string,
         imageUrl: char.image_url as string | null,
+        speciesImage: sp?.image ?? null,
         level: char.level as number,
         speciesEmoji: sp?.emoji ?? '🦕',
       })
@@ -155,7 +152,7 @@ export default function NavBar() {
     <>
       {/* Desktop top bar — md and above */}
       <nav className="hidden md:flex items-center px-6 gap-6" style={{
-        position: 'fixed', top: 0, left: 0, right: 0, height: '56px', zIndex: 40,
+        position: 'fixed', top: 0, left: 0, right: 0, height: '64px', zIndex: 40,
         background: 'rgba(8,6,4,0.97)',
         borderBottom: '1px solid #2a1e10',
         backdropFilter: 'blur(12px)',
@@ -216,7 +213,7 @@ export default function NavBar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
           {data !== null && (
             <>
-              <Avatar imageUrl={data.imageUrl} speciesEmoji={data.speciesEmoji} level={data.level} />
+              <Avatar imageUrl={data.imageUrl} speciesImage={data.speciesImage} speciesEmoji={data.speciesEmoji} level={data.level} />
               <HpBar hp={data.hp} maxHp={data.maxHp} width={72} />
               <span style={{ fontSize: '13px', color: '#a08858', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.04em' }}>
                 🦴 {data.bones.toLocaleString()}
@@ -239,7 +236,7 @@ export default function NavBar() {
       }}>
         {data !== null && (
           <>
-            <Avatar imageUrl={data.imageUrl} speciesEmoji={data.speciesEmoji} level={data.level} />
+            <Avatar imageUrl={data.imageUrl} speciesImage={data.speciesImage} speciesEmoji={data.speciesEmoji} level={data.level} />
             <div style={{ minWidth: 0 }}>
               <p style={{
                 fontSize: '12px', color: '#c8a870', fontWeight: 700,
