@@ -26,18 +26,22 @@ export default function ReplayClient({
   const [watching, setWatching] = useState(false)
   const [dismissing, setDismissing] = useState(false)
 
+  // Always mark seen via API before navigating — ensures the DB is updated before
+  // the town page renders server-side and checks for unseen battles.
   async function markSeenAndGo() {
-    await fetch('/api/battle/mark-seen', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ battleId }),
-    })
+    try {
+      await fetch('/api/battle/mark-seen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ battleId }),
+      })
+    } catch {}
     window.location.href = viewerSurvived ? '/town' : '/obituary'
   }
 
-  async function dismiss() {
+  function dismiss() {
     setDismissing(true)
-    await markSeenAndGo()
+    markSeenAndGo()
   }
 
   const cinzel = 'var(--font-cinzel, Georgia)'

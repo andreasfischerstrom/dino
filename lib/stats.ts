@@ -1,4 +1,4 @@
-import { GEAR, GearTemplate, StatKey, Stats } from './game-data'
+import { GEAR, GearTemplate, StatKey, Stats, STAT_MAX } from './game-data'
 
 export interface GearBonus { [key: string]: number }
 export interface ActiveBuff { stat: StatKey; bonus: number; label: string }
@@ -32,6 +32,10 @@ export function applyGearAndBuffs(
   }
   for (const buff of buffs) {
     result[buff.stat] = (result[buff.stat] || 0) + buff.bonus
+  }
+  // Cap all stats at STAT_MAX — gear and buffs cannot push a stat beyond the ceiling
+  for (const key of Object.keys(result) as StatKey[]) {
+    if (result[key] > STAT_MAX) result[key] = STAT_MAX
   }
   return result
 }

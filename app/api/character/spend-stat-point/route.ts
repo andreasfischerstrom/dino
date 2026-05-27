@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { STATS, StatKey } from '@/lib/game-data'
+import { STATS, StatKey, STAT_MAX } from '@/lib/game-data'
 
 const HP_PER_CONSTITUTION = 10  // from maxHp: 50 + constitution * 10
 
@@ -22,6 +22,8 @@ export async function POST(req: Request) {
   if (!character.stat_points || character.stat_points < 1) return NextResponse.json({ error: 'No stat points available' }, { status: 400 })
 
   const stats = character.stats as Record<StatKey, number>
+  if ((stats[stat as StatKey] || 0) >= STAT_MAX) return NextResponse.json({ error: 'Stat is already at maximum' }, { status: 400 })
+
   const newStats = { ...stats, [stat as StatKey]: (stats[stat as StatKey] || 0) + 1 }
 
   const update: Record<string, unknown> = {

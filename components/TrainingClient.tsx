@@ -61,7 +61,11 @@ export default function TrainingClient({ character, equippedGear, mobs, species,
         }}
         fighterBName={selectedMob.name}
         fighterBImage={selectedMob.image || selectedMob.emoji}
-        onComplete={() => { window.location.href = '/town' }}
+        onComplete={() => {
+          const result = (battleData.result as Record<string, unknown>)
+          const died = (result.newHp as number) === 0
+          window.location.href = died ? '/obituary' : '/town'
+        }}
         mobId={selectedMob.id}
         initialDaring={daring}
         surrenderAt={surrenderAt}

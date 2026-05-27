@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { GearSlot } from '@/lib/game-data'
+import { GearSlot, STAT_MAX } from '@/lib/game-data'
 
 const SLOT_IMAGES: Record<GearSlot, string> = {
   jaws:      '/images/equipment/fang.png',
@@ -237,7 +237,7 @@ export default function CharacterCard({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-4">
             {localStats.map(stat => {
-              const barMax = 15
+              const barMax = STAT_MAX
               const basePct = Math.min(100, (stat.base / barMax) * 100)
               const gearPct = Math.min(100 - basePct, (stat.gear / barMax) * 100)
               const buffPct = Math.min(100 - basePct - gearPct, (stat.buff / barMax) * 100)

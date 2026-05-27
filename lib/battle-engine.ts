@@ -351,6 +351,7 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
       // Check surrender (PvP only — mobs never surrender)
       const checkSurrender = (fighter: Fighter, hp: number, maxHp: number, side: 'a' | 'b') => {
         if (fighter.isMob) return false
+        if (hp <= 0) return false  // dead fighters can't surrender
         const hpPct = (hp / maxHp) * 100
         if (hpPct <= fighter.surrenderAt && fighter.surrenderAt > 0) {
           addEvent({ round, type: 'surrender', attacker: side, text: `${fighter.name} raises a limb in surrender at ${Math.round(hpPct)}% HP. The crowd boos. ${fighter.name} does not care. ${fighter.name} is alive.` })

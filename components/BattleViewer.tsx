@@ -35,7 +35,7 @@ interface Props {
   surrenderAt?: number
   daringOptions?: DaringOption[]
   activeManagement?: boolean
-  viewerSnapshot?: CharacterSnapshot  // overrides fighterA for the outcome screen (replay use)
+  viewerSnapshot?: CharacterSnapshot
 }
 
 const EVENT_COLORS: Record<string, string> = {
@@ -52,8 +52,7 @@ const EVENT_COLORS: Record<string, string> = {
   passive:   '#d4a843',
 }
 
-const SPEED = 2800        // ms per event
-const SUSPENSE_HOLD = 2000
+const CHAR_SPEED = 28       // ms per character while typing
 const DISPLAY_ROUND_SIZE = 3
 
 function getDisplayRoundEndIdx(events: BattleEvent[], displayRound: number): number {
@@ -86,6 +85,15 @@ function hpBarColor(pct: number) {
   if (pct > 50) return 'linear-gradient(to bottom, #d03030 0%, #921818 60%, #6a0f0f 100%)'
   if (pct > 25) return 'linear-gradient(to bottom, #d07020 0%, #924010 60%, #6a2808 100%)'
   return 'linear-gradient(to bottom, #ff4444 0%, #cc2020 60%, #991010 100%)'
+}
+
+function eventEmoji(type: string) {
+  if (type === 'crit') return '💥 '
+  if (type === 'death') return '☠️ '
+  if (type === 'surrender') return '🏳️ '
+  if (type === 'outcome') return '🏆 '
+  if (type === 'counter') return '↩️ '
+  return ''
 }
 
 function FighterHead({ image, name, align, size = 72, attacking, dead, flash, floatNum }: {
@@ -153,10 +161,8 @@ export default function BattleViewer({
 }: Props) {
   const [localEvents, setLocalEvents] = useState<BattleEvent[]>(() => battleData.events as BattleEvent[])
   const [localResult, setLocalResult] = useState<Record<string, unknown>>(() => battleData.result as Record<string, unknown>)
-  const [visibleCount, setVisibleCount] = useState(0)
+  const [visibleCount, setVisibleCount] = useState(1)
   const [showOutcome, setShowOutcome] = useState(false)
-  const [suspense, setSuspense] = useState(false)
-  const [done, setDone] = useState(false)
 
   type Phase = 'playing' | 'interRound'
   const [phase, setPhase] = useState<Phase>('playing')
@@ -180,11 +186,19 @@ export default function BattleViewer({
   const [shake, setShake] = useState(false)
   const floatIdRef = useRef(0)
 
+  // Typewriter state
+  const [typedText, setTypedText] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const [waitingForTap, setWaitingForTap] = useState(false)
+  const typeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleTapRef = useRef<() => void>(() => {})
+
   function showFloat(set: (v: FloatNum | null) => void, amount: number, isCrit: boolean, isCounter: boolean) {
     set({ id: ++floatIdRef.current, amount, isCrit, isCounter })
     setTimeout(() => set(null), 1050)
   }
 
+  // Trigger fight animations when a new event becomes visible
   useEffect(() => {
     if (visibleCount === 0) return
     const event = localEvents[visibleCount - 1]
@@ -220,6 +234,34 @@ export default function BattleViewer({
     if (event.hpB <= 0) setDeadB(true)
   }, [visibleCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Typewriter: start typing when the current event changes
+  useEffect(() => {
+    const event = localEvents[visibleCount - 1]
+    if (!event) return
+
+    if (typeTimerRef.current) clearTimeout(typeTimerRef.current)
+    setTypedText('')
+    setIsTyping(true)
+    setWaitingForTap(false)
+
+    const chars = [...event.text]
+    let i = 0
+
+    function tick() {
+      i++
+      setTypedText(chars.slice(0, i).join(''))
+      if (i < chars.length) {
+        typeTimerRef.current = setTimeout(tick, CHAR_SPEED)
+      } else {
+        setIsTyping(false)
+        setWaitingForTap(true)
+      }
+    }
+
+    typeTimerRef.current = setTimeout(tick, CHAR_SPEED)
+    return () => { if (typeTimerRef.current) clearTimeout(typeTimerRef.current) }
+  }, [visibleCount, localEvents])
+
   const currentEvent = localEvents[visibleCount - 1]
   const hpA = currentEvent?.hpA ?? localEvents[0]?.hpA ?? fighterA.hp
   const hpB = currentEvent?.hpB ?? localEvents[0]?.hpB ?? 100
@@ -240,44 +282,60 @@ export default function BattleViewer({
     prevHpBRef.current = hpB
   }, [hpB])
 
-  // Auto-advance — no manual controls
-  useEffect(() => {
-    if (phase !== 'playing' || suspense || done) return
+  function completeTyping() {
+    if (typeTimerRef.current) clearTimeout(typeTimerRef.current)
+    const event = localEvents[visibleCount - 1]
+    if (event) setTypedText(event.text)
+    setIsTyping(false)
+    setWaitingForTap(true)
+  }
 
+  function advance() {
+    setWaitingForTap(false)
     const displayRoundEnd = getDisplayRoundEndIdx(localEvents, currentDisplayRound)
+    const isAtRoundEnd = displayRoundEnd >= 0 && (visibleCount - 1) === displayRoundEnd
 
-    if (displayRoundEnd >= 0 && visibleCount > displayRoundEnd) {
+    if (isAtRoundEnd) {
       const lastEvent = localEvents[displayRoundEnd]
       if (isTerminalEvent(lastEvent)) {
-        setDone(true)
-      } else if (activeManagement) {
-        setPhase('interRound')
-      } else {
-        setRoundStartHp({ a: lastEvent.hpA, b: lastEvent.hpB })
-        setCurrentDisplayRound(d => d + 1)
+        setShowOutcome(true)
+        return
       }
-      return
+      if (activeManagement) {
+        setPhase('interRound')
+        return
+      }
+      setRoundStartHp({ a: lastEvent.hpA, b: lastEvent.hpB })
+      setCurrentDisplayRound(d => d + 1)
     }
 
-    const nextEvent = localEvents[visibleCount]
-    if (!nextEvent) return
+    const nextCount = visibleCount + 1
+    if (nextCount > localEvents.length) {
+      setShowOutcome(true)
+      return
+    }
+    setVisibleCount(nextCount)
+  }
 
-    const isSuspenseEvent = isTerminalEvent(nextEvent) && visibleCount > 0
-    const timer = setTimeout(() => {
-      if (isSuspenseEvent) setSuspense(true)
-      else setVisibleCount(v => Math.min(v + 1, localEvents.length))
-    }, SPEED)
-    return () => clearTimeout(timer)
-  }, [phase, visibleCount, suspense, done, localEvents, currentDisplayRound])
+  function handleTap() {
+    if (phase === 'interRound') return
+    if (isTyping) { completeTyping(); return }
+    if (waitingForTap) advance()
+  }
+
+  // Keep ref current for the stable keyboard listener
+  handleTapRef.current = handleTap
 
   useEffect(() => {
-    if (!suspense) return
-    const timer = setTimeout(() => {
-      setSuspense(false)
-      setVisibleCount(v => Math.min(v + 1, localEvents.length))
-    }, SUSPENSE_HOLD)
-    return () => clearTimeout(timer)
-  }, [suspense, localEvents.length])
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.code === 'Enter') {
+        e.preventDefault()
+        handleTapRef.current()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   async function continueToNextRound() {
     if (recomputing) return
@@ -313,15 +371,13 @@ export default function BattleViewer({
     if (lastShownEvent) setRoundStartHp({ a: lastShownEvent.hpA, b: lastShownEvent.hpB })
     setCurrentDisplayRound(d => d + 1)
     setPhase('playing')
+    setVisibleCount(v => v + 1)
   }
 
   const hpPctA = Math.round((hpA / maxHpA) * 100)
   const hpPctB = Math.round((hpB / maxHpB) * 100)
   const userIsA = userSide === 'a'
 
-  // Left side of screen always = event fighter A (challenger in PvP).
-  // fighterA prop = the viewer, fighterBName = the opponent — so swap names
-  // when the viewer is actually the defender (userSide='b').
   const leftName  = userIsA ? fighterA.name  : fighterBName
   const leftImage = userIsA ? fighterA.image : fighterBImage
   const rightName  = userIsA ? fighterBName  : fighterA.name
@@ -364,12 +420,17 @@ export default function BattleViewer({
       backgroundSize: 'cover',
       backgroundPosition: 'center',
     }}>
+      <style>{`
+        @keyframes blink-arrow { 0%, 100% { opacity: 1 } 50% { opacity: 0 } }
+        .advance-arrow { animation: blink-arrow 0.7s step-end infinite; }
+        @keyframes cursor-blink { 0%, 100% { opacity: 1 } 50% { opacity: 0 } }
+        .type-cursor { animation: cursor-blink 0.55s step-end infinite; }
+      `}</style>
 
-      {/* ── TOP: Fighting-game HP strip ── */}
+      {/* ── TOP: HP strip ── */}
       <div className="shrink-0 flex items-stretch px-3 pt-3 pb-2"
         style={{ background: 'rgba(6,4,2,0.88)', backdropFilter: 'blur(6px)', borderBottom: '1px solid rgba(90,64,40,0.4)' }}>
 
-        {/* Left = event fighter A (challenger). Name swapped by userSide above. */}
         <div className="flex-1 flex flex-col gap-1 pr-2">
           <div className="flex justify-between items-baseline">
             <span style={{ color: '#d4a843', fontFamily: cinzel, fontSize: '11px', fontWeight: 'bold',
@@ -388,7 +449,6 @@ export default function BattleViewer({
           </div>
         </div>
 
-        {/* Round counter */}
         <div className="shrink-0 flex flex-col items-center justify-center px-3">
           <span style={{ color: '#4a3820', fontFamily: cinzel, fontSize: '9px', letterSpacing: '0.1em' }}>RND</span>
           <span style={{ color: '#8a7040', fontFamily: cinzel, fontSize: '18px', fontWeight: 'bold', lineHeight: 1 }}>
@@ -396,7 +456,6 @@ export default function BattleViewer({
           </span>
         </div>
 
-        {/* Right = event fighter B (defender). Name swapped by userSide above. */}
         <div className="flex-1 flex flex-col gap-1 pl-2">
           <div className="flex justify-between items-baseline">
             <span style={{ color: '#6a5030', fontSize: '10px', fontFamily: 'monospace' }}>{hpB}/{maxHpB}</span>
@@ -416,7 +475,7 @@ export default function BattleViewer({
         </div>
       </div>
 
-      {/* ── ARENA: portraits + text all on one horizontal eyeline ── */}
+      {/* ── ARENA: portraits ── */}
       <div
         className="flex-1 flex items-center justify-between gap-3 px-5"
         style={{ minHeight: 0, animation: shake ? 'arena-shake 0.46s ease-out' : 'none' }}>
@@ -424,88 +483,96 @@ export default function BattleViewer({
         <FighterHead image={leftImage} name={leftName} align="left" size={72}
           attacking={attackingA} dead={deadA} flash={flashA} floatNum={floatA} />
 
-        {/* Center: event text, vertically centered with portraits */}
-        <div className="flex-1 flex items-center justify-center">
-          {suspense ? (
-            <p className="animate-pulse text-center" style={{ color: '#6a5030', letterSpacing: '0.5em', fontSize: '1.1rem' }}>
-              . . .
-            </p>
-          ) : currentEvent ? (
-            <div key={visibleCount} className="fade-in w-full" style={{
-              background: 'rgba(6,4,2,0.78)', backdropFilter: 'blur(6px)',
-              border: `1px solid ${currentEvent.type === 'crit' ? 'rgba(255,120,40,0.6)' : currentEvent.type === 'death' || currentEvent.type === 'outcome' ? 'rgba(180,60,60,0.5)' : 'rgba(90,64,40,0.5)'}`,
-              borderRadius: '8px', padding: '0.875rem 1rem', textAlign: 'center',
-              boxShadow: currentEvent.type === 'crit' ? '0 0 20px rgba(255,120,40,0.25)' : '0 2px 12px rgba(0,0,0,0.6)',
-            }}>
-              <p style={{
-                color: EVENT_COLORS[currentEvent.type] || '#e8d5b0',
-                fontStyle: currentEvent.type === 'flavor' || currentEvent.type === 'intro' ? 'italic' : 'normal',
-                fontWeight: currentEvent.type === 'crit' || currentEvent.type === 'outcome' || currentEvent.type === 'passive' || currentEvent.type === 'death' ? 'bold' : 'normal',
-                fontSize: '0.9rem', lineHeight: 1.55,
-              }}>
-                {currentEvent.type === 'crit' && '💥 '}
-                {currentEvent.type === 'death' && '☠️ '}
-                {currentEvent.type === 'surrender' && '🏳️ '}
-                {currentEvent.type === 'outcome' && '🏆 '}
-                {currentEvent.type === 'counter' && '↩️ '}
-                {currentEvent.text}
-              </p>
-            </div>
-          ) : null}
-        </div>
+        {/* Spacer so portraits stay on the sides */}
+        <div className="flex-1" />
 
         <FighterHead image={rightImage} name={rightName} align="right" size={72}
           attacking={attackingB} dead={deadB} flash={flashB} floatNum={floatB} />
       </div>
 
-      {/* ── BOTTOM: only shown when action needed ── */}
-      {(phase === 'interRound' || done) && (
+      {/* ── BOTTOM: text box (Pokémon-style) + inter-round panel ── */}
+      {phase === 'interRound' ? (
         <div className="shrink-0 px-4 pb-4 pt-3 fade-in"
           style={{ background: 'rgba(6,4,2,0.9)', backdropFilter: 'blur(6px)', borderTop: '1px solid rgba(90,64,40,0.35)' }}>
-          {phase === 'interRound' ? (
-            <div className="space-y-3">
-              <p className="text-xs font-bold text-center" style={{ color: '#d4a843', fontFamily: cinzel, letterSpacing: '0.06em' }}>
-                — Round {currentDisplayRound} Complete —
-              </p>
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-center" style={{ color: '#d4a843', fontFamily: cinzel, letterSpacing: '0.06em' }}>
+              — Round {currentDisplayRound} Complete —
+            </p>
 
-              <div className="flex gap-2 text-xs">
-                <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: dmgDealtUser > dmgReceivedUser ? '#0e1e08' : '#1a0e08', border: '1px solid #2a1e10' }}>
-                  <p style={{ color: '#5abf6a' }}>+{Math.max(0, dmgDealtUser)} dealt</p>
-                </div>
-                <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#1a0808', border: '1px solid #2a1e10' }}>
-                  <p style={{ color: '#bf5a5a' }}>−{Math.max(0, dmgReceivedUser)} received</p>
-                </div>
-                <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#0a0806', border: '1px solid #2a1e10' }}>
-                  <p style={{ color: userAhead ? '#5abf6a' : '#bf5a5a' }}>{userAhead ? 'Ahead' : 'Behind'}</p>
-                </div>
+            <div className="flex gap-2 text-xs">
+              <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: dmgDealtUser > dmgReceivedUser ? '#0e1e08' : '#1a0e08', border: '1px solid #2a1e10' }}>
+                <p style={{ color: '#5abf6a' }}>+{Math.max(0, dmgDealtUser)} dealt</p>
               </div>
-
-              {daringOptions && mobId && (
-                <div>
-                  <label className="block text-xs font-bold mb-1" style={{ color: '#a08050', fontFamily: cinzel, letterSpacing: '0.06em' }}>
-                    ADJUST DARING
-                  </label>
-                  <select value={activeDaring} onChange={e => setActiveDaring(e.target.value)}
-                    className="game-input text-sm" disabled={recomputing}>
-                    {daringOptions.map(d => (
-                      <option key={d.key} value={d.key}>{d.label} — {d.description}</option>
-                    ))}
-                  </select>
-                  {activeDaring !== committedDaring && (
-                    <p className="text-xs mt-1 animate-pulse" style={{ color: '#d4a843' }}>Change takes effect next round.</p>
-                  )}
-                </div>
-              )}
-
-              <button className="btn-primary w-full" onClick={continueToNextRound} disabled={recomputing}>
-                {recomputing ? 'Recalculating...' : 'Continue →'}
-              </button>
+              <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#1a0808', border: '1px solid #2a1e10' }}>
+                <p style={{ color: '#bf5a5a' }}>−{Math.max(0, dmgReceivedUser)} received</p>
+              </div>
+              <div className="flex-1 py-1.5 px-2 rounded text-center" style={{ background: '#0a0806', border: '1px solid #2a1e10' }}>
+                <p style={{ color: userAhead ? '#5abf6a' : '#bf5a5a' }}>{userAhead ? 'Ahead' : 'Behind'}</p>
+              </div>
             </div>
-          ) : (
-            <button className="btn-primary w-full" onClick={() => setShowOutcome(true)}>
-              See Results →
+
+            {daringOptions && mobId && (
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: '#a08050', fontFamily: cinzel, letterSpacing: '0.06em' }}>
+                  ADJUST DARING
+                </label>
+                <select value={activeDaring} onChange={e => setActiveDaring(e.target.value)}
+                  className="game-input text-sm" disabled={recomputing}>
+                  {daringOptions.map(d => (
+                    <option key={d.key} value={d.key}>{d.label} — {d.description}</option>
+                  ))}
+                </select>
+                {activeDaring !== committedDaring && (
+                  <p className="text-xs mt-1 animate-pulse" style={{ color: '#d4a843' }}>Change takes effect next round.</p>
+                )}
+              </div>
+            )}
+
+            <button className="btn-primary w-full" onClick={continueToNextRound} disabled={recomputing}>
+              {recomputing ? 'Recalculating...' : 'Continue →'}
             </button>
+          </div>
+        </div>
+      ) : (
+        /* Pokémon-style text box */
+        <div
+          className="shrink-0 px-4 pb-3 pt-3"
+          style={{
+            background: 'rgba(6,4,2,0.92)',
+            backdropFilter: 'blur(8px)',
+            borderTop: `1px solid ${currentEvent?.type === 'crit' ? 'rgba(255,120,40,0.5)' : currentEvent?.type === 'death' || currentEvent?.type === 'outcome' ? 'rgba(180,60,60,0.45)' : 'rgba(90,64,40,0.4)'}`,
+            cursor: 'pointer',
+            minHeight: '88px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+          }}
+          onClick={handleTap}
+        >
+          {currentEvent && (
+            <p style={{
+              color: EVENT_COLORS[currentEvent.type] || '#e8d5b0',
+              fontStyle: currentEvent.type === 'flavor' || currentEvent.type === 'intro' ? 'italic' : 'normal',
+              fontWeight: currentEvent.type === 'crit' || currentEvent.type === 'outcome' || currentEvent.type === 'passive' || currentEvent.type === 'death' ? 'bold' : 'normal',
+              fontSize: '0.9rem', lineHeight: 1.6,
+              minHeight: '2.8rem',
+            }}>
+              {eventEmoji(currentEvent.type)}
+              {typedText}
+              {isTyping && (
+                <span className="type-cursor" style={{ color: '#d4a843', marginLeft: '1px' }}>▌</span>
+              )}
+            </p>
           )}
+
+          <div className="flex items-center justify-between" style={{ marginTop: '4px' }}>
+            <span style={{ color: '#3a2e1a', fontSize: '10px', letterSpacing: '0.06em' }}>
+              {phase === 'playing' && 'SPACE / tap'}
+            </span>
+            {waitingForTap && (
+              <span className="advance-arrow" style={{ color: '#d4a843', fontSize: '12px' }}>▼</span>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -120,7 +120,13 @@ export default function ArenaClient({
         fighterBName={battleOpponent.name}
         fighterBImage={battleOpponent.image}
         userSide={battleOpponent.userSide}
-        onComplete={() => { window.location.href = '/town' }}
+        onComplete={() => {
+          const result = (battleData.result as Record<string, unknown>)
+          const died = battleOpponent.userSide === 'b'
+            ? !(result.defenderAlive as boolean)
+            : (result.newHp as number) === 0
+          window.location.href = died ? '/obituary' : '/town'
+        }}
       />
     )
   }

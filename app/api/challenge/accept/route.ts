@@ -1,8 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { GEAR, GearTemplate, StatKey, xpForLevel, maxHp } from '@/lib/game-data'
 import { simulateBattle, Fighter } from '@/lib/battle-engine'
 import { applyGearAndBuffs } from '@/lib/stats'
+
+// Admin client bypasses RLS — needed to update the attacker's character from the defender's session
+const supabaseAdmin = createAdminClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -59,6 +66,7 @@ export async function POST(req: Request) {
     stats: applyGearAndBuffs(attacker.stats, attackerGear, attacker.buffs || []),
     daring: challenge.challenger_daring,
     surrenderAt: challenge.challenger_surrender_at,
+    initialHp: attacker.hp,
   }
 
   const fighterB: Fighter = {
@@ -68,6 +76,7 @@ export async function POST(req: Request) {
     stats: applyGearAndBuffs(defender.stats, defenderGear, defender.buffs || []),
     daring,
     surrenderAt,
+    initialHp: defender.hp,
   }
 
   // Consume both fighters' buffs
@@ -81,10 +90,15 @@ export async function POST(req: Request) {
   const aWon = battle.winner === 'a'
   const bWon = battle.winner === 'b'
 
-  // XP rewards
-  const baseXp = 80 + Math.abs(attacker.level - defender.level) * 15
-  const aXpGain = aWon ? baseXp : Math.floor(baseXp * 0.10)
-  const bXpGain = bWon ? baseXp : Math.floor(baseXp * 0.10)
+  // XP rewards — scaled by level gap so farming low-levels is unrewarding
+  // Winning as the underdog (vs higher level) gives bonus XP; winning as the favorite gives little
+  const BASE_XP = 80
+  const aLevelAdv = defender.level - attacker.level  // positive = attacker is the underdog
+  const bLevelAdv = attacker.level - defender.level  // positive = defender is the underdog
+  const aXpMult = Math.max(0.15, Math.min(3.0, 1 + aLevelAdv * 0.15))
+  const bXpMult = Math.max(0.15, Math.min(3.0, 1 + bLevelAdv * 0.15))
+  const aXpGain = aWon ? Math.round(BASE_XP * aXpMult) : Math.max(5, Math.floor(BASE_XP * aXpMult * 0.10))
+  const bXpGain = bWon ? Math.round(BASE_XP * bXpMult) : Math.max(5, Math.floor(BASE_XP * bXpMult * 0.10))
 
   function newLevel(currentLevel: number, currentXp: number, xpGain: number) {
     const total = currentXp + xpGain
@@ -95,11 +109,10 @@ export async function POST(req: Request) {
 
   const aMaxHp = maxHp(fighterA.stats.constitution)
   const bMaxHp = maxHp(fighterB.stats.constitution)
-  const aHpLost = Math.max(0, aMaxHp - battle.aFinalHp)
-  const bHpLost = Math.max(0, bMaxHp - battle.bFinalHp)
 
-  const aNewHp = Math.max(battle.aAlive ? 1 : 0, attacker.hp - aHpLost)
-  const bNewHp = Math.max(battle.bAlive ? 1 : 0, defender.hp - bHpLost)
+  // Battle started at real HP so aFinalHp/bFinalHp are already the correct post-battle values
+  const aNewHp = Math.max(battle.aAlive ? 1 : 0, battle.aFinalHp)
+  const bNewHp = Math.max(battle.bAlive ? 1 : 0, battle.bFinalHp)
 
   const aProgress = newLevel(attacker.level, attacker.xp, aXpGain)
   const bProgress = newLevel(defender.level, defender.xp, bXpGain)
@@ -117,14 +130,14 @@ export async function POST(req: Request) {
 
   const now = new Date().toISOString()
 
-  await supabase.from('characters').update({
+  await supabaseAdmin.from('characters').update({
     hp: Math.min(aNewHp, aNewMaxHp), max_hp: aNewMaxHp,
     alive: battle.aAlive, xp: aProgress.xp, level: aProgress.level,
     bones: aNewBones, wins: aWon ? attacker.wins + 1 : attacker.wins,
     losses: !aWon ? attacker.losses + 1 : attacker.losses,
     kills: !battle.bAlive ? attacker.kills + 1 : attacker.kills,
     last_regen_at: now,
-    stat_points: (attacker.stat_points || 0) + Math.max(0, aLevelsGained),
+    stat_points: (attacker.stat_points || 0) + Math.max(0, aLevelsGained) * 2,
   }).eq('id', attacker.id)
 
   await supabase.from('characters').update({
@@ -134,7 +147,7 @@ export async function POST(req: Request) {
     losses: !bWon ? defender.losses + 1 : defender.losses,
     kills: !battle.aAlive ? defender.kills + 1 : defender.kills,
     last_regen_at: now,
-    stat_points: (defender.stat_points || 0) + Math.max(0, bLevelsGained),
+    stat_points: (defender.stat_points || 0) + Math.max(0, bLevelsGained) * 2,
   }).eq('id', defender.id)
 
   // Close challenge

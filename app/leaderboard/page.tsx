@@ -11,6 +11,7 @@ export default async function LeaderboardPage() {
   const { data: top } = await supabase
     .from('characters')
     .select('id, name, species, level, wins, losses, kills, alive, bones')
+    .eq('alive', true)
     .order('kills', { ascending: false })
     .limit(25)
 
@@ -18,8 +19,10 @@ export default async function LeaderboardPage() {
     .from('characters')
     .select('id, name, species, level, wins, losses, kills')
     .eq('alive', false)
+    .order('level', { ascending: false })
     .order('kills', { ascending: false })
-    .limit(10)
+    .order('wins', { ascending: false })
+    .limit(25)
 
   const rankDisplay = (i: number) => {
     if (i === 0) return { text: '🥇', gold: true }

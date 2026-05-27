@@ -228,7 +228,7 @@ export default function BattleOutcome({
 
       {showButton && (
         <button className="btn-primary px-8 py-3 text-base fade-in" onClick={onContinue}>
-          Back to Town
+          {survived ? 'Back to Town' : 'View Obituary'}
         </button>
       )}
     </div>

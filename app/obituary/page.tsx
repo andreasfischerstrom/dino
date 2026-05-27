@@ -35,6 +35,7 @@ export default async function ObituaryPage() {
     .from('battles')
     .select('id')
     .or(`and(challenger_id.eq.${character.id},challenger_seen.eq.false),and(challenged_id.eq.${character.id},challenged_seen.eq.false)`)
+    .not('battle_result', 'is', null)
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle()

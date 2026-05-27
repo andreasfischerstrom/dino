@@ -101,7 +101,7 @@ export async function POST(req: Request) {
     const newLevel = computeLevel(newXp)
     const levelsGained = newLevel - (originalLevel ?? character.level)
     const newMaxHp = newLevel > (originalLevel ?? character.level) ? maxHp(charStats.constitution) : character.max_hp
-    const newStatPoints = (originalStatPoints ?? character.stat_points ?? 0) + Math.max(0, levelsGained)
+    const newStatPoints = (originalStatPoints ?? character.stat_points ?? 0) + Math.max(0, levelsGained) * 2
 
     // Reverse previous win/loss, apply new
     const baseWins = character.wins - (previousWon ? 1 : 0)
@@ -150,7 +150,7 @@ export async function POST(req: Request) {
     wins: won ? character.wins + 1 : character.wins,
     losses: !won ? character.losses + 1 : character.losses,
     last_regen_at: new Date().toISOString(),
-    stat_points: (character.stat_points || 0) + levelsGained,
+    stat_points: (character.stat_points || 0) + levelsGained * 2,
   }).eq('id', character.id)
 
   return NextResponse.json({

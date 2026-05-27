@@ -1,9 +1,15 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { SPECIES, xpForLevel, levelFromXp } from '@/lib/game-data'
 import ReplayClient from '@/components/ReplayClient'
+
+const supabaseAdmin = createAdminClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export default async function ReplayPage({ params }: { params: Promise<{ battleId: string }> }) {
   const { battleId } = await params
@@ -34,6 +40,10 @@ export default async function ReplayPage({ params }: { params: Promise<{ battleI
   // Already seen — skip to appropriate page
   const alreadySeen = isChallenger ? battle.challenger_seen : battle.challenged_seen
   if (alreadySeen) redirect(viewer.alive ? '/town' : '/obituary')
+
+  // Mark as seen using admin client to bypass RLS
+  const seenField = isChallenger ? 'challenger_seen' : 'challenged_seen'
+  await supabaseAdmin.from('battles').update({ [seenField]: true }).eq('id', battle.id)
 
   const userSide: 'a' | 'b' = isChallenger ? 'a' : 'b'
   const opponentId = isChallenger ? battle.challenged_id : battle.challenger_id

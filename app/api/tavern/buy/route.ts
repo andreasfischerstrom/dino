@@ -13,12 +13,23 @@ export async function POST(req: Request) {
 
   const { data: character } = await supabase
     .from('characters')
-    .select('id, hp, max_hp, bones, xp, buffs, stats')
+    .select('id, hp, max_hp, bones, xp, buffs, stats, buffs_purchased')
     .eq('user_id', user.id)
     .single()
 
   if (!character) return NextResponse.json({ error: 'No character' }, { status: 400 })
-  if (character.bones < item.price) return NextResponse.json({ error: 'Not enough bones. Go fight something.' }, { status: 400 })
+
+  const isBuff = item.effects.some(e => e.type === 'buff')
+  const currentBuffs: { stat: string; bonus: number; label: string }[] = character.buffs || []
+
+  if (isBuff && currentBuffs.length >= 1) {
+    return NextResponse.json({ error: 'You already have an active buff. Use it first.' }, { status: 400 })
+  }
+
+  const buffsPurchased = (character.buffs_purchased as number) || 0
+  const actualPrice = isBuff ? Math.round(item.price * (1 + buffsPurchased * 0.5)) : item.price
+
+  if (character.bones < actualPrice) return NextResponse.json({ error: 'Not enough bones. Go fight something.' }, { status: 400 })
 
   // Check stat requirements
   if (item.statReq) {
@@ -31,10 +42,9 @@ export async function POST(req: Request) {
   }
 
   const updates: Record<string, unknown> = {
-    bones: character.bones - item.price,
+    bones: character.bones - actualPrice,
   }
 
-  const currentBuffs: { stat: string; bonus: number; label: string }[] = character.buffs || []
   let newHp = character.hp
   let newXp = character.xp
   let newBuffs = [...currentBuffs]
@@ -53,12 +63,13 @@ export async function POST(req: Request) {
   }
 
   updates.buffs = newBuffs
+  if (isBuff) updates.buffs_purchased = buffsPurchased + 1
 
   await supabase.from('characters').update(updates).eq('id', character.id)
 
   return NextResponse.json({
     ok: true,
-    newBones: character.bones - item.price,
+    newBones: character.bones - actualPrice,
     newHp,
     newXp,
     newBuffs,

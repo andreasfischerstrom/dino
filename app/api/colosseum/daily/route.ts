@@ -99,7 +99,7 @@ export async function POST() {
     losses: !won ? character.losses + 1 : character.losses,
     last_regen_at: now,
     last_daily_at: now,
-    stat_points: (character.stat_points || 0) + Math.max(0, levelsGained),
+    stat_points: (character.stat_points || 0) + Math.max(0, levelsGained) * 2,
   }).eq('id', character.id)
 
   return NextResponse.json({

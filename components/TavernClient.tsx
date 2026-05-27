@@ -42,6 +42,8 @@ export default function TavernClient({ character, investment }: { character: Rec
   const charStats = (character.stats || {}) as Record<StatKey, number>
   const cunning = charStats.cunning || 0
   const [loading, setLoading] = useState<string | null>(null)
+  const [currentBuffs, setCurrentBuffs] = useState<{ stat: string; bonus: number; label: string }[]>((character.buffs as [] | null) || [])
+  const [buffsPurchased, setBuffsPurchased] = useState((character.buffs_purchased as number) || 0)
   const [message, setMessage] = useState('')
   const [rumor] = useState(() => RUMORS[Math.floor(Math.random() * RUMORS.length)])
 
@@ -70,6 +72,11 @@ export default function TavernClient({ character, investment }: { character: Rec
   const hpMissing = maxHp - hp
   const healCost = hpMissing * HEALER_COST_PER_HP
   const hpPct = Math.round((hp / maxHp) * 100)
+
+  function buffPrice(item: TavernItem): number {
+    const isBuff = item.effects.some(e => e.type === 'buff')
+    return isBuff ? Math.round(item.price * (1 + buffsPurchased * 0.5)) : item.price
+  }
 
   function meetsStatReq(item: TavernItem): boolean {
     if (!item.statReq) return true
@@ -107,6 +114,7 @@ export default function TavernClient({ character, investment }: { character: Rec
     if (!res.ok) { setMessage(json.error); setLoading(null); return }
     setBones(json.newBones)
     if (json.newHp !== undefined) setHp(Math.min(maxHp, json.newHp))
+    if (json.newBuffs !== undefined) { setCurrentBuffs(json.newBuffs); setBuffsPurchased(p => p + 1) }
     const item = TAVERN_ITEMS.find(i => i.id === itemId)
     setMessage(`Purchased: ${item?.name}. ${item?.flavorText}`)
     setLoading(null)
@@ -256,11 +264,14 @@ export default function TavernClient({ character, investment }: { character: Rec
                 }}>{tier.label}</p>
                 <div className="space-y-2">
                   {items.map(item => {
-                    const canAfford = bones >= item.price
+                    const isBuff = item.effects.some(e => e.type === 'buff')
+                    const price = buffPrice(item)
+                    const canAfford = bones >= price
                     const unlocked = meetsStatReq(item)
                     const isHeal = item.effects.some(e => e.type === 'heal')
                     const fullAlready = isHeal && hp >= maxHp
-                    const disabled = !canAfford || loading === item.id || fullAlready || !unlocked
+                    const buffBlocked = isBuff && currentBuffs.length >= 1
+                    const disabled = !canAfford || loading === item.id || fullAlready || !unlocked || buffBlocked
                     const effectDescs = describeEffects(item.effects, maxHp, hp)
 
                     return (
@@ -288,12 +299,15 @@ export default function TavernClient({ character, investment }: { character: Rec
                           )}
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-bold mb-1" style={{ color: '#d4a843' }}>🦴 {item.price}</p>
+                          <p className="text-sm font-bold mb-1" style={{ color: isBuff && price > item.price ? '#bf8a40' : '#d4a843' }}>
+                            🦴 {price}
+                            {isBuff && price > item.price && <span className="text-xs ml-1" style={{ color: '#7a5a30' }}>↑</span>}
+                          </p>
                           <button
                             className="btn-primary text-xs px-3 py-1"
                             disabled={disabled}
                             onClick={() => buyItem(item.id)}>
-                            {loading === item.id ? '...' : !unlocked ? 'Locked' : !canAfford ? 'No bones' : fullAlready ? 'Full HP' : 'Buy'}
+                            {loading === item.id ? '...' : !unlocked ? 'Locked' : buffBlocked ? 'Buff active' : !canAfford ? 'No bones' : fullAlready ? 'Full HP' : 'Buy'}
                           </button>
                         </div>
                       </div>
