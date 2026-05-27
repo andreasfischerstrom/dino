@@ -313,8 +313,9 @@ export default async function TownPage() {
     <div className="min-h-screen px-4 py-6 max-w-4xl mx-auto">
 
       {/* Town banner + location cards — top of page */}
-      <div className="rounded-xl overflow-hidden mb-4" style={{
+      <div className="rounded-t-xl overflow-hidden" style={{
         border: '1px solid #3a2810',
+        borderBottom: 'none',
         boxShadow: '0 4px 32px rgba(0,0,0,0.7)',
       }}>
         {/* Banner header */}
@@ -432,6 +433,12 @@ export default async function TownPage() {
         passiveDescription={species?.passive?.description}
         lastRegenAt={character.last_regen_at ?? character.created_at}
         regenPerMinute={regenPerMinute(character.max_hp)}
+        style={{
+          borderTop: '1px solid #3a2810',
+          borderTopLeftRadius: 0,
+          borderTopRightRadius: 0,
+          marginBottom: 0,
+        }}
       />
 
       {hpPct < 30 && (

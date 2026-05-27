@@ -62,6 +62,7 @@ interface Props {
   passiveDescription?: string
   lastRegenAt?: string
   regenPerMinute?: number
+  style?: React.CSSProperties
 }
 
 export default function CharacterCard({
@@ -71,6 +72,7 @@ export default function CharacterCard({
   stats, slots, buffs,
   passiveName, passiveDescription,
   lastRegenAt, regenPerMinute,
+  style: styleProp,
 }: Props) {
   const [expanded, setExpanded] = useState(false)
   const [localStatPoints, setLocalStatPoints] = useState(statPoints)
@@ -156,6 +158,7 @@ export default function CharacterCard({
       borderRadius: '4px',
       padding: '1.25rem',
       boxShadow: '0 3px 12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,220,100,0.04)',
+      ...styleProp,
     }}>
       {/* Always-visible top section */}
       <div className="flex items-center gap-4">
