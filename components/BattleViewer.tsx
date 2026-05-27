@@ -540,10 +540,10 @@ export default function BattleViewer({
             backdropFilter: 'blur(8px)',
             borderTop: `1px solid ${currentEvent?.type === 'crit' ? 'rgba(255,120,40,0.5)' : currentEvent?.type === 'death' || currentEvent?.type === 'outcome' ? 'rgba(180,60,60,0.45)' : 'rgba(90,64,40,0.4)'}`,
             cursor: 'pointer',
-            minHeight: '88px',
+            height: '108px',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between',
+            position: 'relative',
           }}
           onClick={handleTap}
         >
@@ -553,7 +553,8 @@ export default function BattleViewer({
               fontStyle: currentEvent.type === 'flavor' || currentEvent.type === 'intro' ? 'italic' : 'normal',
               fontWeight: currentEvent.type === 'crit' || currentEvent.type === 'outcome' || currentEvent.type === 'passive' || currentEvent.type === 'death' ? 'bold' : 'normal',
               fontSize: '0.9rem', lineHeight: 1.6,
-              minHeight: '2.8rem',
+              overflow: 'hidden',
+              flex: 1,
             }}>
               {eventEmoji(currentEvent.type)}
               {typedText}
@@ -563,13 +564,11 @@ export default function BattleViewer({
             </p>
           )}
 
-          <div className="flex items-center justify-between" style={{ marginTop: '4px' }}>
+          <div style={{ position: 'absolute', bottom: '12px', left: '16px', right: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ color: '#3a2e1a', fontSize: '10px', letterSpacing: '0.06em' }}>
               {phase === 'playing' && 'SPACE / tap'}
             </span>
-            {waitingForTap && (
-              <span className="advance-arrow" style={{ color: '#d4a843', fontSize: '12px' }}>▼</span>
-            )}
+            <span className="advance-arrow" style={{ color: '#d4a843', fontSize: '12px', visibility: waitingForTap ? 'visible' : 'hidden' }}>▼</span>
           </div>
         </div>
       )}
