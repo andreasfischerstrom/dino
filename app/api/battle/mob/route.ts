@@ -153,6 +153,33 @@ export async function POST(req: Request) {
     stat_points: (character.stat_points || 0) + levelsGained * 2,
   }).eq('id', character.id)
 
+  // Save to battle history (not for recomputes — already saved on initial call)
+  const battleResult = {
+    opponentType: 'mob' as const,
+    opponentName: mob.name,
+    winner: battle.winner,
+    a: {
+      hpBefore: character.hp,
+      hpAfter: newHp,
+      maxHp: maxHp(charStats.constitution),
+      xpGained,
+      bonesDelta: bonesGained,
+      leveledUp,
+      survived: !characterDied,
+    },
+  }
+  await supabase.from('battles').insert({
+    challenger_id: character.id,
+    challenged_id: null,
+    winner_id: won ? character.id : null,
+    events: battle.events,
+    challenger_survived: !characterDied,
+    challenged_survived: true,
+    battle_result: battleResult,
+    challenger_seen: true,
+    challenged_seen: true,
+  })
+
   return NextResponse.json({
     events: battle.events,
     result: {

@@ -32,7 +32,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
 
   const opponentIds = [...new Set((battles || []).map((b: Record<string, unknown>) =>
     b.challenger_id === id ? b.challenged_id : b.challenger_id
-  ))] as string[]
+  ))].filter(Boolean) as string[]
   const { data: opponents } = opponentIds.length
     ? await supabase.from('characters').select('id, name, level, species').in('id', opponentIds)
     : { data: [] }
@@ -135,9 +135,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
               const side = isChallenger ? 'a' : 'b'
               const result = b.battle_result as Record<string, unknown> | null
               const sideResult = result?.[side] as Record<string, unknown> | undefined
-              const opponentId = (isChallenger ? b.challenged_id : b.challenger_id) as string
-              const opponent = opponentMap[opponentId] as Record<string, unknown> | undefined
+              const isMob = (result?.opponentType as string | undefined) === 'mob'
+              const opponentId = (isChallenger ? b.challenged_id : b.challenger_id) as string | undefined
+              const opponent = opponentId ? opponentMap[opponentId] as Record<string, unknown> | undefined : undefined
               const opSp = SPECIES.find(s => s.id === opponent?.species)
+              const mobName = result?.opponentName as string | undefined
               const xpGained = sideResult?.xpGained as number | undefined
               const bonesDelta = sideResult?.bonesDelta as number | undefined
               const hpBefore = sideResult?.hpBefore as number | undefined
@@ -147,15 +149,22 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
               return (
                 <div key={b.id as string} className="py-3" style={{ borderBottom: '1px solid #1a1410' }}>
                   <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-bold" style={{ color: won ? '#6abf6a' : b.winner_id ? '#bf6a6a' : '#a08050' }}>
                         {won ? '✅ Win' : b.winner_id ? '❌ Loss' : '🤝 Draw'}
                         {!survived && <span style={{ color: '#8b2020' }}> · Fatal</span>}
                       </span>
-                      {opponent && (
+                      {isMob && mobName && (
+                        <span className="text-sm" style={{ color: '#8a7a5a' }}>
+                          vs <span style={{ color: '#c8a84b' }}>{mobName}</span>
+                          <span className="ml-1 text-xs px-1 rounded" style={{ background: '#1a1208', color: '#6a5030', border: '1px solid #3a2810' }}>mob</span>
+                        </span>
+                      )}
+                      {!isMob && opponent && (
                         <span className="text-sm" style={{ color: '#8a7a5a' }}>
                           vs {opSp?.emoji} <span style={{ color: '#c8a84b' }}>{opponent.name as string}</span>
                           <span style={{ color: '#5a4a3a' }}> (Lvl {opponent.level as number})</span>
+                          <span className="ml-1 text-xs px-1 rounded" style={{ background: '#0e1e08', color: '#4a8f5a', border: '1px solid #2a5a20' }}>PvP</span>
                         </span>
                       )}
                     </div>

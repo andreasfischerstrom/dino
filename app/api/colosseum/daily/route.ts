@@ -102,6 +102,32 @@ export async function POST() {
     stat_points: (character.stat_points || 0) + Math.max(0, levelsGained) * 2,
   }).eq('id', character.id)
 
+  const battleResult = {
+    opponentType: 'mob' as const,
+    opponentName: boss.fullName,
+    winner: battle.winner,
+    a: {
+      hpBefore: character.hp,
+      hpAfter: Math.min(newHp, newMaxHp),
+      maxHp: playerMaxHp,
+      xpGained,
+      bonesDelta: bonesGained,
+      leveledUp: progress.level > character.level,
+      survived: battle.aAlive,
+    },
+  }
+  await supabase.from('battles').insert({
+    challenger_id: character.id,
+    challenged_id: null,
+    winner_id: won ? character.id : null,
+    events: battle.events,
+    challenger_survived: battle.aAlive,
+    challenged_survived: true,
+    battle_result: battleResult,
+    challenger_seen: true,
+    challenged_seen: true,
+  })
+
   return NextResponse.json({
     events: battle.events,
     result: {
