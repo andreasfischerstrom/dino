@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { GearSlot, STAT_MAX } from '@/lib/game-data'
 import { createClient } from '@/lib/supabase/client'
@@ -79,6 +80,7 @@ export default function CharacterCard({
   const [liveHp, setLiveHp] = useState(hp)
   const [hoveredStat, setHoveredStat] = useState<string | null>(null)
   const liveHpRef = useRef(hp)
+  const router = useRouter()
 
   // Regen ticker — restarts whenever hpBase changes (e.g. after a remote battle)
   useEffect(() => {
@@ -101,7 +103,10 @@ export default function CharacterCard({
     return () => clearTimeout(timeout)
   }, [hpBase, maxHp, lastRegenAt, regenPerMinute])
 
-  // Realtime: sync HP drops from other devices/sessions
+  // Realtime: when character HP changes on another device, refresh the
+  // server component. router.refresh() re-fetches the town page — if a
+  // replay is pending it redirects there first; otherwise the new HP
+  // comes in via fresh props and the regen ticker restarts correctly.
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase.channel(`char-hp-${characterId}`)
@@ -113,14 +118,12 @@ export default function CharacterCard({
       }, (payload) => {
         const newHp = (payload.new as Record<string, unknown>).hp as number
         if (typeof newHp === 'number' && newHp !== liveHpRef.current) {
-          liveHpRef.current = newHp
-          setHpBase(newHp)
-          setLiveHp(newHp)
+          router.refresh()
         }
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [characterId])
+  }, [characterId, router])
 
   const hpPct = Math.round((liveHp / maxHp) * 100)
   const xpSpan = xpForNext - xpCurrent
