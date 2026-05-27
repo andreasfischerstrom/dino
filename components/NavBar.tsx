@@ -124,7 +124,7 @@ export default function NavBar() {
         </Link>
 
         {/* Center nav links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flex: 1, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, justifyContent: 'center' }}>
           {tabs.map(tab => {
             const active = pathname === tab.href || (tab.href !== '/town' && pathname.startsWith(tab.href))
             const hovered = hoveredTab === tab.href
@@ -137,7 +137,7 @@ export default function NavBar() {
                 onMouseLeave={() => setHoveredTab(null)}
                 style={{
                   position: 'relative',
-                  padding: '6px 14px',
+                  padding: '6px 18px',
                   borderRadius: '6px',
                   fontSize: '11px',
                   fontFamily: 'var(--font-cinzel, Georgia)',
