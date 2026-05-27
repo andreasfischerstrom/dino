@@ -174,8 +174,11 @@ export default function BattleViewer({
 
   const [flashA, setFlashA] = useState(false)
   const [flashB, setFlashB] = useState(false)
-  const prevHpARef = useRef<number | null>(null)
-  const prevHpBRef = useRef<number | null>(null)
+  const initHpB = localEvents[0]?.maxHpB ?? 100
+  const [displayedHpA, setDisplayedHpA] = useState(fighterA.hp)
+  const [displayedHpB, setDisplayedHpB] = useState(initHpB)
+  const displayedHpARef = useRef(fighterA.hp)
+  const displayedHpBRef = useRef(initHpB)
 
   const [attackingA, setAttackingA] = useState(false)
   const [attackingB, setAttackingB] = useState(false)
@@ -199,6 +202,18 @@ export default function BattleViewer({
   }
 
   function triggerEventAnimations(event: BattleEvent) {
+    // HP bars + flash — fire together with animations
+    if (event.hpA < displayedHpARef.current - 4) {
+      setFlashA(true); setTimeout(() => setFlashA(false), 350)
+    }
+    if (event.hpB < displayedHpBRef.current - 4) {
+      setFlashB(true); setTimeout(() => setFlashB(false), 350)
+    }
+    setDisplayedHpA(event.hpA)
+    setDisplayedHpB(event.hpB)
+    displayedHpARef.current = event.hpA
+    displayedHpBRef.current = event.hpB
+
     if (event.type === 'attack' || event.type === 'crit') {
       const dmg = parseDamage(event.text)
       if (event.attacker === 'a') {
@@ -257,24 +272,8 @@ export default function BattleViewer({
   }, [visibleCount, localEvents])
 
   const currentEvent = localEvents[visibleCount - 1]
-  const hpA = currentEvent?.hpA ?? localEvents[0]?.hpA ?? fighterA.hp
-  const hpB = currentEvent?.hpB ?? localEvents[0]?.hpB ?? 100
   const maxHpA = localEvents[0]?.maxHpA ?? fighterA.maxHp
   const maxHpB = localEvents[0]?.maxHpB ?? 100
-
-  useEffect(() => {
-    if (prevHpARef.current !== null && hpA < prevHpARef.current - 4) {
-      setFlashA(true); setTimeout(() => setFlashA(false), 350)
-    }
-    prevHpARef.current = hpA
-  }, [hpA])
-
-  useEffect(() => {
-    if (prevHpBRef.current !== null && hpB < prevHpBRef.current - 4) {
-      setFlashB(true); setTimeout(() => setFlashB(false), 350)
-    }
-    prevHpBRef.current = hpB
-  }, [hpB])
 
   function completeTyping() {
     if (typeTimerRef.current) clearTimeout(typeTimerRef.current)
@@ -371,8 +370,8 @@ export default function BattleViewer({
     setVisibleCount(v => v + 1)
   }
 
-  const hpPctA = Math.round((hpA / maxHpA) * 100)
-  const hpPctB = Math.round((hpB / maxHpB) * 100)
+  const hpPctA = Math.round((displayedHpA / maxHpA) * 100)
+  const hpPctB = Math.round((displayedHpB / maxHpB) * 100)
   const userIsA = userSide === 'a'
 
   const leftName  = userIsA ? fighterA.name  : fighterBName
@@ -411,8 +410,10 @@ export default function BattleViewer({
   }
 
   return (
-    <div className="flex flex-col max-w-2xl mx-auto w-full" style={{
+    <div className="w-full min-h-dvh flex flex-col items-center justify-center" style={{ background: '#06040280' }}>
+    <div className="flex flex-col w-full max-w-2xl" style={{
       height: '100dvh',
+      maxHeight: 'min(100dvh, 640px)',
       backgroundImage: 'linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0.55)), url(/images/arena-bg.png)',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
@@ -434,7 +435,7 @@ export default function BattleViewer({
               textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '130px' }}>
               {leftName}
             </span>
-            <span style={{ color: '#6a5030', fontSize: '10px', fontFamily: 'monospace' }}>{hpA}/{maxHpA}</span>
+            <span style={{ color: '#6a5030', fontSize: '10px', fontFamily: 'monospace' }}>{displayedHpA}/{maxHpA}</span>
           </div>
           <div className="hud-bar" style={{ height: '18px', boxShadow: flashA ? '0 0 12px rgba(255,80,80,0.6)' : undefined }}>
             <div style={{
@@ -455,7 +456,7 @@ export default function BattleViewer({
 
         <div className="flex-1 flex flex-col gap-1 pl-2">
           <div className="flex justify-between items-baseline">
-            <span style={{ color: '#6a5030', fontSize: '10px', fontFamily: 'monospace' }}>{hpB}/{maxHpB}</span>
+            <span style={{ color: '#6a5030', fontSize: '10px', fontFamily: 'monospace' }}>{displayedHpB}/{maxHpB}</span>
             <span style={{ color: '#d4a843', fontFamily: cinzel, fontSize: '11px', fontWeight: 'bold',
               textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '130px', textAlign: 'right' }}>
               {rightName}
@@ -572,6 +573,7 @@ export default function BattleViewer({
           </div>
         </div>
       )}
+    </div>
     </div>
   )
 }
