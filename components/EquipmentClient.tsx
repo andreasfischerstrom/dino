@@ -206,7 +206,7 @@ export default function EquipmentClient({ character, gear, inventory }: Props) {
                         </button>
                         <div className="px-4 pb-2">
                           <button
-                            className="text-xs px-2 py-1 rounded"
+                            className="text-xs px-3 py-2.5 rounded"
                             style={{ background: '#1a0a0a', color: '#a06050', border: '1px solid #3a1a14' }}
                             disabled={selling === item.id}
                             onClick={() => sellItem(item.id)}>

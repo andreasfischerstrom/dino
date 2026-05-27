@@ -273,10 +273,11 @@ export default function CharacterCard({
               return (
                 <div key={stat.key} className="flex items-center gap-2">
                   <span
-                    className="text-xs w-20 shrink-0 cursor-help relative"
-                    style={{ color: '#a08050' }}
+                    className="text-xs w-20 shrink-0 relative select-none"
+                    style={{ color: '#a08050', cursor: 'default' }}
                     onMouseEnter={() => setHoveredStat(stat.key)}
-                    onMouseLeave={() => setHoveredStat(null)}>
+                    onMouseLeave={() => setHoveredStat(null)}
+                    onClick={() => setHoveredStat(hoveredStat === stat.key ? null : stat.key)}>
                     {stat.label}
                     {hoveredStat === stat.key && (
                       <span className="absolute left-0 z-50 pointer-events-none"
@@ -310,7 +311,7 @@ export default function CharacterCard({
                       onClick={() => spendPoint(stat.key)}
                       disabled={spending !== null}
                       className="shrink-0 rounded font-bold flex items-center justify-center"
-                      style={{ width: '28px', height: '28px', background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428', fontSize: '14px', boxShadow: '0 0 6px rgba(90,191,106,0.2)' }}>
+                      style={{ width: '44px', height: '44px', background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428', fontSize: '14px', boxShadow: '0 0 6px rgba(90,191,106,0.2)' }}>
                       {spending === stat.key ? '…' : '+'}
                     </button>
                   )}
@@ -344,7 +345,7 @@ export default function CharacterCard({
                     {/* Content */}
                     <div className="relative flex flex-col items-center justify-center gap-0.5 p-1.5" style={{ minHeight: '64px' }}>
                       <span style={{
-                        fontSize: '9px',
+                        fontSize: '11px',
                         color: '#5a4a30',
                         textTransform: 'uppercase',
                         letterSpacing: '0.06em',

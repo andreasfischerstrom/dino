@@ -236,10 +236,10 @@ export default function TavernClient({ character, investment }: { character: Rec
         <p className="text-sm italic" style={{ color: '#a08050' }}>"{rumor}"</p>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide pb-1">
         {tabs.map(t => (
           <button key={t.key} onClick={() => { setTab(t.key); setMessage('') }}
-            className={`tab-btn ${tab === t.key ? 'tab-active' : 'tab-inactive'}`}>
+            className={`tab-btn shrink-0 ${tab === t.key ? 'tab-active' : 'tab-inactive'}`}>
             {t.label}
           </button>
         ))}

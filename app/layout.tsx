@@ -1,6 +1,7 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Cinzel, Cinzel_Decorative, Crimson_Pro } from 'next/font/google'
 import './globals.css'
+import BottomNav from '@/components/BottomNav'
 
 const cinzel = Cinzel({
   subsets: ['latin'],
@@ -29,10 +30,20 @@ export const metadata: Metadata = {
   description: 'A gladiatorial dinosaur fighting game. 65 million years in the making.',
 }
 
+export const viewport: Viewport = {
+  themeColor: '#0a0906',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`h-full ${cinzel.variable} ${cinzelDeco.variable} ${crimson.variable}`}>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full pb-20">
+        {children}
+        <BottomNav />
+      </body>
     </html>
   )
 }

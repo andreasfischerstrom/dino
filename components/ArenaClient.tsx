@@ -316,7 +316,8 @@ export default function ArenaClient({
             </div>
 
             <input
-              type="text"
+              type="search"
+              autoComplete="off"
               placeholder="Search by name..."
               value={search}
               onChange={e => setSearch(e.target.value)}

@@ -138,8 +138,8 @@ export default function TrainingClient({ character, equippedGear, mobs, species,
 
       {/* Pre-fight modal */}
       {pendingMob && (
-        <div className="fixed inset-0 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.88)', zIndex: 50 }}>
-          <div className="w-full" style={{ maxWidth: '420px', background: '#120d07', border: '1px solid #3a2810', borderRadius: '12px', boxShadow: '0 24px 64px rgba(0,0,0,0.95), 0 0 0 1px rgba(90,64,40,0.3)', overflow: 'hidden' }}>
+        <div className="fixed inset-0 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.88)', zIndex: 50 }} onClick={() => setPendingMob(null)}>
+          <div className="w-full" style={{ maxWidth: '420px', background: '#120d07', border: '1px solid #3a2810', borderRadius: '12px', boxShadow: '0 24px 64px rgba(0,0,0,0.95), 0 0 0 1px rgba(90,64,40,0.3)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
 
             {/* Header */}
             <div className="flex flex-col items-center pt-8 pb-6 px-6 text-center" style={{ background: 'linear-gradient(to bottom, #1a1208, #120d07)', borderBottom: '1px solid #2a1e10' }}>

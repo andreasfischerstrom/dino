@@ -148,48 +148,52 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
 
               return (
                 <div key={b.id as string} className="py-3" style={{ borderBottom: '1px solid #1a1410' }}>
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2 flex-wrap">
+                  {/* Row 1: result + opponent + date */}
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div>
                       <span className="text-sm font-bold" style={{ color: won ? '#6abf6a' : b.winner_id ? '#bf6a6a' : '#a08050' }}>
                         {won ? '✅ Win' : b.winner_id ? '❌ Loss' : '🤝 Draw'}
                         {!survived && <span style={{ color: '#8b2020' }}> · Fatal</span>}
                       </span>
                       {isMob && mobName && (
-                        <span className="text-sm" style={{ color: '#8a7a5a' }}>
+                        <span className="ml-2 text-sm" style={{ color: '#8a7a5a' }}>
                           vs <span style={{ color: '#c8a84b' }}>{mobName}</span>
                           <span className="ml-1 text-xs px-1 rounded" style={{ background: '#1a1208', color: '#6a5030', border: '1px solid #3a2810' }}>mob</span>
                         </span>
                       )}
                       {!isMob && opponent && (
-                        <span className="text-sm" style={{ color: '#8a7a5a' }}>
+                        <span className="ml-2 text-sm" style={{ color: '#8a7a5a' }}>
                           vs {opSp?.emoji} <span style={{ color: '#c8a84b' }}>{opponent.name as string}</span>
-                          <span style={{ color: '#5a4a3a' }}> (Lvl {opponent.level as number})</span>
+                          <span style={{ color: '#5a4a3a' }}> Lvl {opponent.level as number}</span>
                           <span className="ml-1 text-xs px-1 rounded" style={{ background: '#0e1e08', color: '#4a8f5a', border: '1px solid #2a5a20' }}>PvP</span>
                         </span>
                       )}
                     </div>
-                    <span className="text-xs" style={{ color: '#5a4a3a' }}>
+                    <span className="text-xs shrink-0" style={{ color: '#5a4a3a' }}>
                       {new Date(b.created_at as string).toLocaleDateString()}
                     </span>
                   </div>
 
+                  {/* Row 2: stat badges */}
                   {sideResult && (
-                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs mt-1" style={{ color: '#6a5a3a' }}>
+                    <div className="flex flex-wrap gap-1.5">
                       {hpBefore !== undefined && hpAfter !== undefined && maxHp !== undefined && (
-                        <span>❤ {hpBefore} → {hpAfter}/{maxHp}</span>
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: '#1a0a0a', color: '#8a5a5a', border: '1px solid #2a1414' }}>
+                          ❤ {hpBefore}→{hpAfter}
+                        </span>
                       )}
                       {xpGained !== undefined && (
-                        <span style={{ color: xpGained > 0 ? '#4a8f5a' : '#6a5a3a' }}>
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: xpGained > 0 ? '#0a1a0a' : '#141414', color: xpGained > 0 ? '#4a8f5a' : '#5a5a5a', border: `1px solid ${xpGained > 0 ? '#1a4a1a' : '#2a2a2a'}` }}>
                           ✦ {xpGained > 0 ? `+${xpGained}` : xpGained} XP
                         </span>
                       )}
                       {bonesDelta !== undefined && (
-                        <span style={{ color: bonesDelta > 0 ? '#a08050' : '#7a5a3a' }}>
-                          🦴 {bonesDelta > 0 ? `+${bonesDelta}` : bonesDelta} bones
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: bonesDelta > 0 ? '#1a1408' : '#141408', color: bonesDelta > 0 ? '#a08050' : '#6a5a3a', border: `1px solid ${bonesDelta > 0 ? '#3a2810' : '#2a2010'}` }}>
+                          🦴 {bonesDelta > 0 ? `+${bonesDelta}` : bonesDelta}
                         </span>
                       )}
                       {!!sideResult.leveledUp && (
-                        <span style={{ color: '#d4a843' }}>⬆ Leveled up!</span>
+                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: '#1a1408', color: '#d4a843', border: '1px solid #4a3010' }}>⬆ Level up</span>
                       )}
                     </div>
                   )}

@@ -195,6 +195,13 @@ export default function BattleViewer({
   const [waitingForTap, setWaitingForTap] = useState(false)
   const typeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const handleTapRef = useRef<() => void>(() => {})
+  const [isTouch, setIsTouch] = useState(false)
+  const [portraitSize, setPortraitSize] = useState(72)
+
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(pointer: coarse)').matches)
+    setPortraitSize(Math.min(96, Math.max(72, Math.floor(window.innerWidth * 0.22))))
+  }, [])
 
   function showFloat(set: (v: FloatNum | null) => void, amount: number, isCrit: boolean, isCounter: boolean) {
     set({ id: ++floatIdRef.current, amount, isCrit, isCounter })
@@ -478,13 +485,12 @@ export default function BattleViewer({
         className="flex-1 flex items-center justify-between gap-3 px-5"
         style={{ minHeight: 0, animation: shake ? 'arena-shake 0.46s ease-out' : 'none' }}>
 
-        <FighterHead image={leftImage} name={leftName} align="left" size={72}
+        <FighterHead image={leftImage} name={leftName} align="left" size={portraitSize}
           attacking={attackingA} dead={deadA} flash={flashA} floatNum={floatA} />
 
-        {/* Spacer so portraits stay on the sides */}
         <div className="flex-1" />
 
-        <FighterHead image={rightImage} name={rightName} align="right" size={72}
+        <FighterHead image={rightImage} name={rightName} align="right" size={portraitSize}
           attacking={attackingB} dead={deadB} flash={flashB} floatNum={floatB} />
       </div>
 
@@ -544,6 +550,7 @@ export default function BattleViewer({
             display: 'flex',
             flexDirection: 'column',
             position: 'relative',
+            paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
           }}
           onClick={handleTap}
         >
@@ -566,7 +573,7 @@ export default function BattleViewer({
 
           <div style={{ position: 'absolute', bottom: '12px', left: '16px', right: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ color: '#3a2e1a', fontSize: '10px', letterSpacing: '0.06em' }}>
-              {phase === 'playing' && 'SPACE / tap'}
+              {phase === 'playing' && (isTouch ? 'tap to continue' : 'space / tap')}
             </span>
             <span className="advance-arrow" style={{ color: '#d4a843', fontSize: '12px', visibility: waitingForTap ? 'visible' : 'hidden' }}>▼</span>
           </div>
