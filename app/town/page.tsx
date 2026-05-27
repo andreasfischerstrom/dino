@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SPECIES, STATS, GEAR_SLOTS, TOWNS, xpForLevel, maxHp } from '@/lib/game-data'
 import { getEquippedGear, computeGearBonus } from '@/lib/stats'
-import SignOutButton from '@/components/SignOutButton'
 import CharacterCard from '@/components/CharacterCard'
 import { alreadyFoughtToday, generateDailyBoss, todayUTC } from '@/lib/daily-boss'
 
@@ -362,9 +361,6 @@ export default async function TownPage() {
               fontFamily: 'var(--font-cinzel, Georgia)',
               textShadow: '0 1px 6px rgba(0,0,0,0.8)',
             }}>{townDef.subtitle}</p>
-          </div>
-          <div className="md:hidden" style={{ position: 'absolute', top: '10px', right: '12px' }}>
-            <SignOutButton />
           </div>
         </div>
 
