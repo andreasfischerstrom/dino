@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { TAVERN_ITEMS, StatKey } from '@/lib/game-data'
+import { TAVERN_ITEMS, StatKey, getDenPerks } from '@/lib/game-data'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
   const { data: character } = await supabase
     .from('characters')
-    .select('id, hp, max_hp, bones, xp, buffs, stats, buffs_purchased')
+    .select('id, hp, max_hp, bones, xp, buffs, stats, buffs_purchased, den_town, den_tier, current_town')
     .eq('user_id', user.id)
     .single()
 
@@ -27,7 +27,15 @@ export async function POST(req: Request) {
   }
 
   const buffsPurchased = (character.buffs_purchased as number) || 0
-  const actualPrice = isBuff ? Math.round(item.price * (1 + buffsPurchased * 0.5)) : item.price
+  const denTownId = character.den_town as number | null
+  const denTierId = character.den_tier as number | null
+  const currentTown = character.current_town as number | null
+  const denPerks = (denTownId && denTierId && denTownId === currentTown)
+    ? getDenPerks(denTownId, denTierId)
+    : {}
+  const discountMult = 1 - (denPerks.tavernDiscount ?? 0)
+  const basePrice = isBuff ? Math.round(item.price * (1 + buffsPurchased * 0.5)) : item.price
+  const actualPrice = Math.round(basePrice * discountMult)
 
   if (character.bones < actualPrice) return NextResponse.json({ error: 'Not enough bones. Go fight something.' }, { status: 400 })
 

@@ -5,9 +5,10 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Icon } from '@iconify/react'
 import LocationCards from '@/components/LocationCards'
+import DenTownCard from '@/components/DenTownCard'
 import TownUnlockPrompt from '@/components/TownUnlockPrompt'
 import TownIntroOverlay from '@/components/TownIntroOverlay'
-import { SPECIES, TOWNS, maxHp } from '@/lib/game-data'
+import { SPECIES, TOWNS, DEN_DATA, DEN_TIERS, getDenPerks, maxHp } from '@/lib/game-data'
 import { getEquippedGear, computeGearBonus } from '@/lib/stats'
 import { alreadyFoughtToday, generateDailyBoss, todayUTC } from '@/lib/daily-boss'
 
@@ -181,12 +182,19 @@ export default async function TownPage() {
   if (!character.alive) redirect('/obituary')
 
   const lastVisitRaw = character.last_regen_at ?? character.created_at
+  const currentTownEarly = (character.current_town as number) ?? 1
+  const denTownId = character.den_town as number | null
+  const denTierId = character.den_tier as number | null
+  const denPerks = (denTownId && denTierId && denTownId === currentTownEarly)
+    ? getDenPerks(denTownId, denTierId)
+    : {}
 
   if (character.hp < character.max_hp) {
     const lastRegen = new Date(lastVisitRaw)
     const minutesElapsed = Math.min((Date.now() - lastRegen.getTime()) / 60000, 1440)
     if (!isNaN(minutesElapsed) && minutesElapsed > 0) {
-      const regenAmount = Math.floor(minutesElapsed * regenPerMinute(character.max_hp))
+      const regenRate = regenPerMinute(character.max_hp) * (denPerks.regenMult ?? 1)
+      const regenAmount = Math.floor(minutesElapsed * regenRate)
       if (regenAmount >= 1) {
         const newHp = Math.min(character.max_hp, character.hp + regenAmount)
         await supabase.from('characters').update({ hp: newHp, last_regen_at: new Date().toISOString() }).eq('id', character.id)
@@ -306,27 +314,28 @@ export default async function TownPage() {
       <div className="rounded-xl overflow-hidden mb-4" style={{
         border: '1px solid #3a2810',
         boxShadow: '0 4px 32px rgba(0,0,0,0.7)',
+        position: 'relative',
       }}>
-        {/* Banner header */}
-        <div style={{
-          position: 'relative',
-          height: '110px',
-          overflow: 'hidden',
-        }}>
-          <img
-            src={townDef.banner}
-            alt={townDef.name}
-            style={{
-              position: 'absolute', inset: 0,
-              width: '100%', height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'center 30%',
-              filter: 'brightness(0.45) saturate(0.8)',
-            }}
-          />
+        {/* Shared banner background for entire card */}
+        <img
+          src={townDef.banner}
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center 30%',
+            filter: 'brightness(0.35) saturate(0.7)',
+            zIndex: 0,
+          }}
+        />
+
+        {/* Banner header — bright portion */}
+        <div style={{ position: 'relative', height: '110px', zIndex: 1 }}>
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(8,5,2,0.85) 100%)',
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.0) 0%, rgba(8,5,2,0.7) 100%)',
           }} />
           <div style={{
             position: 'absolute', inset: 0,
@@ -354,12 +363,27 @@ export default async function TownPage() {
           </div>
         </div>
 
-        {/* Location cards */}
+        {/* Location cards — dark overlay so text is readable */}
         <LocationCards cards={[
           { href: '/arena',  label: townDef.locations.arena,  icon: 'game-icons:crossed-swords', desc: 'Fight mobs & players' },
           { href: '/tavern', label: townDef.locations.tavern, icon: 'game-icons:tavern-sign',    desc: 'Quests & healing' },
           { href: '/shop',   label: townDef.locations.gear,   icon: 'game-icons:anvil',          desc: 'Buy gear' },
-        ]} />
+        ]} gridBackground="rgba(0,0,0,0.82)" />
+
+        {/* Den row */}
+        {(() => {
+          const isHome = !!denTownId && denTownId === currentTownEarly
+          const hasDenElsewhere = !!denTownId && denTownId !== currentTownEarly
+          const denTownName = hasDenElsewhere ? (TOWNS.find(t => t.id === denTownId)?.name ?? '') : ''
+          const denTownData = denTownId ? DEN_DATA[denTownId] : null
+          const accent = isHome ? (denTownData?.accentColor ?? '#c8a050') : '#c8a050'
+          const desc = isHome
+            ? `Your ${DEN_TIERS[denTierId! - 1]} · perks active`
+            : hasDenElsewhere
+              ? `You own a den in ${denTownName}`
+              : 'Claim territory in this town'
+          return <DenTownCard isHome={isHome} accent={accent} desc={desc} />
+        })()}
       </div>
 
       {returnLine && (

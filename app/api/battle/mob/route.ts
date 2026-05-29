@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { MOBS, GEAR, GearTemplate, StatKey, xpForLevel, maxHp } from '@/lib/game-data'
+import { MOBS, GEAR, GearTemplate, StatKey, xpForLevel, maxHp, getDenPerks } from '@/lib/game-data'
 import { simulateBattle, Fighter } from '@/lib/battle-engine'
 import { applyGearAndBuffs } from '@/lib/stats'
 
@@ -90,10 +90,15 @@ export async function POST(req: Request) {
   const battle = simulateBattle(fighterA, fighterB, isRecompute ? { startRound: fromRound, skipIntro: true } : {})
 
   const won = battle.winner === 'a'
-  const xpGained = won ? mob.xpReward : Math.floor(mob.xpReward * 0.10)
-  const bonesGained = won
+  const denPerks = (character.den_town && character.den_tier)
+    ? getDenPerks(character.den_town as number, character.den_tier as number)
+    : {}
+  const baseXp = won ? mob.xpReward : Math.floor(mob.xpReward * 0.10)
+  const baseBones = won
     ? Math.floor(Math.random() * (mob.bonesReward[1] - mob.bonesReward[0] + 1) + mob.bonesReward[0])
     : Math.floor(mob.bonesReward[0] * 0.2)
+  const xpGained = Math.round(baseXp * (denPerks.xpMult ?? 1))
+  const bonesGained = Math.round(baseBones * (denPerks.bonesMult ?? 1))
 
   const characterDied = !battle.aAlive
   const newHp = characterDied ? 0 : Math.max(1, battle.aFinalHp)

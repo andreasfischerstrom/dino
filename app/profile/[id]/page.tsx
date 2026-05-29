@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { SPECIES, STATS, GEAR, GEAR_SLOTS, xpForLevel } from '@/lib/game-data'
+import { SPECIES, STATS, GEAR, GEAR_SLOTS, xpForLevel, getDenPerks } from '@/lib/game-data'
 import { getEquippedGear, computeGearBonus } from '@/lib/stats'
 import DeleteCharacterButton from '@/components/DeleteCharacterButton'
 import CharacterCard from '@/components/CharacterCard'
@@ -25,10 +25,17 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   // Apply HP regen for own living character (same logic as town page)
   const isOwnCheck = character.user_id === user?.id
   if (isOwnCheck && character.alive && character.hp < character.max_hp) {
+    const denTownId = character.den_town as number | null
+    const denTierId = character.den_tier as number | null
+    const currentTown = character.current_town as number | null
+    const denPerks = (denTownId && denTierId && denTownId === currentTown)
+      ? getDenPerks(denTownId, denTierId)
+      : {}
     const lastRegen = new Date((character.last_regen_at ?? character.created_at) as string)
     const minutesElapsed = Math.min((Date.now() - lastRegen.getTime()) / 60000, 1440)
     if (!isNaN(minutesElapsed) && minutesElapsed > 0) {
-      const regenAmount = Math.floor(minutesElapsed * ((character.max_hp as number) / 60))
+      const regenRate = ((character.max_hp as number) / 60) * (denPerks.regenMult ?? 1)
+      const regenAmount = Math.floor(minutesElapsed * regenRate)
       if (regenAmount >= 1) {
         const newHp = Math.min(character.max_hp as number, (character.hp as number) + regenAmount)
         await supabase.from('characters').update({ hp: newHp, last_regen_at: new Date().toISOString() }).eq('id', id)

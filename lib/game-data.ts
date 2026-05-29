@@ -217,6 +217,117 @@ export interface TownDefinition {
   banner: string
 }
 
+export interface DenPerkDef {
+  regenMult?: number
+  tavernDiscount?: number
+  ferocityBonus?: number
+  xpMult?: number
+  bonesMult?: number
+  homeHpBonus?: number
+}
+
+export interface DenTownData {
+  costs: [number, number, number]
+  accentColor: string
+  glowColor: string
+  centralIcon: string
+  perksPerTier: [DenPerkDef, DenPerkDef, DenPerkDef]
+  activePerksByTier: [string[], string[], string[]]
+  allPerks: string[]
+}
+
+export const DEN_TIERS = ['Den', 'Safehouse', 'Estate'] as const
+
+export const DEN_DATA: Record<number, DenTownData> = {
+  1: {
+    costs: [800, 3000, 8000],
+    accentColor: '#c8a050',
+    glowColor: 'rgba(180,110,20,0.3)',
+    centralIcon: 'ph:fire-fill',
+    perksPerTier: [
+      { regenMult: 1.25 },
+      { regenMult: 1.25, tavernDiscount: 0.10 },
+      { regenMult: 1.25, tavernDiscount: 0.10, homeHpBonus: 5 },
+    ],
+    activePerksByTier: [
+      ['HP regenerates 25% faster'],
+      ['HP regenerates 25% faster', '10% Tavern discount'],
+      ['HP regenerates 25% faster', '10% Tavern discount', '+5 HP when defending on home ground'],
+    ],
+    allPerks: ['HP regenerates 25% faster', '10% Tavern discount (Safehouse)', '+5 HP home defense (Estate)'],
+  },
+  2: {
+    costs: [5000, 15000, 40000],
+    accentColor: '#c84020',
+    glowColor: 'rgba(180,50,20,0.3)',
+    centralIcon: 'game-icons:fire',
+    perksPerTier: [
+      { ferocityBonus: 1 },
+      { ferocityBonus: 2 },
+      { ferocityBonus: 2, homeHpBonus: 5 },
+    ],
+    activePerksByTier: [
+      ['+1 Ferocity when fighting in The Ashpit'],
+      ['+2 Ferocity when fighting in The Ashpit'],
+      ['+2 Ferocity when fighting in The Ashpit', '+5 HP when defending on home ground'],
+    ],
+    allPerks: ['+1–2 Ferocity when fighting in The Ashpit', '+5 HP home defense (Estate)'],
+  },
+  3: {
+    costs: [20000, 60000, 150000],
+    accentColor: '#4a9a50',
+    glowColor: 'rgba(30,110,50,0.3)',
+    centralIcon: 'ph:drop-fill',
+    perksPerTier: [
+      { xpMult: 1.10 },
+      { xpMult: 1.15 },
+      { xpMult: 1.15, homeHpBonus: 5 },
+    ],
+    activePerksByTier: [
+      ['+10% XP from mob fights'],
+      ['+15% XP from mob fights'],
+      ['+15% XP from mob fights', '+5 HP when defending on home ground'],
+    ],
+    allPerks: ['+10–15% XP from mob fights', '+5 HP home defense (Estate)'],
+  },
+  4: {
+    costs: [75000, 200000, 500000],
+    accentColor: '#5a8aaa',
+    glowColor: 'rgba(60,120,180,0.3)',
+    centralIcon: 'ph:snowflake-fill',
+    perksPerTier: [
+      { bonesMult: 1.08 },
+      { bonesMult: 1.10 },
+      { bonesMult: 1.10, homeHpBonus: 5 },
+    ],
+    activePerksByTier: [
+      ['+8% bones from all fights'],
+      ['+10% bones from all fights'],
+      ['+10% bones from all fights', '+5 HP when defending on home ground'],
+    ],
+    allPerks: ['+8–10% bones from all fights', '+5 HP home defense (Estate)'],
+  },
+}
+
+export function getDenPerks(townId: number, tier: number): DenPerkDef {
+  return DEN_DATA[townId]?.perksPerTier[tier - 1] ?? {}
+}
+
+export function getDenBuyCost(townId: number): number {
+  return DEN_DATA[townId]?.costs[0] ?? 0
+}
+
+export function getDenUpgradeCost(townId: number, currentTier: number): number | null {
+  if (currentTier >= 3) return null
+  return DEN_DATA[townId]?.costs[currentTier] ?? null
+}
+
+export function getDenSellValue(townId: number, tier: number): number {
+  const data = DEN_DATA[townId]
+  if (!data) return 0
+  return Math.floor(data.costs.slice(0, tier).reduce((a, b) => a + b, 0) * 0.6)
+}
+
 export const TOWNS: TownDefinition[] = [
   {
     id: 1,

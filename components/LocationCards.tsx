@@ -10,11 +10,11 @@ interface LocationCard {
   desc: string
 }
 
-export default function LocationCards({ cards }: { cards: LocationCard[] }) {
+export default function LocationCards({ cards, gridBackground }: { cards: LocationCard[], gridBackground?: string }) {
   const [hovered, setHovered] = useState<string | null>(null)
 
   return (
-    <div className="grid grid-cols-3" style={{ background: '#0c0905', borderTop: '1px solid #2a1e10' }}>
+    <div className="grid grid-cols-3" style={{ background: gridBackground ?? '#0c0905', borderTop: '1px solid #2a1e10', position: 'relative', zIndex: 1 }}>
       {cards.map((loc, i) => (
         <Link key={loc.href} href={loc.href} style={{ textDecoration: 'none' }}>
           <div
