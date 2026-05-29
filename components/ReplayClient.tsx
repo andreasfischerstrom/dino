@@ -47,30 +47,34 @@ export default function ReplayClient({
   const cinzel = 'var(--font-cinzel, Georgia)'
 
   if (watching) {
-    // fighterA is always the viewer for BattleOutcome purposes (matching ArenaClient pattern)
-    // userSide tells BattleViewer which event HP stream belongs to the viewer
-    const fighterA: CharacterSnapshot = userSide === 'a'
-      ? viewerSnapshot
-      : {
-          // When viewer is 'b', BattleViewer still needs a fighterA (the challenger).
-          // We use opponentName/image for the portrait but viewerSnapshot fields don't matter
-          // since BattleOutcome is driven by localResult, not fighterA stats when userSide='b'.
-          // We still pass viewerSnapshot so BattleOutcome shows viewer's HP/XP transition.
-          ...viewerSnapshot,
-          name: opponentName,
-          image: opponentImage,
-        }
+    // Normalize so BattleViewer always sees the viewer as fighter A.
+    // When userSide='b', swap hpA/hpB and attacker in events, and flip the result winner.
+    type RawEvent = { hpA: number; hpB: number; maxHpA: number; maxHpB: number; attacker?: 'a' | 'b'; [k: string]: unknown }
+    const normalizedEvents = userSide === 'b'
+      ? (events as RawEvent[]).map(e => ({
+          ...e,
+          hpA: e.hpB, hpB: e.hpA,
+          maxHpA: e.maxHpB, maxHpB: e.maxHpA,
+          attacker: e.attacker === 'a' ? 'b' : e.attacker === 'b' ? 'a' : e.attacker,
+        }))
+      : events
 
-    const fighterBName = userSide === 'a' ? opponentName : viewerSnapshot.name
-    const fighterBImage = userSide === 'a' ? opponentImage : viewerSnapshot.image
+    const normalizedResult = userSide === 'b'
+      ? {
+          ...battleResult,
+          winner: battleResult.winner === 'a' ? 'b' : battleResult.winner === 'b' ? 'a' : battleResult.winner,
+          attackerAlive: (battleResult as Record<string, unknown>).defenderAlive,
+          defenderAlive: (battleResult as Record<string, unknown>).attackerAlive,
+        }
+      : battleResult
 
     return (
       <BattleViewer
-        battleData={{ events, result: battleResult }}
-        fighterA={fighterA}
-        fighterBName={fighterBName}
-        fighterBImage={fighterBImage}
-        userSide={userSide}
+        battleData={{ events: normalizedEvents, result: normalizedResult }}
+        fighterA={viewerSnapshot}
+        fighterBName={opponentName}
+        fighterBImage={opponentImage}
+        userSide="a"
         onComplete={markSeenAndGo}
         viewerSnapshot={viewerSnapshot}
       />

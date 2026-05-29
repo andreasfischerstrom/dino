@@ -270,7 +270,7 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
       const minDmg = Math.max(3, atk.stats.strength * 2)
       const maxDmg = Math.max(minDmg + 2, atk.stats.strength * 4)
       let baseDmg = rand(minDmg, maxDmg)
-      baseDmg = Math.round(baseDmg * atkDaring.dmgMult)
+      baseDmg = Math.round(baseDmg * atkDaring.dmgMult * defDaring.dmgReceivedMult)
 
       // Pachycephalosaurus Headbutt ignores hide; otherwise percentage-based defense
       const damageReduction = isPachyHeadbutt ? 0 : Math.min(0.45, def.stats.hide * 0.04)
