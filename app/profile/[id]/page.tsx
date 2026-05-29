@@ -22,6 +22,21 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
 
   if (!character) return <div className="p-8 text-center" style={{ color: '#5a4a3a' }}>Character not found or has been eaten.</div>
 
+  // Apply HP regen for own living character (same logic as town page)
+  const isOwnCheck = character.user_id === user?.id
+  if (isOwnCheck && character.alive && character.hp < character.max_hp) {
+    const lastRegen = new Date((character.last_regen_at ?? character.created_at) as string)
+    const minutesElapsed = Math.min((Date.now() - lastRegen.getTime()) / 60000, 1440)
+    if (!isNaN(minutesElapsed) && minutesElapsed > 0) {
+      const regenAmount = Math.floor(minutesElapsed * ((character.max_hp as number) / 60))
+      if (regenAmount >= 1) {
+        const newHp = Math.min(character.max_hp as number, (character.hp as number) + regenAmount)
+        await supabase.from('characters').update({ hp: newHp, last_regen_at: new Date().toISOString() }).eq('id', id)
+        character.hp = newHp
+      }
+    }
+  }
+
   const { data: inventory } = await supabase
     .from('inventory')
     .select('gear_id, equipped')

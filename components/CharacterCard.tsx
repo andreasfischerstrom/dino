@@ -1,6 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { GearSlot, GearTemplate, GEAR_SLOTS, STAT_MAX } from '@/lib/game-data'
 import { createClient } from '@/lib/supabase/client'
@@ -85,7 +84,6 @@ export default function CharacterCard({
   const [localStatPoints, setLocalStatPoints] = useState(statPoints)
   const [localStats, setLocalStats] = useState(stats)
   const [spending, setSpending] = useState<string | null>(null)
-  const [hpBase, setHpBase] = useState(hp)
   const [liveHp, setLiveHp] = useState(hp)
   const [hoveredStat, setHoveredStat] = useState<string | null>(null)
   // Inline equipment state
@@ -94,29 +92,7 @@ export default function CharacterCard({
   const [openEquipSlot, setOpenEquipSlot] = useState<GearSlot | null>(null)
   const [equipLoading, setEquipLoading] = useState<string | null>(null)
   const [sellLoading, setSellLoading] = useState<string | null>(null)
-  const liveHpRef = useRef(hp)
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!lastRegenAt || !regenPerMinute || hpBase >= maxHp) return
-    const msPerHp = 60000 / regenPerMinute
-    const elapsed = Date.now() - new Date(lastRegenAt).getTime()
-    const msUntilNext = msPerHp - (elapsed % msPerHp)
-
-    let currentHp = hpBase
-    let timeout: ReturnType<typeof setTimeout>
-
-    function tick() {
-      currentHp = Math.min(maxHp, currentHp + 1)
-      liveHpRef.current = currentHp
-      setLiveHp(currentHp)
-      if (currentHp < maxHp) timeout = setTimeout(tick, msPerHp)
-    }
-
-    timeout = setTimeout(tick, msUntilNext)
-    return () => clearTimeout(timeout)
-  }, [hpBase, maxHp, lastRegenAt, regenPerMinute])
-
+  // Keep liveHp in sync with DB updates via Realtime
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase.channel(`char-hp-${characterId}`)
@@ -127,13 +103,11 @@ export default function CharacterCard({
         filter: `id=eq.${characterId}`,
       }, (payload) => {
         const newHp = (payload.new as Record<string, unknown>).hp as number
-        if (typeof newHp === 'number' && newHp !== liveHpRef.current) {
-          router.refresh()
-        }
+        if (typeof newHp === 'number') setLiveHp(newHp)
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [characterId, router])
+  }, [characterId])
 
   const hpPct = Math.round((liveHp / maxHp) * 100)
   const xpSpan = xpForNext - xpCurrent
