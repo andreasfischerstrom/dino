@@ -84,6 +84,7 @@ export default function CharacterCard({
   const [localStatPoints, setLocalStatPoints] = useState(statPoints)
   const [localStats, setLocalStats] = useState(stats)
   const [spending, setSpending] = useState<string | null>(null)
+  const [hpBase, setHpBase] = useState(hp)
   const [liveHp, setLiveHp] = useState(hp)
   const [hoveredStat, setHoveredStat] = useState<string | null>(null)
   // Inline equipment state
@@ -92,7 +93,25 @@ export default function CharacterCard({
   const [openEquipSlot, setOpenEquipSlot] = useState<GearSlot | null>(null)
   const [equipLoading, setEquipLoading] = useState<string | null>(null)
   const [sellLoading, setSellLoading] = useState<string | null>(null)
-  // Keep liveHp in sync with DB updates via Realtime
+
+  // Client-side HP simulation — ticks up between server-side regen writes
+  useEffect(() => {
+    if (!lastRegenAt || !regenPerMinute || hpBase >= maxHp) return
+    const msPerHp = 60000 / regenPerMinute
+    const elapsed = Date.now() - new Date(lastRegenAt).getTime()
+    const msUntilNext = msPerHp - (elapsed % msPerHp)
+    let current = hpBase
+    let timeout: ReturnType<typeof setTimeout>
+    function tick() {
+      current = Math.min(maxHp, current + 1)
+      setLiveHp(current)
+      if (current < maxHp) timeout = setTimeout(tick, msPerHp)
+    }
+    timeout = setTimeout(tick, msUntilNext)
+    return () => clearTimeout(timeout)
+  }, [hpBase, maxHp, lastRegenAt, regenPerMinute])
+
+  // Realtime: reset simulation base when DB is actually written (battle, regen on town visit, etc.)
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase.channel(`char-hp-${characterId}`)
@@ -103,7 +122,10 @@ export default function CharacterCard({
         filter: `id=eq.${characterId}`,
       }, (payload) => {
         const newHp = (payload.new as Record<string, unknown>).hp as number
-        if (typeof newHp === 'number') setLiveHp(newHp)
+        if (typeof newHp === 'number') {
+          setHpBase(newHp)
+          setLiveHp(newHp)
+        }
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }

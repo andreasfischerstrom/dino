@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
@@ -28,6 +28,7 @@ interface NavData {
   imageUrl: string | null
   speciesImage: string | null
   speciesEmoji: string
+  lastRegenAt: string | null
 }
 
 const HP_COLOR = '#c04040'
@@ -146,7 +147,7 @@ export default function NavBar() {
       if (!user) return
       const { data: char } = await supabase
         .from('characters')
-        .select('id, bones, current_town, hp, max_hp, xp, name, image_url, level, species')
+        .select('id, bones, current_town, hp, max_hp, xp, name, image_url, level, species, last_regen_at')
         .eq('user_id', user.id)
         .single()
       if (!char) return
@@ -168,9 +169,10 @@ export default function NavBar() {
         imageUrl: char.image_url as string | null,
         speciesImage: sp?.image ?? null,
         speciesEmoji: sp?.emoji ?? '🦕',
+        lastRegenAt: char.last_regen_at as string | null,
       })
 
-      // Subscribe to live character updates (HP regen, battles, purchases)
+      // Subscribe to live character updates (battles, purchases, server-side regen)
       channel = supabase
         .channel(`nav-char-${char.id}`)
         .on('postgres_changes', {
@@ -187,6 +189,7 @@ export default function NavBar() {
             xp: c.xp as number,
             level: c.level as number,
             bones: c.bones as number,
+            lastRegenAt: c.last_regen_at as string | null,
           } : prev)
         })
         .subscribe()
@@ -198,6 +201,25 @@ export default function NavBar() {
       if (channel) channel.unsubscribe()
     }
   }, [pathname])
+
+  // Client-side HP simulation — mirrors CharacterCard logic so both stay in sync
+  const navHpRef = useRef(data?.hp ?? 0)
+  useEffect(() => {
+    if (!data || data.hp >= data.maxHp || !data.lastRegenAt) return
+    navHpRef.current = data.hp
+    const regenPerMinute = data.maxHp / 60
+    const msPerHp = 60000 / regenPerMinute
+    const elapsed = Date.now() - new Date(data.lastRegenAt).getTime()
+    const msUntilNext = msPerHp - (elapsed % msPerHp)
+    let timeout: ReturnType<typeof setTimeout>
+    function tick() {
+      navHpRef.current = Math.min(data!.maxHp, navHpRef.current + 1)
+      setData(prev => prev ? { ...prev, hp: navHpRef.current } : prev)
+      if (navHpRef.current < data!.maxHp) timeout = setTimeout(tick, msPerHp)
+    }
+    timeout = setTimeout(tick, msUntilNext)
+    return () => clearTimeout(timeout)
+  }, [data?.lastRegenAt, data?.maxHp]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (HIDDEN_ON.some(p => pathname.startsWith(p))) return null
 
