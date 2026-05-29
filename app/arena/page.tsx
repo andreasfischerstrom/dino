@@ -1,11 +1,17 @@
 export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { SPECIES, DARING_OPTIONS, TOWNS, MOBS } from '@/lib/game-data'
 import { generateDailyBoss, alreadyFoughtToday, todayUTC } from '@/lib/daily-boss'
 import { getEquippedGear } from '@/lib/stats'
 import ArenaClient from '@/components/ArenaClient'
+
+const supabaseAdmin = createAdminClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export default async function ArenaPage() {
   const supabase = await createClient()
@@ -24,11 +30,16 @@ export default async function ArenaPage() {
   const currentTown = (character.current_town as number) ?? 1
   const townDef = TOWNS.find(t => t.id === currentTown) ?? TOWNS[0]
 
+  const now = new Date().toISOString()
+  const charLevel = (character.level as number) ?? 1
+
   const [
     { data: inventory },
     { data: others },
     { data: incomingChallenges },
     { data: outgoingChallenges },
+    { data: queueEntry },
+    { count: queueCount },
   ] = await Promise.all([
     supabase.from('inventory').select('gear_id, equipped').eq('character_id', character.id),
     supabase
@@ -49,13 +60,26 @@ export default async function ArenaPage() {
       .select('*, challenged:challenged_id(name, species, level)')
       .eq('challenger_id', character.id)
       .eq('status', 'pending'),
+    supabaseAdmin
+      .from('matchmaking_queue')
+      .select('*')
+      .eq('character_id', character.id)
+      .gt('expires_at', now)
+      .maybeSingle(),
+    supabaseAdmin
+      .from('matchmaking_queue')
+      .select('*', { count: 'exact', head: true })
+      .neq('character_id', character.id)
+      .gt('expires_at', now)
+      .gte('character_level', charLevel - 10)
+      .lte('character_level', charLevel + 10),
   ])
 
   const equippedGear = getEquippedGear(inventory || [])
   const townMobs = MOBS.filter(m => (m.town ?? 1) === currentTown)
   const dailyBoss = generateDailyBoss(todayUTC(), character.level)
   const foughtToday = alreadyFoughtToday(character.last_daily_at ?? null)
-  const defaultTab = (incomingChallenges?.length ?? 0) > 0 ? 'duels' : 'fight'
+  const defaultTab = queueEntry ? 'open-bout' : (incomingChallenges?.length ?? 0) > 0 ? 'duels' : 'open-bout'
 
   return (
     <ArenaClient
@@ -70,7 +94,9 @@ export default async function ArenaPage() {
       dailyBoss={dailyBoss}
       foughtToday={foughtToday}
       locationName={townDef.locations.arena}
-      defaultTab={defaultTab as 'fight' | 'duels'}
+      defaultTab={defaultTab as 'fight' | 'open-bout' | 'duels'}
+      queueEntry={queueEntry ?? null}
+      queueCount={queueCount ?? 0}
     />
   )
 }

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { GEAR, GearTemplate, StatKey, xpForLevel, maxHp } from '@/lib/game-data'
+import { GEAR, GearTemplate, StatKey, xpForLevel, maxHp, getDenPerks } from '@/lib/game-data'
 import { simulateBattle, Fighter } from '@/lib/battle-engine'
 import { applyGearAndBuffs } from '@/lib/stats'
 
@@ -59,11 +59,31 @@ export async function POST(req: Request) {
   const attackerGear = await getGearStats(attacker.id)
   const defenderGear = await getGearStats(defender.id)
 
+  const attackerDenPerks = (attacker.den_town && attacker.den_tier)
+    ? getDenPerks(attacker.den_town as number, attacker.den_tier as number)
+    : {}
+  const defenderDenPerks = (defender.den_town && defender.den_tier)
+    ? getDenPerks(defender.den_town as number, defender.den_tier as number)
+    : {}
+
+  const attackerBaseStats = applyGearAndBuffs(attacker.stats, attackerGear, attacker.buffs || [])
+  const defenderBaseStats = applyGearAndBuffs(defender.stats, defenderGear, defender.buffs || [])
+
+  if (attackerDenPerks.ferocityBonus) {
+    attackerBaseStats.strength = (attackerBaseStats.strength || 0) + attackerDenPerks.ferocityBonus
+  }
+  if (defenderDenPerks.ferocityBonus) {
+    defenderBaseStats.strength = (defenderBaseStats.strength || 0) + defenderDenPerks.ferocityBonus
+  }
+
+  const defenderIsAtHome = !!(defender.den_town && defender.den_town === defender.current_town)
+  const homeHpBonus = defenderIsAtHome ? (defenderDenPerks.homeHpBonus ?? 0) : 0
+
   const fighterA: Fighter = {
     id: attacker.id,
     name: attacker.name,
     species: attacker.species,
-    stats: applyGearAndBuffs(attacker.stats, attackerGear, attacker.buffs || []),
+    stats: attackerBaseStats,
     daring: challenge.challenger_daring,
     surrenderAt: challenge.challenger_surrender_at,
     initialHp: attacker.hp,
@@ -73,10 +93,10 @@ export async function POST(req: Request) {
     id: defender.id,
     name: defender.name,
     species: defender.species,
-    stats: applyGearAndBuffs(defender.stats, defenderGear, defender.buffs || []),
+    stats: defenderBaseStats,
     daring,
     surrenderAt,
-    initialHp: defender.hp,
+    initialHp: Math.min(defender.max_hp, defender.hp + homeHpBonus),
   }
 
   // Consume both fighters' buffs

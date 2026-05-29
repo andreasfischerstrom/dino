@@ -6,7 +6,7 @@ import { Mob, GearTemplate, Species, DaringOption, xpForLevel, STATS, STAT_MAX }
 import { DailyBoss } from '@/lib/daily-boss'
 import BattleViewer from './BattleViewer'
 
-type Tab = 'fight' | 'duels'
+type Tab = 'fight' | 'open-bout' | 'duels'
 
 interface Props {
   character: Record<string, unknown>
@@ -21,6 +21,8 @@ interface Props {
   foughtToday: boolean
   locationName: string
   defaultTab?: Tab
+  queueEntry: Record<string, unknown> | null
+  queueCount: number
 }
 
 function Countdown() {
@@ -45,7 +47,7 @@ export default function ArenaClient({
   character, equippedGear: _equippedGear, mobs, others,
   incomingChallenges, outgoingChallenges,
   species, daringOptions, dailyBoss, foughtToday,
-  locationName, defaultTab = 'fight',
+  locationName, defaultTab = 'fight', queueEntry, queueCount,
 }: Props) {
   const [tab, setTab] = useState<Tab>(defaultTab || 'fight')
 
@@ -73,6 +75,14 @@ export default function ArenaClient({
   const [acceptingId, setAcceptingId] = useState<string | null>(null)
   const [confirmingChallenge, setConfirmingChallenge] = useState<Record<string, unknown> | null>(null)
   const [showChallengeSection, setShowChallengeSection] = useState(false)
+
+  // Open Bout queue state
+  const [activeQueueEntry, setActiveQueueEntry] = useState(queueEntry)
+  const [queueBelowOffset, setQueueBelowOffset] = useState(3)
+  const [queueAboveLimit, setQueueAboveLimit] = useState<number | null>(null)
+  const [queueLoading, setQueueLoading] = useState(false)
+  const [queueError, setQueueError] = useState('')
+  const [queueMatchFound, setQueueMatchFound] = useState(false)
 
   const charLevel = character.level as number
   const charSpecies = species.find(s => s.id === (character.species as string))
@@ -140,6 +150,40 @@ export default function ArenaClient({
     setAcceptingId(null)
   }
 
+  async function joinQueue() {
+    setQueueLoading(true); setQueueError('')
+    const minLevel = charLevel - queueBelowOffset
+    const maxLevel = queueAboveLimit === null ? null : charLevel + queueAboveLimit
+    try {
+      const res = await fetch('/api/matchmaking/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ minLevel, maxLevel, daring, surrenderAt }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setQueueError(json.error || 'Something went wrong.'); setQueueLoading(false); return }
+      if (json.matched) {
+        setQueueMatchFound(true)
+      } else {
+        setActiveQueueEntry({
+          min_level: minLevel, max_level: maxLevel ?? 999,
+          daring, surrender_at: surrenderAt,
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        })
+      }
+    } catch {
+      setQueueError('Request failed. Check your connection and try again.')
+    }
+    setQueueLoading(false)
+  }
+
+  async function cancelQueue() {
+    setQueueLoading(true)
+    await fetch('/api/matchmaking/cancel', { method: 'POST' })
+    setActiveQueueEntry(null)
+    setQueueLoading(false)
+  }
+
   // Battle viewer
   if (battleData && battleOpponent) {
     const nextLevelXp = xpForLevel((character.level as number) + 1)
@@ -190,41 +234,37 @@ export default function ArenaClient({
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-6 p-1 rounded-lg" style={{ background: '#0e0a06', border: '1px solid #2a1e10' }}>
-        {(['fight', 'duels'] as Tab[]).map(t => {
+        {(['open-bout', 'fight', 'duels'] as Tab[]).map(t => {
           const active = tab === t
-          const badge = t === 'duels' && incomingChallenges.length > 0 ? incomingChallenges.length : 0
+          const badge = t === 'duels' && incomingChallenges.length > 0
+            ? incomingChallenges.length
+            : t === 'open-bout' && activeQueueEntry ? 1 : 0
+          const label = t === 'fight' ? 'Beasts' : t === 'open-bout' ? 'Matchmaking' : 'Duels'
           return (
             <button
               key={t}
               onClick={() => setTab(t)}
               style={{
-                position: 'relative',
-                flex: 1,
-                padding: '8px 12px',
-                borderRadius: '6px',
-                fontSize: '11px',
-                fontFamily: 'var(--font-cinzel, Georgia)',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase' as const,
-                fontWeight: active ? 700 : 400,
+                position: 'relative', flex: 1, padding: '8px 12px', borderRadius: '6px',
+                fontSize: '11px', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.08em',
+                textTransform: 'uppercase' as const, fontWeight: active ? 700 : 400,
                 color: active ? '#d4a843' : '#6a5040',
                 background: active ? '#1a1208' : 'transparent',
                 border: active ? '1px solid #3a2810' : '1px solid transparent',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
+                cursor: 'pointer', transition: 'all 0.15s',
               }}
             >
-              {t === 'fight' ? 'Beasts' : 'Duels'}
+              {label}
               {badge > 0 && (
                 <span style={{
                   position: 'absolute', top: '-4px', right: '-4px',
-                  background: '#c0392b', color: '#fff',
+                  background: t === 'open-bout' ? '#2d6e2a' : '#c0392b', color: '#fff',
                   borderRadius: '9px', fontSize: '10px', fontWeight: 700,
                   minWidth: '16px', height: '16px',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: '0 3px', lineHeight: 1,
                 }}>
-                  {badge}
+                  {t === 'open-bout' ? '●' : badge}
                 </span>
               )}
             </button>
@@ -425,6 +465,176 @@ export default function ArenaClient({
                   <button className="btn-ghost w-full py-2 text-sm" onClick={() => setPendingMob(null)}>Cancel</button>
                 </div>
               </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Open Bout Tab ── */}
+      {tab === 'open-bout' && (
+        <>
+          {queueMatchFound ? (
+            <div className="panel text-center py-8">
+              <Icon icon="game-icons:crossed-swords" width={32} height={32} style={{ color: '#d4a843', margin: '0 auto 12px' }} />
+              <p className="font-bold text-lg mb-2" style={{ color: '#e8c870', fontFamily: 'var(--font-cinzel, Georgia)' }}>Match Found</p>
+              <p className="text-sm mb-6" style={{ color: '#8a6a38' }}>Your battle has been fought. Return to town to watch the replay.</p>
+              <a href="/town" className="btn-primary text-sm">← Back to town</a>
+            </div>
+          ) : activeQueueEntry ? (
+            /* ── In queue state ── */
+            <div className="space-y-4">
+              <div className="panel">
+                <div className="flex items-center gap-3 mb-4">
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#5abf6a', boxShadow: '0 0 8px #5abf6a', flexShrink: 0 }} />
+                  <p className="font-bold text-sm" style={{ color: '#e8c870', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>
+                    Seeking an Opponent
+                  </p>
+                </div>
+
+                <div className="space-y-2 mb-5">
+                  {[
+                    { label: 'Level range', value: `${activeQueueEntry.min_level} – ${activeQueueEntry.max_level === 999 ? 'Any' : activeQueueEntry.max_level}` },
+                    { label: 'Daring', value: daringOptions.find(d => d.key === activeQueueEntry.daring)?.label ?? activeQueueEntry.daring as string },
+                    { label: 'Surrender', value: activeQueueEntry.surrender_at === 0 ? 'Never' : `at ${activeQueueEntry.surrender_at}% HP` },
+                    { label: 'Expires', value: (() => {
+                        const ms = new Date(activeQueueEntry.expires_at as string).getTime() - Date.now()
+                        const h = Math.floor(ms / 3600000)
+                        const m = Math.floor((ms % 3600000) / 60000)
+                        return ms <= 0 ? 'Expired' : `in ${h}h ${m}m`
+                      })() },
+                  ].map(row => (
+                    <div key={row.label} className="flex justify-between text-sm">
+                      <span style={{ color: '#6a5040' }}>{row.label}</span>
+                      <span style={{ color: '#c8a870' }}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {queueCount > 0 && (
+                  <p className="text-xs mb-5" style={{ color: '#5a9a50', fontStyle: 'italic' }}>
+                    {queueCount} other {queueCount === 1 ? 'fighter' : 'fighters'} seeking a match nearby
+                  </p>
+                )}
+
+                <button
+                  onClick={cancelQueue}
+                  disabled={queueLoading}
+                  className="text-xs"
+                  style={{ color: '#5a3a28', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  {queueLoading ? 'Cancelling…' : 'Leave the queue'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* ── Join queue form ── */
+            <div className="space-y-4">
+              <p className="text-sm" style={{ color: '#7a6848', fontStyle: 'italic' }}>
+                Enter the queue. Fight whoever matches. You will battle at your current HP when a match is found.
+              </p>
+
+              {/* HP warning */}
+              {(character.hp as number) / (character.max_hp as number) < 0.30 && (
+                <div className="p-3 rounded text-sm" style={{ background: '#2a0808', border: '1px solid #7a1515', color: '#c06060' }}>
+                  <Icon icon="ph:warning" width={14} height={14} style={{ display: 'inline', marginRight: 6 }} />
+                  Too wounded to queue. Heal to at least 30% HP first.
+                </div>
+              )}
+
+              <div className="panel space-y-5">
+                {/* Level range */}
+                <div>
+                  <p className="text-xs font-bold mb-3" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>LEVEL RANGE</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 text-center">
+                      <p className="text-xs mb-2" style={{ color: '#6a5040' }}>Min level</p>
+                      <div className="flex items-center justify-center gap-3">
+                        <button
+                          onClick={() => setQueueBelowOffset(Math.min(5, queueBelowOffset + 1))}
+                          disabled={queueBelowOffset >= 5}
+                          style={{ width: 28, height: 28, borderRadius: 4, background: '#1a1208', border: '1px solid #3a2810', color: '#c8a050', cursor: queueBelowOffset >= 5 ? 'not-allowed' : 'pointer', opacity: queueBelowOffset >= 5 ? 0.4 : 1, fontSize: 16 }}
+                        >−</button>
+                        <span className="text-lg font-bold" style={{ color: '#e8c870', fontFamily: 'var(--font-cinzel, Georgia)', minWidth: 32, textAlign: 'center' }}>
+                          {Math.max(1, charLevel - queueBelowOffset)}
+                        </span>
+                        <button
+                          onClick={() => setQueueBelowOffset(Math.max(0, queueBelowOffset - 1))}
+                          disabled={queueBelowOffset <= 0}
+                          style={{ width: 28, height: 28, borderRadius: 4, background: '#1a1208', border: '1px solid #3a2810', color: '#c8a050', cursor: queueBelowOffset <= 0 ? 'not-allowed' : 'pointer', opacity: queueBelowOffset <= 0 ? 0.4 : 1, fontSize: 16 }}
+                        >+</button>
+                      </div>
+                      <p className="text-xs mt-1" style={{ color: '#4a3820' }}>{queueBelowOffset === 0 ? 'Your level' : `${queueBelowOffset} below`}</p>
+                    </div>
+
+                    <span style={{ color: '#4a3820', fontSize: 18 }}>—</span>
+
+                    <div className="flex-1 text-center">
+                      <p className="text-xs mb-2" style={{ color: '#6a5040' }}>Max level</p>
+                      {queueAboveLimit === null ? (
+                        <div>
+                          <p className="text-lg font-bold" style={{ color: '#e8c870', fontFamily: 'var(--font-cinzel, Georgia)' }}>Any</p>
+                          <button onClick={() => setQueueAboveLimit(3)} className="text-xs mt-1" style={{ color: '#6a5040', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Set a cap</button>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-center justify-center gap-3">
+                            <button
+                              onClick={() => setQueueAboveLimit(Math.max(0, queueAboveLimit - 1))}
+                              style={{ width: 28, height: 28, borderRadius: 4, background: '#1a1208', border: '1px solid #3a2810', color: '#c8a050', cursor: 'pointer', fontSize: 16 }}
+                            >−</button>
+                            <span className="text-lg font-bold" style={{ color: '#e8c870', fontFamily: 'var(--font-cinzel, Georgia)', minWidth: 32, textAlign: 'center' }}>
+                              {charLevel + queueAboveLimit}
+                            </span>
+                            <button
+                              onClick={() => setQueueAboveLimit(queueAboveLimit + 1)}
+                              style={{ width: 28, height: 28, borderRadius: 4, background: '#1a1208', border: '1px solid #3a2810', color: '#c8a050', cursor: 'pointer', fontSize: 16 }}
+                            >+</button>
+                          </div>
+                          <button onClick={() => setQueueAboveLimit(null)} className="text-xs mt-1" style={{ color: '#6a5040', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Remove cap</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Daring */}
+                <div>
+                  <label className="block text-xs font-bold mb-2" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>DARING</label>
+                  <select value={daring} onChange={e => setDaring(e.target.value)} className="game-input">
+                    {daringOptions.map(d => <option key={d.key} value={d.key}>{d.label} — {d.description}</option>)}
+                  </select>
+                </div>
+
+                {/* Surrender */}
+                <div>
+                  <div className="flex justify-between items-baseline mb-2">
+                    <label className="text-xs font-bold" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>SURRENDER</label>
+                    <span className="text-sm font-bold" style={{ color: surrenderAt === 0 ? '#bf4040' : '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>
+                      {surrenderAt === 0 ? 'Never' : `at ${surrenderAt}% HP`}
+                    </span>
+                  </div>
+                  <input type="range" min={0} max={50} value={surrenderAt} onChange={e => setSurrenderAt(Number(e.target.value))} className="w-full" />
+                  <p className="text-xs mt-2" style={{ color: surrenderAt === 0 ? '#bf6060' : '#6a5030' }}>
+                    {surrenderAt === 0 ? 'Fight to the death — your character can permanently die.' : `You'll likely survive a loss.`}
+                  </p>
+                </div>
+              </div>
+
+              {queueCount > 0 && (
+                <p className="text-xs" style={{ color: '#5a9a50', fontStyle: 'italic', paddingLeft: 2 }}>
+                  {queueCount} {queueCount === 1 ? 'fighter' : 'fighters'} currently seeking a match nearby
+                </p>
+              )}
+
+              {queueError && <p className="text-sm" style={{ color: '#c05050' }}>{queueError}</p>}
+
+              <button
+                onClick={joinQueue}
+                disabled={queueLoading || (character.hp as number) / (character.max_hp as number) < 0.30}
+                className="btn-primary w-full py-3 disabled:opacity-40"
+              >
+                {queueLoading ? 'Entering queue…' : 'Enter the Queue'}
+              </button>
             </div>
           )}
         </>
