@@ -161,13 +161,29 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
   const daringA = DARING_OPTIONS.find(d => d.key === fighterA.daring)!
   const daringB = DARING_OPTIONS.find(d => d.key === fighterB.daring)!
 
-  // Roar effect: high roar debuffs opponent daring by shifting index down
-  const daringIndexA = DARING_OPTIONS.findIndex(d => d.key === fighterA.daring)
-  const daringIndexB = DARING_OPTIONS.findIndex(d => d.key === fighterB.daring)
-  const roarDebuffOnB = Math.floor(fighterA.stats.roar / 4)
-  const roarDebuffOnA = Math.floor(fighterB.stats.roar / 4)
-  const effectiveDaringA = DARING_OPTIONS[clamp(daringIndexA - roarDebuffOnA, 0, 4)]
-  const effectiveDaringB = DARING_OPTIONS[clamp(daringIndexB - roarDebuffOnB, 0, 4)]
+  const effectiveDaringA = daringA
+  const effectiveDaringB = daringB
+
+  // Roar effect: debuffs opponent's Ferocity and Agility for the fight
+  // Scales immediately — Roar 1 = -1, Roar 7 = -2, Roar 14 = -3, capped at -5
+  const roarDebuffOnA = Math.min(5, Math.ceil(fighterB.stats.roar * 0.15))
+  const roarDebuffOnB = Math.min(5, Math.ceil(fighterA.stats.roar * 0.15))
+  const effectiveA: Fighter = {
+    ...fighterA,
+    stats: {
+      ...fighterA.stats,
+      ferocity: Math.max(0, fighterA.stats.ferocity - roarDebuffOnA),
+      agility:  Math.max(0, fighterA.stats.agility  - roarDebuffOnA),
+    },
+  }
+  const effectiveB: Fighter = {
+    ...fighterB,
+    stats: {
+      ...fighterB.stats,
+      ferocity: Math.max(0, fighterB.stats.ferocity - roarDebuffOnB),
+      agility:  Math.max(0, fighterB.stats.agility  - roarDebuffOnB),
+    },
+  }
 
   const maxHpA = maxHp(fighterA.stats.constitution)
   const maxHpB = maxHp(fighterB.stats.constitution)
@@ -188,8 +204,10 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
   // Intro (skipped for recompute calls)
   if (!opts.skipIntro) {
     addEvent({ round: 0, type: 'intro', text: `The gates open. ${fighterA.name} and ${fighterB.name} enter the arena.` })
-    addEvent({ round: 0, type: 'intro', text: `${fighterA.name} has set their Daring to ${daringA.label.toUpperCase()}${effectiveDaringA.key !== daringA.key ? ` (reduced to ${effectiveDaringA.label.toUpperCase()} by ${fighterB.name}'s terrifying roar)` : ''}.` })
-    addEvent({ round: 0, type: 'intro', text: `${fighterB.name} has set their Daring to ${daringB.label.toUpperCase()}${effectiveDaringB.key !== daringB.key ? ` (reduced to ${effectiveDaringB.label.toUpperCase()} by ${fighterA.name}'s terrifying roar)` : ''}.` })
+    addEvent({ round: 0, type: 'intro', text: `${fighterA.name} has set their Daring to ${daringA.label.toUpperCase()}.` })
+    addEvent({ round: 0, type: 'intro', text: `${fighterB.name} has set their Daring to ${daringB.label.toUpperCase()}.` })
+    if (roarDebuffOnB > 0) addEvent({ round: 0, type: 'roar', text: `${fighterA.name} lets out a thunderous roar. ${fighterB.name} flinches — Ferocity and Agility reduced by ${roarDebuffOnB} for this fight.` })
+    if (roarDebuffOnA > 0) addEvent({ round: 0, type: 'roar', text: `${fighterB.name} lets out a thunderous roar. ${fighterA.name} flinches — Ferocity and Agility reduced by ${roarDebuffOnA} for this fight.` })
     if (speciesA?.passive) addEvent({ round: 0, type: 'passive', text: `⚡ ${fighterA.name}'s passive: ${speciesA.passive.name} — ${speciesA.passive.description}` })
     if (speciesB?.passive) addEvent({ round: 0, type: 'passive', text: `⚡ ${fighterB.name}'s passive: ${speciesB.passive.name} — ${speciesB.passive.description}` })
     addEvent({ round: 0, type: 'intro', text: `The crowd screams. A horn sounds. Something in the distance catches fire. Let's go.` })
@@ -204,8 +222,8 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
 
   while (round <= roundLimit && hpA > 0 && hpB > 0) {
     // Determine attack order by agility
-    const aGoesFirst = fighterA.stats.agility >= fighterB.stats.agility
-      ? (fighterA.stats.agility > fighterB.stats.agility ? true : Math.random() > 0.5)
+    const aGoesFirst = effectiveA.stats.agility >= effectiveB.stats.agility
+      ? (effectiveA.stats.agility > effectiveB.stats.agility ? true : Math.random() > 0.5)
       : false
 
     const attackOrder: Array<'a' | 'b'> = aGoesFirst ? ['a', 'b'] : ['b', 'a']
@@ -218,8 +236,8 @@ export function simulateBattle(fighterA: Fighter, fighterB: Fighter, opts: Simul
     for (const attacker of attackOrder) {
       if (hpA <= 0 || hpB <= 0) break
 
-      const atk = attacker === 'a' ? fighterA : fighterB
-      const def = attacker === 'a' ? fighterB : fighterA
+      const atk = attacker === 'a' ? effectiveA : effectiveB
+      const def = attacker === 'a' ? effectiveB : effectiveA
       const atkDaring = attacker === 'a' ? effectiveDaringA : effectiveDaringB
       const defDaring = attacker === 'a' ? effectiveDaringB : effectiveDaringA
       const atkHp = attacker === 'a' ? hpA : hpB

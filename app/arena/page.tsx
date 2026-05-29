@@ -33,7 +33,7 @@ export default async function ArenaPage() {
     supabase.from('inventory').select('gear_id, equipped').eq('character_id', character.id),
     supabase
       .from('characters')
-      .select('id, name, species, level, wins, losses, kills, daring, surrender_at')
+      .select('id, name, species, level, wins, losses, kills, daring, surrender_at, image_url')
       .eq('alive', true)
       .eq('current_town', currentTown)
       .neq('user_id', user.id)
@@ -41,7 +41,7 @@ export default async function ArenaPage() {
       .limit(20),
     supabase
       .from('challenges')
-      .select('*, challenger:challenger_id(name, species, level)')
+      .select('*, challenger:challenger_id(name, species, level, image_url, stats)')
       .eq('challenged_id', character.id)
       .eq('status', 'pending'),
     supabase

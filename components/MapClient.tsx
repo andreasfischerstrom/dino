@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Icon } from '@iconify/react'
 import type { TownDefinition } from '@/lib/game-data'
 
 interface Props {
@@ -127,13 +128,24 @@ export default function MapClient({ towns, currentTown, characterLevel }: Props)
     if (town.id === currentTown || traveling) return
     setTraveling(true)
     setError(null)
+    // Preload banner while the API call is in-flight
+    if (!localStorage.getItem(`town-intro-${town.id}`)) {
+      const img = new window.Image()
+      img.src = town.banner
+    }
     const res = await fetch('/api/travel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ townId: town.id }),
     })
     if (res.ok) {
-      setArrived(town)
+      // First-ever visit → skip arrival screen, let TownIntroOverlay handle it
+      if (!localStorage.getItem(`town-intro-${town.id}`)) {
+        router.push('/town')
+        router.refresh()
+      } else {
+        setArrived(town)
+      }
     } else {
       const data = await res.json()
       setError(data.error ?? 'Travel failed')
@@ -248,7 +260,7 @@ export default function MapClient({ towns, currentTown, characterLevel }: Props)
                   transition: 'all 0.15s',
                   filter: unlocked ? 'none' : 'grayscale(0.6)',
                 }}>
-                  {unlocked ? town.keeperEmoji : '🔒'}
+                  {unlocked ? <Icon icon={town.keeperIcon} width={24} height={24} /> : <Icon icon="lucide:lock" width={20} height={20} style={{ color: '#5a4830' }} />}
                 </div>
 
                 <div style={{
@@ -284,10 +296,11 @@ export default function MapClient({ towns, currentTown, characterLevel }: Props)
           }}>
             <div className="flex items-start gap-4">
               <div style={{
-                fontSize: '36px', lineHeight: 1, flexShrink: 0,
+                flexShrink: 0,
                 filter: characterLevel < selected.levelReq ? 'grayscale(0.8)' : 'none',
+                color: '#c8a050',
               }}>
-                {selected.keeperEmoji}
+                <Icon icon={selected.keeperIcon} width={36} height={36} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 flex-wrap mb-1">
@@ -331,8 +344,8 @@ export default function MapClient({ towns, currentTown, characterLevel }: Props)
 
                 {characterLevel < selected.levelReq ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm" style={{ color: '#7a5030' }}>
-                      🔒 Requires level {selected.levelReq}
+                    <span className="text-sm" style={{ color: '#7a5030', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Icon icon="lucide:lock" width={13} height={13} />Requires level {selected.levelReq}
                     </span>
                     <span className="text-xs" style={{ color: '#4a3828' }}>
                       ({selected.levelReq - characterLevel} level{selected.levelReq - characterLevel !== 1 ? 's' : ''} away)
@@ -384,8 +397,8 @@ export default function MapClient({ towns, currentTown, characterLevel }: Props)
                   border: `1px solid ${selected?.id === town.id ? '#3a2a18' : '#1e1810'}`,
                   transition: 'all 0.15s',
                 }}>
-                  <span style={{ fontSize: '18px', opacity: unlocked ? 1 : 0.4 }}>
-                    {unlocked ? town.keeperEmoji : '🔒'}
+                  <span style={{ fontSize: '18px', opacity: unlocked ? 1 : 0.4, display: 'flex', alignItems: 'center' }}>
+                    {unlocked ? <Icon icon={town.keeperIcon} width={20} height={20} /> : <Icon icon="lucide:lock" width={18} height={18} style={{ color: '#5a4830' }} />}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">

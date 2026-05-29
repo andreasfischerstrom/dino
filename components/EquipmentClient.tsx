@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { GearTemplate, GearSlot, GEAR_SLOTS } from '@/lib/game-data'
+import { Icon } from '@iconify/react'
 
 const SLOT_IMAGES: Record<GearSlot, string> = {
   jaws:      '/images/equipment/fang.png',
@@ -84,7 +85,7 @@ export default function EquipmentClient({ character, gear, inventory, shopName }
       <div className="flex items-center gap-4 mb-6">
         <Link href="/town" className="btn-ghost text-sm">← Town</Link>
         <h1 className="text-3xl font-bold" style={{ color: '#c8a84b' }}>Equipment</h1>
-        <span className="ml-auto text-sm font-bold" style={{ color: '#c8a84b' }}>🦴 {bones}</span>
+        <span className="ml-auto text-sm font-bold flex items-center gap-1" style={{ color: '#c8a84b' }}><Icon icon="ph:bone-fill" width={14} height={14} /> {bones}</span>
       </div>
       <p className="text-sm mb-6" style={{ color: '#a08050' }}>
         Six slots. One item each. Click a slot to swap what's equipped.
@@ -211,7 +212,7 @@ export default function EquipmentClient({ character, gear, inventory, shopName }
                             style={{ background: '#1a0a0a', color: '#a06050', border: '1px solid #3a1a14' }}
                             disabled={selling === item.id}
                             onClick={() => sellItem(item.id)}>
-                            {selling === item.id ? 'Selling...' : `Sell for ${sellPrice} 🦴`}
+                            {selling === item.id ? 'Selling...' : <span className="flex items-center gap-1">Sell for {sellPrice} <Icon icon="ph:bone-fill" width={14} height={14} /></span>}
                           </button>
                         </div>
                       </div>

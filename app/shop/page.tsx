@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { GEAR, TOWNS } from '@/lib/game-data'
+import { GEAR, TOWNS, GEAR_SLOTS } from '@/lib/game-data'
 import { generateDailyMarket } from '@/lib/black-market'
 import ShopClient from '@/components/ShopClient'
 
@@ -43,6 +43,7 @@ export default async function ShopPage() {
   const blackMarketItem = dbItem
     ? {
         name: dbItem.name, description: dbItem.description, emoji: dbItem.emoji,
+        icon: GEAR_SLOTS.find(s => s.key === dbItem.slot)?.icon ?? 'game-icons:charm',
         slot: dbItem.slot, statBonus: dbItem.stat_bonus, price: dbItem.price,
         levelReq: dbItem.level_req, flavor: dbItem.flavor, tier: dbItem.tier,
       }

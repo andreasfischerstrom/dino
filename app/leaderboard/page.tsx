@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SPECIES } from '@/lib/game-data'
+import { Icon } from '@iconify/react'
 
 export default async function LeaderboardPage() {
   const supabase = await createClient()
@@ -12,7 +13,9 @@ export default async function LeaderboardPage() {
     .from('characters')
     .select('id, name, species, level, wins, losses, kills, alive, bones')
     .eq('alive', true)
+    .order('level', { ascending: false })
     .order('kills', { ascending: false })
+    .order('wins', { ascending: false })
     .limit(25)
 
   const { data: dead } = await supabase
@@ -34,14 +37,13 @@ export default async function LeaderboardPage() {
   return (
     <div className="min-h-screen px-4 py-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/town" className="btn-ghost text-sm">← Town</Link>
         <h1 className="text-3xl page-title">Hall of Carnage</h1>
       </div>
       <p className="text-sm mb-8" style={{ color: '#a08050', fontStyle: 'italic' }}>
         The living, ranked by body count. The dead, remembered below.
       </p>
 
-      <h2 className="font-bold mb-3" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>⚔️ Active Gladiators</h2>
+      <h2 className="font-bold mb-3 flex items-center gap-2" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}><Icon icon="game-icons:crossed-swords" width={14} height={14} /> Active Gladiators</h2>
       <div className="panel mb-8" style={{ padding: '0.5rem 0' }}>
         {(top || []).length === 0 && (
           <p className="text-sm px-6 py-4" style={{ color: '#a08050' }}>The arena is empty. This is either peaceful or terrifying.</p>
@@ -77,7 +79,7 @@ export default async function LeaderboardPage() {
                 <p className="text-xs" style={{ color: '#a08050' }}>Lvl {char.level} {sp?.name}</p>
               </div>
               <div className="text-right text-xs" style={{ color: '#a08050' }}>
-                <p>💀 {char.kills} kills</p>
+                <p className="flex items-center justify-end gap-1"><Icon icon="game-icons:death-skull" width={14} height={14} /> {char.kills} kills</p>
                 <p>{char.wins}W / {char.losses}L</p>
               </div>
             </Link>
@@ -85,7 +87,7 @@ export default async function LeaderboardPage() {
         })}
       </div>
 
-      <h2 className="font-bold mb-3" style={{ color: '#7a2020', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>☠️ Hall of the Fallen</h2>
+      <h2 className="font-bold mb-3 flex items-center gap-2" style={{ color: '#7a2020', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}><Icon icon="game-icons:skull-crossed-bones" width={14} height={14} /> Hall of the Fallen</h2>
       <div className="panel" style={{ padding: '0.5rem 0' }}>
         {(dead || []).length === 0 && (
           <p className="text-sm px-6 py-4" style={{ color: '#a08050' }}>Nobody has died yet. Give it time.</p>
@@ -96,7 +98,7 @@ export default async function LeaderboardPage() {
             <Link key={char.id} href={`/profile/${char.id}`}
               className="flex items-center gap-4 px-4 py-3 block row-hover"
               style={{ borderBottom: i < (dead?.length || 0) - 1 ? '1px solid #1e1408' : 'none', textDecoration: 'none' }}>
-              <span className="w-10 text-center text-base" style={{ color: '#4a3020' }}>☠</span>
+              <span className="w-10 text-center text-base flex items-center justify-center" style={{ color: '#4a3020' }}><Icon icon="game-icons:skull-crossed-bones" width={14} height={14} /></span>
               {sp?.image
                 ? <img src={sp.image} alt={sp.name} className="w-10 h-10 rounded object-cover" style={{ border: '1px solid #2a1e0e', filter: 'grayscale(1) brightness(0.45)' }} />
                 : <span className="text-2xl" style={{ filter: 'grayscale(1) brightness(0.5)' }}>{sp?.emoji || '🦕'}</span>}
@@ -105,7 +107,7 @@ export default async function LeaderboardPage() {
                 <p className="text-xs" style={{ color: '#4a3820' }}>Lvl {char.level} {sp?.name} · Fell in battle</p>
               </div>
               <div className="text-right text-xs" style={{ color: '#5a4030' }}>
-                <p>💀 {char.kills} kills</p>
+                <p className="flex items-center justify-end gap-1"><Icon icon="game-icons:death-skull" width={14} height={14} /> {char.kills} kills</p>
                 <p>{char.wins}W / {char.losses}L</p>
               </div>
             </Link>

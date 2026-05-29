@@ -1,7 +1,8 @@
 'use client'
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { Mob, GearTemplate, Species, DaringOption, xpForLevel } from '@/lib/game-data'
+import { Icon } from '@iconify/react'
+import { Mob, GearTemplate, Species, DaringOption, xpForLevel, STATS, STAT_MAX } from '@/lib/game-data'
 import { DailyBoss } from '@/lib/daily-boss'
 import BattleViewer from './BattleViewer'
 
@@ -184,7 +185,6 @@ export default function ArenaClient({
   return (
     <div className="min-h-screen px-4 py-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/town" className="btn-ghost text-sm">← Town</Link>
         <h1 className="text-3xl page-title">{locationName}</h1>
       </div>
 
@@ -253,7 +253,7 @@ export default function ArenaClient({
                 cursor: 'pointer',
               }}
             >
-              <span className="text-lg">🏆</span>
+              <Icon icon="game-icons:trophy-cup" width={20} height={20} />
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-xs tracking-widest uppercase" style={{
                   color: !foughtToday ? '#d4a843' : '#5a4830',
@@ -298,7 +298,7 @@ export default function ArenaClient({
                   ))}
                 </div>
                 <div className="flex gap-2 text-xs mb-4 p-3 rounded" style={{ background: '#100d06', border: '1px solid #2a1e0e', color: '#6a5030' }}>
-                  <span>⚠️</span>
+                  <Icon icon="ph:warning" width={14} height={14} style={{ flexShrink: 0, marginTop: '1px' }} />
                   <span>You fight at Bold daring. No surrender. If your HP reaches zero, your character dies permanently.</span>
                 </div>
                 {foughtToday ? (
@@ -307,7 +307,7 @@ export default function ArenaClient({
                   </div>
                 ) : (
                   <button onClick={fightDaily} disabled={dailyLoading} className="w-full py-3 rounded font-bold text-sm transition-all" style={{ background: dailyLoading ? '#1a1208' : 'linear-gradient(135deg, #5a3a08 0%, #3a2408 100%)', border: '1px solid #8a6020', color: dailyLoading ? '#6a5030' : '#e8c870', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em', boxShadow: dailyLoading ? 'none' : '0 0 20px rgba(212,168,67,0.15)', cursor: 'pointer' }}>
-                    {dailyLoading ? 'Entering the arena...' : 'Enter the Trial ⚔️'}
+                    {dailyLoading ? 'Entering the arena...' : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Icon icon="game-icons:crossed-swords" width={16} height={16} />Enter the Trial</span>}
                   </button>
                 )}
               </div>
@@ -331,7 +331,7 @@ export default function ArenaClient({
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-bold" style={{ color: locked ? '#7a6040' : '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{mob.name}</h3>
                       {locked
-                        ? <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: '#1a1208', color: '#5a4a30', border: '1px solid #3a2a1044' }}>🔒 Lvl {mob.level}</span>
+                        ? <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: '#1a1208', color: '#5a4a30', border: '1px solid #3a2a1044', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Icon icon="lucide:lock" width={10} height={10} />Lvl {mob.level}</span>
                         : <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: diffColor + '22', color: diffColor, border: `1px solid ${diffColor}44` }}>Lvl {mob.level} · {difficulty}</span>
                       }
                     </div>
@@ -385,7 +385,7 @@ export default function ArenaClient({
                     </div>
                     <input type="range" min={0} max={50} value={surrenderAt} onChange={e => setSurrenderAt(Number(e.target.value))} className="w-full" />
                     <p className="text-xs mt-2" style={{ color: surrenderAt === 0 ? '#bf6060' : '#6a5030' }}>
-                      {surrenderAt === 0 ? '⚠️ Fight to the death — your character can permanently die.' : `You'll likely survive a loss.`}
+                      {surrenderAt === 0 ? 'Fight to the death — your character can permanently die.' : `You'll likely survive a loss.`}
                     </p>
                   </div>
                 </div>
@@ -420,7 +420,7 @@ export default function ArenaClient({
 
                 <div className="px-6 py-5 space-y-2">
                   <button className="btn-primary w-full py-3 text-base" onClick={startFight} disabled={fightLoading}>
-                    {fightLoading ? 'Preparing...' : 'Enter the Pit ⚔️'}
+                    {fightLoading ? 'Preparing...' : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Icon icon="game-icons:crossed-swords" width={16} height={16} />Enter the Pit</span>}
                   </button>
                   <button className="btn-ghost w-full py-2 text-sm" onClick={() => setPendingMob(null)}>Cancel</button>
                 </div>
@@ -445,10 +445,14 @@ export default function ArenaClient({
                 {incomingChallenges.map(c => {
                   const challenger = c.challenger as Record<string, unknown>
                   const cSpecies = species.find(s => s.id === (challenger.species as string))
+                  const cImg = (challenger.image_url as string | null) || cSpecies?.image || null
                   return (
                     <div key={c.id as string} className="panel" style={{ borderLeft: '3px solid #7a2020' }}>
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl shrink-0">{cSpecies?.emoji}</span>
+                        {cImg
+                          ? <img src={cImg} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1px solid #4a3520', flexShrink: 0 }} />
+                          : <span className="text-2xl shrink-0">{cSpecies?.emoji ?? '🦕'}</span>
+                        }
                         <div className="flex-1">
                           <p className="font-bold text-sm" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{challenger.name as string} challenges you</p>
                           <p className="text-xs" style={{ color: '#a08050' }}>
@@ -456,7 +460,7 @@ export default function ArenaClient({
                             {(c.challenger_surrender_at as number) === 0 ? ' · Fight to the death' : ` · Surrenders at ${c.challenger_surrender_at}% HP`}
                           </p>
                         </div>
-                        <button className="btn-primary text-xs px-4 py-2 shrink-0" onClick={() => setConfirmingChallenge(c)}>Accept ⚔️</button>
+                        <button className="btn-primary text-xs px-4 py-2 shrink-0" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }} onClick={() => setConfirmingChallenge(c)}><Icon icon="game-icons:crossed-swords" width={13} height={13} />Accept</button>
                       </div>
                     </div>
                   )
@@ -469,7 +473,7 @@ export default function ArenaClient({
           <div className="mb-6">
             <button onClick={() => setShowChallengeSection(s => !s)} className="w-full flex items-center justify-between px-4 py-3 rounded text-left" style={{ background: showChallengeSection ? '#1a1208' : '#120e06', border: '1px solid #3a2810', borderRadius: showChallengeSection ? '6px 6px 0 0' : '6px', cursor: 'pointer' }}>
               <div className="flex items-center gap-2">
-                <span>⚔️</span>
+                <Icon icon="game-icons:crossed-swords" width={16} height={16} style={{ color: '#d4a843' }} />
                 <span className="font-bold text-sm" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>Challenge a Player</span>
                 {others.length > 0 && <span className="text-xs" style={{ color: '#5a4a30' }}>{others.length} available</span>}
               </div>
@@ -488,7 +492,7 @@ export default function ArenaClient({
                     <label className="block text-xs font-bold mb-1.5" style={{ color: '#a08050' }}>Surrender at {surrenderAt}% HP</label>
                     <input type="range" min={0} max={50} value={surrenderAt} onChange={e => setSurrenderAt(Number(e.target.value))} className="w-full mb-1" />
                     <p className="text-xs" style={{ color: surrenderAt === 0 ? '#c05050' : '#6a5030' }}>
-                      {surrenderAt === 0 ? '⚠️ Fight to the death — your character can die.' : `You tap out at ${surrenderAt}% HP.`}
+                      {surrenderAt === 0 ? 'Fight to the death — your character can die.' : `You tap out at ${surrenderAt}% HP.`}
                     </p>
                   </div>
                 </div>
@@ -501,10 +505,14 @@ export default function ArenaClient({
                 <div className="space-y-2">
                   {filteredOthers.map(other => {
                     const otherSpecies = species.find(s => s.id === (other.species as string))
+                    const otherImg = (other.image_url as string | null) || otherSpecies?.image || null
                     const isTarget = challengeTarget?.id === other.id
                     return (
                       <div key={other.id as string} className="panel flex items-center gap-3" style={{ borderColor: isTarget ? '#7a5020' : '#3a2810', borderTop: isTarget ? '2px solid #d4a843' : undefined }}>
-                        <span className="text-2xl shrink-0">{otherSpecies?.emoji || '🦕'}</span>
+                        {otherImg
+                          ? <img src={otherImg} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1px solid #4a3520', flexShrink: 0 }} />
+                          : <span className="text-2xl shrink-0">{otherSpecies?.emoji || '🦕'}</span>
+                        }
                         <div className="flex-1">
                           <p className="font-bold text-sm" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{other.name as string}</p>
                           <p className="text-xs" style={{ color: '#a08050' }}>Lvl {other.level as number} {otherSpecies?.name} · {other.wins as number}W {other.losses as number}L · {other.kills as number} kills</p>
@@ -540,46 +548,90 @@ export default function ArenaClient({
           )}
 
           {/* Accept challenge modal */}
-          {confirmingChallenge && (
-            <div className="fixed inset-0 flex items-center justify-center px-4 z-50" style={{ background: 'rgba(0,0,0,0.85)' }}>
-              <div className="panel max-w-sm w-full space-y-4" style={{ borderTop: '2px solid #7a2020', boxShadow: '0 8px 32px rgba(0,0,0,0.95)' }}>
-                <div>
-                  <h3 className="font-bold page-title mb-1" style={{ fontSize: '1.1rem' }}>
-                    {(confirmingChallenge.challenger as Record<string, unknown>)?.name as string} challenges you
-                  </h3>
-                  <p className="text-xs" style={{ color: '#6a5030' }}>
-                    Their daring: <strong style={{ color: '#d4a843' }}>{confirmingChallenge.challenger_daring as string}</strong>
-                    {(confirmingChallenge.challenger_surrender_at as number) === 0
-                      ? <span style={{ color: '#c05050' }}> · Fight to the death</span>
-                      : <> · Surrenders at <strong style={{ color: '#d4a843' }}>{confirmingChallenge.challenger_surrender_at as number}%</strong> HP</>}
-                  </p>
-                </div>
-                <hr style={{ border: 'none', borderTop: '1px solid #2a1e10' }} />
-                <div className="space-y-3">
-                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)' }}>Your settings</p>
-                  <div>
-                    <label className="block text-xs font-bold mb-1.5" style={{ color: '#a08050' }}>Your Daring</label>
-                    <select value={daring} onChange={e => setDaring(e.target.value)} className="game-input text-xs">
-                      {daringOptions.map(d => <option key={d.key} value={d.key}>{d.label} — {d.description}</option>)}
-                    </select>
+          {confirmingChallenge && (() => {
+            const challenger = confirmingChallenge.challenger as Record<string, unknown>
+            const cSpecies = species.find(s => s.id === (challenger?.species as string))
+            const cImg = (challenger?.image_url as string | null) || cSpecies?.image || null
+            const cStats = challenger?.stats as Record<string, number> | null
+            const [showChallengerStats, setShowChallengerStats] = useState(false)
+            return (
+              <div className="fixed inset-0 flex items-center justify-center px-4 z-50" style={{ background: 'rgba(0,0,0,0.85)' }} onClick={() => setConfirmingChallenge(null)}>
+                <div className="panel w-full" style={{ maxWidth: '420px', maxHeight: '90vh', overflowY: 'auto', borderTop: '2px solid #7a2020', boxShadow: '0 8px 32px rgba(0,0,0,0.95)' }} onClick={e => e.stopPropagation()}>
+                  {/* Challenger identity */}
+                  <div className="flex items-center gap-3 mb-3">
+                    {cImg
+                      ? <img src={cImg} alt="" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: '2px solid #7a2020', flexShrink: 0 }} />
+                      : <span className="text-3xl shrink-0">{cSpecies?.emoji ?? '🦕'}</span>
+                    }
+                    <div>
+                      <h3 className="font-bold page-title" style={{ fontSize: '1.1rem' }}>
+                        {challenger?.name as string} challenges you
+                      </h3>
+                      <p className="text-xs" style={{ color: '#6a5030' }}>
+                        Lvl {challenger?.level as number} {cSpecies?.name} · Daring: <strong style={{ color: '#d4a843' }}>{confirmingChallenge.challenger_daring as string}</strong>
+                        {(confirmingChallenge.challenger_surrender_at as number) === 0
+                          ? <span style={{ color: '#c05050' }}> · To the death</span>
+                          : <> · Surrenders at <strong style={{ color: '#d4a843' }}>{confirmingChallenge.challenger_surrender_at as number}%</strong></>}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold mb-1.5" style={{ color: '#a08050' }}>Surrender at {surrenderAt}% HP</label>
-                    <input type="range" min={0} max={50} value={surrenderAt} onChange={e => setSurrenderAt(Number(e.target.value))} className="w-full mb-1" />
-                    <p className="text-xs" style={{ color: surrenderAt === 0 ? '#c05050' : '#6a5030' }}>
-                      {surrenderAt === 0 ? '⚠️ Fight to the death — your character can die.' : `You tap out at ${surrenderAt}% HP.`}
-                    </p>
+
+                  {/* Challenger stats toggle */}
+                  {cStats && (
+                    <div className="mb-3">
+                      <button
+                        className="w-full text-left px-3 py-2 rounded text-xs flex items-center justify-between"
+                        style={{ background: showChallengerStats ? '#1a1408' : '#120e06', border: '1px solid #3a2810', cursor: 'pointer' }}
+                        onClick={() => setShowChallengerStats(s => !s)}>
+                        <span style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Their Stats</span>
+                        <span style={{ color: '#5a4830' }}>{showChallengerStats ? '▴' : '▾'}</span>
+                      </button>
+                      {showChallengerStats && (
+                        <div className="px-3 py-2 rounded-b space-y-1.5" style={{ background: '#0e0b06', border: '1px solid #3a2810', borderTop: 'none' }}>
+                          {STATS.map(stat => {
+                            const val = cStats[stat.key] || 0
+                            return (
+                              <div key={stat.key} className="flex items-center gap-2">
+                                <span className="text-xs w-20 shrink-0 flex items-center gap-1" style={{ color: '#7a6a4a' }}><Icon icon={stat.icon} width={11} height={11} />{stat.label}</span>
+                                <div className="flex-1 stat-bar">
+                                  <div className="stat-bar-fill" style={{ width: `${Math.min(100, (val / STAT_MAX) * 100)}%` }} />
+                                </div>
+                                <span className="text-xs w-4 text-right font-bold shrink-0" style={{ color: '#c8a84b' }}>{val}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <hr style={{ border: 'none', borderTop: '1px solid #2a1e10', marginBottom: '12px' }} />
+                  <div className="space-y-3 mb-4">
+                    <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)' }}>Your settings</p>
+                    <div>
+                      <label className="block text-xs font-bold mb-1.5" style={{ color: '#a08050' }}>Your Daring</label>
+                      <select value={daring} onChange={e => setDaring(e.target.value)} className="game-input text-xs">
+                        {daringOptions.map(d => <option key={d.key} value={d.key}>{d.label} — {d.description}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold mb-1.5" style={{ color: '#a08050' }}>Surrender at {surrenderAt}% HP</label>
+                      <input type="range" min={0} max={50} value={surrenderAt} onChange={e => setSurrenderAt(Number(e.target.value))} className="w-full mb-1" />
+                      <p className="text-xs" style={{ color: surrenderAt === 0 ? '#c05050' : '#6a5030' }}>
+                        {surrenderAt === 0 ? 'Fight to the death — your character can die.' : `You tap out at ${surrenderAt}% HP.`}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-3">
-                  <button className="btn-primary flex-1" disabled={!!acceptingId} onClick={() => acceptChallenge(confirmingChallenge.id as string)}>
-                    {acceptingId ? 'Fighting...' : 'Accept ⚔️'}
-                  </button>
-                  <button className="btn-ghost flex-1" onClick={() => setConfirmingChallenge(null)}>Decline</button>
+                  <div className="flex gap-3">
+                    <button className="btn-primary flex-1" disabled={!!acceptingId} onClick={() => acceptChallenge(confirmingChallenge.id as string)}>
+                      {acceptingId ? 'Fighting...' : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Icon icon="game-icons:crossed-swords" width={14} height={14} />Accept</span>}
+                    </button>
+                    <button className="btn-ghost flex-1" onClick={() => setConfirmingChallenge(null)}>Decline</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Challenge confirmation modal */}
           {challengeTarget && showChallengeSection && (
@@ -595,7 +647,7 @@ export default function ArenaClient({
                 <p className="text-xs" style={{ color: '#5a4a30' }}>They won&apos;t see your settings until they accept. Their daring is their choice.</p>
                 <div className="flex gap-3">
                   <button className="btn-primary flex-1" onClick={sendChallenge} disabled={challengeLoading}>
-                    {challengeLoading ? 'Sending...' : 'Send Challenge ⚔️'}
+                    {challengeLoading ? 'Sending...' : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Icon icon="game-icons:crossed-swords" width={14} height={14} />Send Challenge</span>}
                   </button>
                   <button className="btn-ghost flex-1" onClick={() => setChallengeTarget(null)}>Cancel</button>
                 </div>

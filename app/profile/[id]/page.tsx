@@ -1,8 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { SPECIES, STATS, GEAR, STAT_MAX } from '@/lib/game-data'
+import { SPECIES, STATS, GEAR, GEAR_SLOTS, xpForLevel } from '@/lib/game-data'
+import { getEquippedGear, computeGearBonus } from '@/lib/stats'
 import DeleteCharacterButton from '@/components/DeleteCharacterButton'
+import CharacterCard from '@/components/CharacterCard'
+import ReadOnlyStatsPanel from '@/components/ReadOnlyStatsPanel'
+import { Icon } from '@iconify/react'
 
 export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -39,80 +43,123 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   const opponentMap = Object.fromEntries((opponents || []).map((c: Record<string, unknown>) => [c.id, c]))
 
   const sp = SPECIES.find(s => s.id === character.species)
-  const hpPct = Math.round((character.hp / character.max_hp) * 100)
-  const equippedGear = (inventory || [])
-    .filter((i: { equipped: boolean }) => i.equipped)
-    .map((i: { gear_id: string }) => GEAR.find(g => g.id === i.gear_id))
-    .filter(Boolean)
-
   const isOwn = character.user_id === user.id
+
+  const equippedGearTemplates = getEquippedGear(inventory || [])
+  const gearBonus = computeGearBonus(equippedGearTemplates)
+  const buffs: { stat: string; bonus: number; label: string }[] = character.buffs || []
+
+  const statsRows = STATS.map(stat => {
+    const base = (character.stats as Record<string, number>)[stat.key] || 0
+    const gear = (gearBonus[stat.key] as number) || 0
+    const buff = buffs.find(b => b.stat === stat.key)?.bonus || 0
+    return { key: stat.key, label: stat.label, emoji: stat.emoji, icon: stat.icon, description: stat.description, base, gear, buff, total: base + gear + buff }
+  })
+
+  const slots = GEAR_SLOTS.map(slot => {
+    const item = equippedGearTemplates.find(g => g.slot === slot.key)
+    return { key: slot.key, label: slot.label, emoji: slot.emoji, item: item ? { name: item.name, emoji: item.emoji } : null }
+  })
+
+  const currentLevelXp = xpForLevel(character.level as number)
+  const nextLevelXp = xpForLevel((character.level as number) + 1)
+
+  // Inline equipment management (own profile)
+  const ownedGear = (inventory || [])
+    .map((i: { gear_id: string }) => GEAR.find(g => g.id === i.gear_id))
+    .filter(Boolean) as typeof GEAR
+  const initialEquippedGearIds = (inventory || [])
+    .filter((i: { equipped: boolean }) => i.equipped)
+    .map((i: { gear_id: string }) => i.gear_id)
+
+  // Read-only stats for other players' profiles
+  const hpPct = Math.round((character.hp / character.max_hp) * 100)
+  const readOnlyStats = STATS.map(stat => ({
+    key: stat.key,
+    label: stat.label,
+    emoji: stat.emoji,
+    icon: stat.icon,
+    description: stat.description,
+    value: (character.stats as Record<string, number>)[stat.key] || 0,
+  }))
 
   return (
     <div className="min-h-screen px-4 py-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/town" className="btn-ghost text-sm">← Town</Link>
         <h1 className="text-3xl font-bold flex-1" style={{ color: character.alive ? '#c8a84b' : '#8a7a5a' }}>
-          {character.alive ? '' : '☠️ '}{character.name}
+          {!character.alive && <><Icon icon="game-icons:skull-crossed-bones" width={14} height={14} />{' '}</>}{character.name}
         </h1>
-        {isOwn && <DeleteCharacterButton />}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* Identity */}
-        <div className="panel">
-          <div className="flex items-center gap-4 mb-4">
-            {character.image_url || sp?.image
-              ? <img src={(character.image_url || sp?.image) as string} alt={character.name as string} className="w-20 h-20 rounded-lg object-cover" style={{ border: '2px solid #c8a84b' }} />
-              : <div className="text-6xl">{sp?.emoji}</div>}
-            <div>
-              <p className="font-bold" style={{ color: '#c8a84b' }}>{character.name}</p>
-              <p className="text-sm" style={{ color: '#8a7a5a' }}>Lvl {character.level} {sp?.name}</p>
-              {!character.alive && <p className="text-xs mt-1" style={{ color: '#8b2020' }}>☠️ Deceased</p>}
-            </div>
-          </div>
-          <div className="space-y-1 text-sm" style={{ color: '#8a7a5a' }}>
-            <p>💀 {character.kills} kills · ✅ {character.wins}W / {character.losses}L</p>
-            <p>🦴 {character.bones} bones</p>
-          </div>
-          {character.alive && (
-            <div className="mt-3">
-              <div className="flex justify-between text-xs mb-1" style={{ color: '#5a4a3a' }}>
-                <span>HP</span><span>{character.hp}/{character.max_hp}</span>
+      {isOwn ? (
+        <CharacterCard
+          name={character.name as string}
+          image={(character.image_url as string | null) || sp?.image || null}
+          speciesEmoji={sp?.emoji ?? '🦕'}
+          speciesName={sp?.name ?? ''}
+          level={character.level as number}
+          hp={character.hp as number}
+          maxHp={character.max_hp as number}
+          xp={character.xp as number}
+          xpCurrent={currentLevelXp}
+          xpForNext={nextLevelXp}
+          statPoints={(character.stat_points as number) || 0}
+          characterId={character.id as string}
+          kills={character.kills as number}
+          wins={character.wins as number}
+          losses={character.losses as number}
+          bones={character.bones as number}
+          stats={statsRows}
+          slots={slots}
+          buffs={buffs}
+          passiveName={sp?.passive?.name}
+          passiveDescription={sp?.passive?.description}
+          lastRegenAt={character.last_regen_at as string | undefined}
+          regenPerMinute={(character.max_hp as number) / 60}
+          ownedGear={ownedGear}
+          initialEquippedGearIds={initialEquippedGearIds}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Identity */}
+          <div className="panel">
+            <div className="flex items-center gap-4 mb-4">
+              {character.image_url || sp?.image
+                ? <img src={(character.image_url || sp?.image) as string} alt={character.name as string} className="w-20 h-20 rounded-lg object-cover" style={{ border: '2px solid #c8a84b' }} />
+                : <div className="text-6xl">{sp?.emoji}</div>}
+              <div>
+                <p className="font-bold" style={{ color: '#c8a84b' }}>{character.name}</p>
+                <p className="text-sm" style={{ color: '#8a7a5a' }}>Lvl {character.level} {sp?.name}</p>
+                {!character.alive && <p className="text-xs mt-1 flex items-center gap-1" style={{ color: '#8b2020' }}><Icon icon="game-icons:skull-crossed-bones" width={14} height={14} /> Deceased</p>}
               </div>
-              <div className="stat-bar">
-                <div className="hp-bar-fill" style={{ width: `${hpPct}%` }} />
-              </div>
             </div>
-          )}
-        </div>
-
-        {/* Stats */}
-        <div className="panel">
-          <h2 className="font-bold mb-3" style={{ color: '#c8a84b' }}>Stats</h2>
-          <div className="space-y-2">
-            {STATS.map(stat => {
-              const val = (character.stats as Record<string, number>)[stat.key] || 0
-              return (
-                <div key={stat.key} className="flex items-center gap-2">
-                  <span className="text-sm w-4">{stat.emoji}</span>
-                  <span className="text-xs w-20" style={{ color: '#8a7a5a' }}>{stat.label}</span>
-                  <div className="flex-1 stat-bar">
-                    <div className="stat-bar-fill" style={{ width: `${Math.min(100, (val / STAT_MAX) * 100)}%` }} />
-                  </div>
-                  <span className="text-xs w-4 text-right font-bold" style={{ color: '#c8a84b' }}>{val}</span>
+            <div className="space-y-1 text-sm" style={{ color: '#8a7a5a' }}>
+              <p className="flex items-center gap-1 flex-wrap"><Icon icon="game-icons:death-skull" width={14} height={14} /> {character.kills} kills · <Icon icon="lucide:circle-check" width={12} height={12} style={{ color: '#5abf6a' }} /> {character.wins}W / {character.losses}L</p>
+              <p className="flex items-center gap-1"><Icon icon="ph:bone-fill" width={14} height={14} /> {character.bones} bones</p>
+            </div>
+            {character.alive && (
+              <div className="mt-3">
+                <div className="flex justify-between text-xs mb-1" style={{ color: '#5a4a3a' }}>
+                  <span>HP</span><span>{character.hp}/{character.max_hp}</span>
                 </div>
-              )
-            })}
+                <div className="stat-bar">
+                  <div className="hp-bar-fill" style={{ width: `${hpPct}%` }} />
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      </div>
 
-      {/* Equipped gear */}
-      {equippedGear.length > 0 && (
+          {/* Stats (read-only with tooltips) */}
+          <ReadOnlyStatsPanel stats={readOnlyStats} />
+        </div>
+      )}
+
+      {/* Equipped gear (other profiles only — CharacterCard handles this for own) */}
+      {!isOwn && initialEquippedGearIds.length > 0 && (
         <div className="panel mb-6">
           <h2 className="font-bold mb-3" style={{ color: '#c8a84b' }}>Equipped Gear</h2>
           <div className="flex flex-wrap gap-3">
-            {equippedGear.map((item: typeof GEAR[number] | undefined) => item && (
+            {ownedGear.filter(g => initialEquippedGearIds.includes(g.id)).map(item => (
               <div key={item.id} className="flex items-center gap-2 px-3 py-2 rounded"
                 style={{ background: '#0d0d0d', border: '1px solid #c8a84b' }}>
                 <span>{item.emoji}</span>
@@ -148,11 +195,14 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
 
               return (
                 <div key={b.id as string} className="py-3" style={{ borderBottom: '1px solid #1a1410' }}>
-                  {/* Row 1: result + opponent + date */}
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <div>
                       <span className="text-sm font-bold" style={{ color: won ? '#6abf6a' : b.winner_id ? '#bf6a6a' : '#a08050' }}>
-                        {won ? '✅ Win' : b.winner_id ? '❌ Loss' : '🤝 Draw'}
+                        {won
+                          ? <span className="flex items-center gap-1"><Icon icon="lucide:circle-check" width={12} height={12} style={{ color: '#5abf6a' }} /> Win</span>
+                          : b.winner_id
+                          ? <span className="flex items-center gap-1"><Icon icon="lucide:x" width={12} height={12} style={{ color: '#bf5a5a' }} /> Loss</span>
+                          : <span className="flex items-center gap-1"><Icon icon="game-icons:laurels" width={12} height={12} /> Draw</span>}
                         {!survived && <span style={{ color: '#8b2020' }}> · Fatal</span>}
                       </span>
                       {isMob && mobName && (
@@ -174,7 +224,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                     </span>
                   </div>
 
-                  {/* Row 2: stat badges */}
                   {sideResult && (
                     <div className="flex flex-wrap gap-1.5">
                       {hpBefore !== undefined && hpAfter !== undefined && maxHp !== undefined && (
@@ -188,12 +237,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                         </span>
                       )}
                       {bonesDelta !== undefined && (
-                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: bonesDelta > 0 ? '#1a1408' : '#141408', color: bonesDelta > 0 ? '#a08050' : '#6a5a3a', border: `1px solid ${bonesDelta > 0 ? '#3a2810' : '#2a2010'}` }}>
-                          🦴 {bonesDelta > 0 ? `+${bonesDelta}` : bonesDelta}
+                        <span className="text-xs px-2 py-0.5 rounded flex items-center gap-1" style={{ background: bonesDelta > 0 ? '#1a1408' : '#141408', color: bonesDelta > 0 ? '#a08050' : '#6a5a3a', border: `1px solid ${bonesDelta > 0 ? '#3a2810' : '#2a2010'}` }}>
+                          <Icon icon="ph:bone-fill" width={14} height={14} /> {bonesDelta > 0 ? `+${bonesDelta}` : bonesDelta}
                         </span>
                       )}
                       {!!sideResult.leveledUp && (
-                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: '#1a1408', color: '#d4a843', border: '1px solid #4a3010' }}>⬆ Level up</span>
+                        <span className="text-xs px-2 py-0.5 rounded flex items-center gap-1" style={{ background: '#1a1408', color: '#d4a843', border: '1px solid #4a3010' }}><Icon icon="game-icons:upgrade" width={12} height={12} style={{ color: '#5abf6a' }} /> Level up</span>
                       )}
                     </div>
                   )}
@@ -201,6 +250,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Retire — bottom of page, only for own living character */}
+      {isOwn && character.alive && (
+        <div className="mt-8 pt-6" style={{ borderTop: '1px solid #1e1408' }}>
+          <DeleteCharacterButton />
         </div>
       )}
     </div>

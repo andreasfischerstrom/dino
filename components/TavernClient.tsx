@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { TAVERN_QUESTS, TAVERN_ITEMS, TavernItem, TavernItemEffect, StatKey, TavernQuest } from '@/lib/game-data'
+import { Icon } from '@iconify/react'
 
 const RUMORS = [
   "A Spinosaurus named 'Dave' has gone undefeated for three weeks. Nobody knows how Dave does it. Dave won't say.",
@@ -219,24 +220,23 @@ export default function TavernClient({ character, investment, locationName, keep
     if (!res.ok) { setInvestMessage(json.error); setCollectLoading(false); return }
     setBones(json.newBones)
     setActiveInvestment(null)
-    setInvestMessage(`Collected 🦴 ${json.returns} — profit of ${json.profit} bones.`)
+    setInvestMessage(`Collected ${json.returns} bones — profit of ${json.profit} bones.`)
     setCollectLoading(false)
   }
 
   const tabs = [
-    { key: 'shop' as const, label: '🛒 Shop' },
-    { key: 'heal' as const, label: '🌿 Healer' },
-    { key: 'dice' as const, label: '🎲 Bone Dice' },
-    { key: 'invest' as const, label: '🏦 Invest' },
-    { key: 'quest' as const, label: `⚡ Quest${quest ? '' : ' (none)'}` },
+    { key: 'shop' as const, label: <span className="flex items-center gap-1"><Icon icon="lucide:shopping-bag" width={13} height={13} /> Shop</span> },
+    { key: 'heal' as const, label: <span className="flex items-center gap-1"><Icon icon="lucide:leaf" width={13} height={13} /> Healer</span> },
+    { key: 'dice' as const, label: <span className="flex items-center gap-1"><Icon icon="game-icons:perspective-dice-six" width={13} height={13} /> Bone Dice</span> },
+    { key: 'invest' as const, label: <span className="flex items-center gap-1"><Icon icon="game-icons:gold-bar" width={13} height={13} /> Invest</span> },
+    { key: 'quest' as const, label: <span className="flex items-center gap-1"><Icon icon="game-icons:scroll-unfurled" width={13} height={13} /> Quest{quest ? '' : ' (none)'}</span> },
   ]
 
   return (
     <div className="min-h-screen px-4 py-8 max-w-2xl mx-auto">
       <div className="flex items-center gap-4 mb-4">
-        <Link href="/town" className="btn-ghost text-sm">← Town</Link>
         <h1 className="text-3xl page-title">{locationName}</h1>
-        <span className="ml-auto text-sm font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>🦴 {bones}</span>
+        <span className="ml-auto text-sm font-bold flex items-center gap-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}><Icon icon="ph:bone-fill" width={14} height={14} /> {bones}</span>
       </div>
       <p className="text-sm mb-4" style={{ color: '#a08050', fontStyle: 'italic' }}>
         Smells like smoke and bad decisions. You feel at home.
@@ -262,9 +262,9 @@ export default function TavernClient({ character, investment, locationName, keep
 
       {tab === 'shop' && (
         <div className="space-y-6">
-          <p className="text-xs" style={{ color: '#a08050' }}>
+          <p className="text-xs flex items-center gap-1 flex-wrap" style={{ color: '#a08050' }}>
             Consumables apply at the start of your next fight. Heals and XP apply immediately.
-            Items marked 🔒 require higher stats to purchase.
+            Items marked <Icon icon="lucide:lock" width={12} height={12} /> require higher stats to purchase.
           </p>
           {TIER_LABELS.map(tier => {
             const items = TAVERN_ITEMS.filter(tier.filter)
@@ -290,14 +290,14 @@ export default function TavernClient({ character, investment, locationName, keep
                     return (
                       <div key={item.id} className="panel flex items-start gap-4"
                         style={{ opacity: unlocked ? 1 : 0.6 }}>
-                        <div className="text-3xl w-10 text-center shrink-0 mt-0.5">{item.emoji}</div>
+                        <div className="w-10 flex items-center justify-center shrink-0 mt-0.5"><Icon icon={item.icon} width={28} height={28} /></div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-bold text-sm" style={{
                               color: unlocked ? '#d4a843' : '#5a4a30',
                               fontFamily: 'var(--font-cinzel, Georgia)',
                             }}>{item.name}</p>
-                            {!unlocked && <span className="text-xs">🔒</span>}
+                            {!unlocked && <Icon icon="lucide:lock" width={12} height={12} />}
                           </div>
                           <p className="text-xs mt-0.5" style={{ color: '#a08050' }}>{item.description}</p>
                           <div className="flex flex-wrap gap-x-3 mt-0.5">
@@ -312,8 +312,8 @@ export default function TavernClient({ character, investment, locationName, keep
                           )}
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-bold mb-1" style={{ color: isBuff && price > item.price ? '#bf8a40' : '#d4a843' }}>
-                            🦴 {price}
+                          <p className="text-sm font-bold mb-1 flex items-center gap-1" style={{ color: isBuff && price > item.price ? '#bf8a40' : '#d4a843' }}>
+                            <Icon icon="ph:bone-fill" width={14} height={14} /> {price}
                             {isBuff && price > item.price && <span className="text-xs ml-1" style={{ color: '#7a5a30' }}>↑</span>}
                           </p>
                           <button
@@ -355,7 +355,7 @@ export default function TavernClient({ character, investment, locationName, keep
               <div className="rounded p-4 space-y-3" style={{ background: '#0e0c08', border: '1px solid #3a2810' }}>
                 <div className="flex justify-between items-center">
                   <span className="text-sm" style={{ color: '#a08050' }}>Full heal cost</span>
-                  <span className="text-base font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>🦴 {healCost}</span>
+                  <span className="text-base font-bold flex items-center gap-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}><Icon icon="ph:bone-fill" width={14} height={14} /> {healCost}</span>
                 </div>
                 <button className="btn-primary w-full py-2.5" onClick={heal} disabled={loading === 'heal' || bones < healCost}>
                   {loading === 'heal' ? 'Healing...' : bones < healCost ? `Need ${healCost - bones} more bones` : `Heal to Full`}
@@ -386,7 +386,7 @@ export default function TavernClient({ character, investment, locationName, keep
               <div>
                 <div className="flex justify-between text-xs mb-2" style={{ color: '#a08050' }}>
                   <span>Your bet</span>
-                  <span className="font-bold" style={{ color: '#d4a843' }}>🦴 {diceBet}</span>
+                  <span className="font-bold flex items-center gap-1" style={{ color: '#d4a843' }}><Icon icon="ph:bone-fill" width={14} height={14} /> {diceBet}</span>
                 </div>
                 <input
                   type="range" min={1} max={Math.min(300, bones)} value={diceBet}
@@ -400,13 +400,13 @@ export default function TavernClient({ character, investment, locationName, keep
 
               <div className="rounded p-3 space-y-1" style={{ background: '#0e0c08', border: '1px solid #3a2810' }}>
                 <div className="flex justify-between text-xs" style={{ color: '#a08050' }}>
-                  <span>Win pays</span><span style={{ color: '#5abf6a' }}>+🦴 {diceBet}</span>
+                  <span>Win pays</span><span className="flex items-center gap-1" style={{ color: '#5abf6a' }}>+<Icon icon="ph:bone-fill" width={14} height={14} /> {diceBet}</span>
                 </div>
                 <div className="flex justify-between text-xs" style={{ color: '#a08050' }}>
-                  <span>Cheat win pays</span><span style={{ color: '#d4a843' }}>+🦴 {diceBet * 2}</span>
+                  <span>Cheat win pays</span><span className="flex items-center gap-1" style={{ color: '#d4a843' }}>+<Icon icon="ph:bone-fill" width={14} height={14} /> {diceBet * 2}</span>
                 </div>
                 <div className="flex justify-between text-xs" style={{ color: '#a08050' }}>
-                  <span>Caught cheating</span><span style={{ color: '#bf5a5a' }}>-🦴 {Math.ceil(diceBet * 1.2)} + 30% HP</span>
+                  <span>Caught cheating</span><span className="flex items-center gap-1" style={{ color: '#bf5a5a' }}>-<Icon icon="ph:bone-fill" width={14} height={14} /> {Math.ceil(diceBet * 1.2)} + 30% HP</span>
                 </div>
               </div>
 
@@ -502,28 +502,28 @@ export default function TavernClient({ character, investment, locationName, keep
                   <>
                     <p className="font-bold mb-1" style={{ color: '#5abf6a', fontFamily: 'var(--font-cinzel, Georgia)' }}>Victory</p>
                     <p className="text-xs" style={{ color: '#a08050' }}>The house pays up. They look displeased.</p>
-                    <p className="text-sm font-bold mt-2" style={{ color: '#5abf6a' }}>+🦴 {diceResult.boneDelta}</p>
+                    <p className="text-sm font-bold mt-2 flex items-center justify-center gap-1" style={{ color: '#5abf6a' }}>+<Icon icon="ph:bone-fill" width={14} height={14} /> {diceResult.boneDelta}</p>
                   </>
                 )}
                 {diceResult.outcome === 'cheat_win' && (
                   <>
                     <p className="font-bold mb-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>Cunning Victory</p>
                     <p className="text-xs" style={{ color: '#a08050' }}>Nobody noticed. Probably.</p>
-                    <p className="text-sm font-bold mt-2" style={{ color: '#d4a843' }}>+🦴 {diceResult.boneDelta}</p>
+                    <p className="text-sm font-bold mt-2 flex items-center justify-center gap-1" style={{ color: '#d4a843' }}>+<Icon icon="ph:bone-fill" width={14} height={14} /> {diceResult.boneDelta}</p>
                   </>
                 )}
                 {diceResult.outcome === 'loss' && (
                   <>
                     <p className="font-bold mb-1" style={{ color: '#bf5a5a', fontFamily: 'var(--font-cinzel, Georgia)' }}>Defeat</p>
                     <p className="text-xs" style={{ color: '#a08050' }}>The house wins. It usually does.</p>
-                    <p className="text-sm font-bold mt-2" style={{ color: '#bf5a5a' }}>{diceResult.boneDelta} 🦴</p>
+                    <p className="text-sm font-bold mt-2 flex items-center justify-center gap-1" style={{ color: '#bf5a5a' }}>{diceResult.boneDelta} <Icon icon="ph:bone-fill" width={14} height={14} /></p>
                   </>
                 )}
                 {diceResult.outcome === 'cheat_caught' && (
                   <>
                     <p className="font-bold mb-1" style={{ color: '#bf5a5a', fontFamily: 'var(--font-cinzel, Georgia)' }}>Caught.</p>
                     <p className="text-xs" style={{ color: '#c07070' }}>The bar goes quiet. Then everyone stands up.</p>
-                    <p className="text-sm font-bold mt-2" style={{ color: '#bf5a5a' }}>{diceResult.boneDelta} 🦴 · -{Math.floor(maxHp * 0.30)} HP</p>
+                    <p className="text-sm font-bold mt-2 flex items-center justify-center gap-1" style={{ color: '#bf5a5a' }}>{diceResult.boneDelta} <Icon icon="ph:bone-fill" width={14} height={14} /> · -{Math.floor(maxHp * 0.30)} HP</p>
                   </>
                 )}
                 {diceResult.outcome === 'draw' && (
@@ -558,7 +558,7 @@ export default function TavernClient({ character, investment, locationName, keep
               <div>
                 <div className="flex justify-between text-xs mb-2" style={{ color: '#a08050' }}>
                   <span>Deposit amount</span>
-                  <span className="font-bold" style={{ color: '#d4a843' }}>🦴 {investAmount} → 🦴 {Math.floor(investAmount * 1.2)} in 24h</span>
+                  <span className="font-bold flex items-center gap-1" style={{ color: '#d4a843' }}><Icon icon="ph:bone-fill" width={14} height={14} /> {investAmount} → <Icon icon="ph:bone-fill" width={14} height={14} /> {Math.floor(investAmount * 1.2)} in 24h</span>
                 </div>
                 <input
                   type="range" min={10} max={Math.max(10, bones)} value={Math.min(investAmount, Math.max(10, bones))}
@@ -571,11 +571,11 @@ export default function TavernClient({ character, investment, locationName, keep
               </div>
 
               <div className="rounded p-3 space-y-1.5" style={{ background: '#0e0c08', border: '1px solid #3a2810' }}>
-                {[
-                  ['You lock', `🦴 ${investAmount}`],
-                  ['You receive after 24h', `🦴 ${Math.floor(investAmount * 1.2)}`],
-                  ['Profit', `+🦴 ${Math.floor(investAmount * 0.2)}`],
-                ].map(([label, value]) => (
+                {([
+                  ['You lock', <span key="lock" className="flex items-center gap-1"><Icon icon="ph:bone-fill" width={14} height={14} /> {investAmount}</span>],
+                  ['You receive after 24h', <span key="receive" className="flex items-center gap-1"><Icon icon="ph:bone-fill" width={14} height={14} /> {Math.floor(investAmount * 1.2)}</span>],
+                  ['Profit', <span key="profit" className="flex items-center gap-1">+<Icon icon="ph:bone-fill" width={14} height={14} /> {Math.floor(investAmount * 0.2)}</span>],
+                ] as [string, React.ReactNode][]).map(([label, value]) => (
                   <div key={label} className="flex justify-between text-xs" style={{ color: '#a08050' }}>
                     <span>{label}</span>
                     <span style={{ color: '#d4a843' }}>{value}</span>
@@ -587,17 +587,17 @@ export default function TavernClient({ character, investment, locationName, keep
                 className="btn-primary w-full py-2.5"
                 disabled={investLoading || bones < 10}
                 onClick={deposit}>
-                {investLoading ? 'Depositing...' : bones < 10 ? 'Need at least 10 bones' : `Lock 🦴 ${investAmount} for 24 hours`}
+                {investLoading ? 'Depositing...' : bones < 10 ? 'Need at least 10 bones' : <span className="flex items-center gap-1">Lock <Icon icon="ph:bone-fill" width={14} height={14} /> {investAmount} for 24 hours</span>}
               </button>
             </div>
           ) : isMatured ? (
             <div className="space-y-4">
               <div className="rounded p-4 text-center" style={{ background: '#0a1f0a', border: '1px solid #2a6428' }}>
                 <p className="font-bold mb-1" style={{ color: '#5abf6a', fontFamily: 'var(--font-cinzel, Georgia)' }}>Investment Matured</p>
-                <p className="text-sm mb-1" style={{ color: '#a08050' }}>
-                  🦴 {activeInvestment.amount as number} → <span style={{ color: '#d4a843', fontWeight: 'bold' }}>🦴 {Math.floor((activeInvestment.amount as number) * 1.2)}</span>
+                <p className="text-sm mb-1 flex items-center justify-center gap-1" style={{ color: '#a08050' }}>
+                  <Icon icon="ph:bone-fill" width={14} height={14} /> {activeInvestment.amount as number} → <span className="flex items-center gap-1" style={{ color: '#d4a843', fontWeight: 'bold' }}><Icon icon="ph:bone-fill" width={14} height={14} /> {Math.floor((activeInvestment.amount as number) * 1.2)}</span>
                 </p>
-                <p className="text-xs" style={{ color: '#5abf6a' }}>+🦴 {Math.floor((activeInvestment.amount as number) * 0.2)} profit</p>
+                <p className="text-xs flex items-center justify-center gap-1" style={{ color: '#5abf6a' }}>+<Icon icon="ph:bone-fill" width={14} height={14} /> {Math.floor((activeInvestment.amount as number) * 0.2)} profit</p>
               </div>
               <button className="btn-primary w-full py-2.5" disabled={collectLoading} onClick={collect}>
                 {collectLoading ? 'Collecting...' : 'Collect Returns'}
@@ -608,11 +608,11 @@ export default function TavernClient({ character, investment, locationName, keep
               <div className="rounded p-4" style={{ background: '#0e0c08', border: '1px solid #3a2810' }}>
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-sm" style={{ color: '#a08050' }}>Locked</span>
-                  <span className="font-bold" style={{ color: '#d4a843' }}>🦴 {activeInvestment.amount as number}</span>
+                  <span className="font-bold flex items-center gap-1" style={{ color: '#d4a843' }}><Icon icon="ph:bone-fill" width={14} height={14} /> {activeInvestment.amount as number}</span>
                 </div>
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-sm" style={{ color: '#a08050' }}>Returns</span>
-                  <span className="font-bold" style={{ color: '#5abf6a' }}>🦴 {Math.floor((activeInvestment.amount as number) * 1.2)}</span>
+                  <span className="font-bold flex items-center gap-1" style={{ color: '#5abf6a' }}><Icon icon="ph:bone-fill" width={14} height={14} /> {Math.floor((activeInvestment.amount as number) * 1.2)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm" style={{ color: '#a08050' }}>Matures</span>
@@ -670,8 +670,8 @@ export default function TavernClient({ character, investment, locationName, keep
                   <p className="text-sm italic leading-relaxed" style={{ color: '#a08050' }}>{questOutcome.text}</p>
                   <div className="flex flex-wrap gap-2 pt-1">
                     {questOutcome.bonesDelta !== 0 && (
-                      <span className="text-xs font-bold px-2.5 py-1 rounded" style={{ background: questOutcome.bonesDelta > 0 ? '#0e2410' : '#2a0808', color: questOutcome.bonesDelta > 0 ? '#5abf6a' : '#bf5a5a', border: `1px solid ${questOutcome.bonesDelta > 0 ? '#2a6428' : '#6a2828'}` }}>
-                        🦴 {questOutcome.bonesDelta > 0 ? `+${questOutcome.bonesDelta}` : questOutcome.bonesDelta} bones
+                      <span className="text-xs font-bold px-2.5 py-1 rounded flex items-center gap-1" style={{ background: questOutcome.bonesDelta > 0 ? '#0e2410' : '#2a0808', color: questOutcome.bonesDelta > 0 ? '#5abf6a' : '#bf5a5a', border: `1px solid ${questOutcome.bonesDelta > 0 ? '#2a6428' : '#6a2828'}` }}>
+                        <Icon icon="ph:bone-fill" width={14} height={14} /> {questOutcome.bonesDelta > 0 ? `+${questOutcome.bonesDelta}` : questOutcome.bonesDelta} bones
                       </span>
                     )}
                     {questOutcome.hpDelta !== 0 && (

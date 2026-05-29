@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   const name = (formData.get('name') as string)?.trim()
   const speciesId = formData.get('species') as string
   const statsRaw = formData.get('stats') as string
-  const imageFile = formData.get('image') as File | null
+  const imageUrl = formData.get('imageUrl') as string | null
 
   if (!name || !speciesId || !statsRaw) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -37,24 +37,6 @@ export async function POST(req: Request) {
     finalStats[key] = Math.max(1, BASE_STATS[key] + (species.baseStats[key] || 0) + (distributed[key] || 0))
   }
 
-  // Upload profile image if provided
-  let imageUrl: string | null = null
-  if (imageFile && imageFile.size > 0) {
-    if (imageFile.size > 2 * 1024 * 1024) {
-      return NextResponse.json({ error: 'Image too large (max 2MB)' }, { status: 400 })
-    }
-    const ext = imageFile.name.split('.').pop() || 'jpg'
-    const path = `${user.id}/profile.${ext}`
-    const arrayBuffer = await imageFile.arrayBuffer()
-    const { error: uploadError } = await supabase.storage
-      .from('character-images')
-      .upload(path, arrayBuffer, { contentType: imageFile.type, upsert: true })
-    if (!uploadError) {
-      const { data: { publicUrl } } = supabase.storage.from('character-images').getPublicUrl(path)
-      imageUrl = publicUrl
-    }
-  }
-
   const { data: character, error } = await supabase.from('characters').insert({
     user_id: user.id,
     name,
@@ -72,6 +54,7 @@ export async function POST(req: Request) {
     alive: true,
     daring: 'measured',
     surrender_at: 20,
+    intro_seen: false,
   }).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

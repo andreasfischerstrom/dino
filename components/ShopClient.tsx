@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { GearTemplate, GEAR_SLOTS, GearSlot } from '@/lib/game-data'
 import { BlackMarketItem } from '@/lib/black-market'
+import { Icon } from '@iconify/react'
 
 interface Props {
   character: Record<string, unknown>
@@ -81,9 +82,8 @@ export default function ShopClient({ character, gear, inventory, blackMarketItem
   return (
     <div className="min-h-screen px-4 py-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-2">
-        <Link href="/town" className="btn-ghost text-sm">← Town</Link>
         <h1 className="text-3xl page-title flex-1">{locationName}</h1>
-        <span className="text-sm font-bold shrink-0" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>🦴 {bones}</span>
+        <span className="text-sm font-bold shrink-0 flex items-center gap-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}><Icon icon="ph:bone-fill" width={14} height={14} /> {bones}</span>
       </div>
       <p className="text-sm mb-6" style={{ color: '#a08050', fontStyle: 'italic' }}>
         &quot;Quality not guaranteed. Refunds not offered. {keeperName} has zero patience.&quot;
@@ -92,7 +92,7 @@ export default function ShopClient({ character, gear, inventory, blackMarketItem
       {/* ── Black Market ── */}
       <div className="mb-6 rounded-lg overflow-hidden" style={{ border: '1px solid #4a1a1a', boxShadow: '0 0 30px rgba(180,40,40,0.06)' }}>
         <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #1e0a0a 0%, #140606 100%)', borderBottom: '1px solid #4a1a1a' }}>
-          <span>🩸</span>
+          <Icon icon="game-icons:bleeding-wound" width={14} height={14} />
           <p className="font-bold text-xs tracking-widest uppercase" style={{ color: '#c04040', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.12em' }}>
             Black Market
           </p>
@@ -101,7 +101,7 @@ export default function ShopClient({ character, gear, inventory, blackMarketItem
         <div className="p-4" style={{ background: '#0e0707' }}>
           <div className="flex gap-4">
             <div className="text-4xl shrink-0 w-12 h-12 flex items-center justify-center rounded" style={{ background: '#1a0a0a', border: '1px solid #3a1010' }}>
-              {blackMarketItem.emoji}
+              <Icon icon={blackMarketItem.icon} width={28} height={28} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-sm mb-0.5" style={{ color: '#e07070', fontFamily: 'var(--font-cinzel, Georgia)' }}>{blackMarketItem.name}</p>
@@ -122,7 +122,7 @@ export default function ShopClient({ character, gear, inventory, blackMarketItem
               </p>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-sm font-bold mb-2" style={{ color: '#d4a843' }}>🦴 {blackMarketItem.price}</p>
+              <p className="text-sm font-bold mb-2 flex items-center gap-1" style={{ color: '#d4a843' }}><Icon icon="ph:bone-fill" width={14} height={14} /> {blackMarketItem.price}</p>
               {bmBought ? (
                 <span className="text-xs px-2 py-1 rounded" style={{ background: '#1a0a0a', color: '#5a3030', border: '1px solid #3a1818' }}>Purchased</span>
               ) : (
@@ -152,7 +152,9 @@ export default function ShopClient({ character, gear, inventory, blackMarketItem
         {(['shop', 'inventory'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`tab-btn ${tab === t ? 'tab-active' : 'tab-inactive'}`}>
-            {t === 'shop' ? '🛒 Shop' : '🎒 My Gear'}
+            {t === 'shop'
+              ? <span className="flex items-center gap-1"><Icon icon="lucide:shopping-bag" width={13} height={13} /> Shop</span>
+              : <span className="flex items-center gap-1"><Icon icon="game-icons:shield-bash" width={13} height={13} /> My Gear</span>}
           </button>
         ))}
       </div>
@@ -173,7 +175,7 @@ export default function ShopClient({ character, gear, inventory, blackMarketItem
                     borderBottom: isOpen ? '1px solid #2a1e0a' : '1px solid #3a2810',
                     borderRadius: isOpen ? '6px 6px 0 0' : '6px',
                   }}>
-                  <span className="text-lg">{slotDef.emoji}</span>
+                  <Icon icon={slotDef.icon} width={18} height={18} />
                   <span className="font-bold text-sm flex-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{slotDef.label}</span>
                   <span className="text-xs" style={{ color: '#6a5030' }}>{isOpen ? '▲' : '▼'}</span>
                 </button>
@@ -188,7 +190,7 @@ export default function ShopClient({ character, gear, inventory, blackMarketItem
                         return (
                           <div key={item.id} className="panel row-hover flex items-center gap-4"
                             style={{ opacity: meetsLevel ? 1 : 0.5 }}>
-                            <div className="text-3xl w-10 text-center">{item.emoji}</div>
+                            <div className="w-10 flex items-center justify-center"><Icon icon={item.icon} width={28} height={28} /></div>
                             <div className="flex-1">
                               <p className="font-bold text-sm" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{item.name}</p>
                               <p className="text-xs mb-1" style={{ color: '#a08050' }}>{item.description}</p>
@@ -203,7 +205,7 @@ export default function ShopClient({ character, gear, inventory, blackMarketItem
                               {!meetsLevel && <p className="text-xs mt-1" style={{ color: '#9b1818' }}>Requires level {item.levelReq}</p>}
                             </div>
                             <div className="text-right">
-                              <p className="text-sm font-bold mb-1" style={{ color: '#d4a843' }}>🦴 {item.price}</p>
+                              <p className="text-sm font-bold mb-1 flex items-center gap-1" style={{ color: '#d4a843' }}><Icon icon="ph:bone-fill" width={14} height={14} /> {item.price}</p>
                               {owned ? (
                                 <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: '#0e2410', color: '#5abf6a', border: '1px solid #2a6428' }}>✓ Owned</span>
                               ) : (
@@ -248,7 +250,7 @@ export default function ShopClient({ character, gear, inventory, blackMarketItem
                     borderBottom: isOpen ? '1px solid #2a1e0a' : '1px solid #3a2810',
                     borderRadius: isOpen ? '6px 6px 0 0' : '6px',
                   }}>
-                  <span className="text-lg">{slotDef.emoji}</span>
+                  <Icon icon={slotDef.icon} width={18} height={18} />
                   <span className="font-bold text-sm flex-1" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{slotDef.label}</span>
                   <span className="text-xs" style={{ color: '#6a5030' }}>{isOpen ? '▲' : '▼'}</span>
                 </button>
@@ -260,7 +262,7 @@ export default function ShopClient({ character, gear, inventory, blackMarketItem
                     return (
                       <div key={item.id} className="panel row-hover flex items-center gap-4"
                         style={{ borderColor: isEquipped ? '#7a5020' : '#4a3520', borderTop: isEquipped ? '2px solid #d4a843' : undefined }}>
-                        <div className="text-3xl w-10 text-center">{item.emoji}</div>
+                        <div className="w-10 flex items-center justify-center"><Icon icon={item.icon} width={28} height={28} /></div>
                         <div className="flex-1">
                           <p className="font-bold text-sm" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{item.name}</p>
                           <div className="flex flex-wrap gap-1 mt-1">

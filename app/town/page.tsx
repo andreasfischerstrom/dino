@@ -4,6 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Icon } from '@iconify/react'
+import LocationCards from '@/components/LocationCards'
+import TownUnlockPrompt from '@/components/TownUnlockPrompt'
+import TownIntroOverlay from '@/components/TownIntroOverlay'
 import { SPECIES, TOWNS, maxHp } from '@/lib/game-data'
 import { getEquippedGear, computeGearBonus } from '@/lib/stats'
 import { alreadyFoughtToday, generateDailyBoss, todayUTC } from '@/lib/daily-boss'
@@ -173,6 +176,7 @@ export default async function TownPage() {
     .limit(1)
     .maybeSingle()
 
+  if (!character.intro_seen) redirect('/intro')
   if (unseenBattle) redirect(`/replay/${unseenBattle.id}`)
   if (!character.alive) redirect('/obituary')
 
@@ -287,6 +291,15 @@ export default async function TownPage() {
   const challenges = incomingChallenges || []
 
   return (
+    <>
+    <TownIntroOverlay
+      townId={townDef.id}
+      name={townDef.name}
+      subtitle={townDef.subtitle}
+      description={townDef.description}
+      flavor={townDef.flavor}
+      banner={townDef.banner}
+    />
     <div className="min-h-screen px-4 py-6 max-w-4xl mx-auto">
 
       {/* Town banner + location cards — top of page */}
@@ -342,36 +355,11 @@ export default async function TownPage() {
         </div>
 
         {/* Location cards */}
-        <div className="grid grid-cols-3" style={{ background: '#0c0905', borderTop: '1px solid #2a1e10' }}>
-          {[
-            { href: '/arena',  label: townDef.locations.arena,  icon: 'game-icons:crossed-swords', desc: 'Fight mobs & players' },
-            { href: '/tavern', label: townDef.locations.tavern, icon: 'game-icons:tavern-sign',    desc: 'Quests & healing' },
-            { href: '/shop',   label: townDef.locations.gear,   icon: 'game-icons:anvil',          desc: 'Buy gear' },
-          ].map((loc, i) => (
-            <Link key={loc.href} href={loc.href} style={{ textDecoration: 'none' }}>
-              <div style={{
-                padding: '14px 10px',
-                textAlign: 'center',
-                borderRight: i < 2 ? '1px solid #1e1610' : 'none',
-                transition: 'background 0.15s',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px', color: '#c8a050' }}>
-                  <Icon icon={loc.icon} width={26} height={26} />
-                </div>
-                <p style={{
-                  color: '#c8a050',
-                  fontFamily: 'var(--font-cinzel, Georgia)',
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                  marginBottom: '3px',
-                }}>{loc.label}</p>
-                <p style={{ color: '#5a4830', fontSize: '10px' }}>{loc.desc}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <LocationCards cards={[
+          { href: '/arena',  label: townDef.locations.arena,  icon: 'game-icons:crossed-swords', desc: 'Fight mobs & players' },
+          { href: '/tavern', label: townDef.locations.tavern, icon: 'game-icons:tavern-sign',    desc: 'Quests & healing' },
+          { href: '/shop',   label: townDef.locations.gear,   icon: 'game-icons:anvil',          desc: 'Buy gear' },
+        ]} />
       </div>
 
       {returnLine && (
@@ -400,28 +388,7 @@ export default async function TownPage() {
 
       {/* New town unlock prompt */}
       {canUnlockNextTown && (
-        <Link href="/map" style={{ textDecoration: 'none', display: 'block' }}>
-          <div className="mt-4 p-3 rounded" style={{
-            background: 'linear-gradient(135deg, #1a0e06 0%, #120a04 100%)',
-            border: '1px solid #7a4818',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
-          }}>
-            <p className="text-sm font-bold mb-1" style={{
-              color: '#d4a843',
-              fontFamily: 'var(--font-cinzel, Georgia)',
-              letterSpacing: '0.04em',
-            }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon icon="game-icons:compass" width={14} height={14} />
-                {nextTown.name} awaits
-              </span>
-            </p>
-            <p className="text-xs" style={{ color: '#a07040' }}>
-              You have outgrown this pit. Word has reached you of {nextTown.subtitle} — further east, harder, better rewarded.{' '}
-              <span style={{ color: '#d4a843', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>Open the map <Icon icon="lucide:chevron-right" width={12} height={12} /></span>
-            </p>
-          </div>
-        </Link>
+        <TownUnlockPrompt townId={nextTown.id} townName={nextTown.name} townSubtitle={nextTown.subtitle} />
       )}
 
       {/* Events — always visible */}
@@ -531,5 +498,6 @@ export default async function TownPage() {
         </div>
       )}
     </div>
+    </>
   )
 }

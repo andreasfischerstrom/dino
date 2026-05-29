@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { SPECIES, STATS, BASE_STATS, STAT_MAX, StatKey, Species } from '@/lib/game-data'
 import SignOutButton from '@/components/SignOutButton'
@@ -8,21 +8,24 @@ export default function CreateCharacter() {
   const router = useRouter()
   const [step, setStep] = useState<'species' | 'stats' | 'name'>('species')
   const [selectedSpecies, setSelectedSpecies] = useState<Species | null>(null)
+  const [selectedPortrait, setSelectedPortrait] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [distributed, setDistributed] = useState<Record<StatKey, number>>({
     strength: 0, agility: 0, constitution: 0, ferocity: 0,
     hide: 0, stamina: 0, jaw: 0, cunning: 0, roar: 0,
   })
-  const [profileImage, setProfileImage] = useState<File | null>(null)
-  const [profilePreview, setProfilePreview] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const fileRef = useRef<HTMLInputElement>(null)
 
   const [activeStat, setActiveStat] = useState<StatKey | null>(null)
   const totalPoints = selectedSpecies?.bonusPoints ?? 5
   const pointsUsed = Object.values(distributed).reduce((a, b) => a + b, 0)
   const pointsLeft = totalPoints - pointsUsed
+
+  function selectSpecies(s: Species) {
+    setSelectedSpecies(s)
+    setSelectedPortrait(s.portraits[0])
+  }
 
   function adjustStat(key: StatKey, delta: number) {
     const current = distributed[key]
@@ -39,15 +42,6 @@ export default function CreateCharacter() {
     return Math.max(1, base + species + dist)
   }
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setProfileImage(file)
-    const reader = new FileReader()
-    reader.onload = () => setProfilePreview(reader.result as string)
-    reader.readAsDataURL(file)
-  }
-
   async function handleCreate() {
     if (!selectedSpecies || !name.trim()) return
     setSaving(true)
@@ -57,7 +51,7 @@ export default function CreateCharacter() {
     formData.append('name', name.trim())
     formData.append('species', selectedSpecies.id)
     formData.append('stats', JSON.stringify(distributed))
-    if (profileImage) formData.append('image', profileImage)
+    if (selectedPortrait) formData.append('imageUrl', selectedPortrait)
 
     const res = await fetch('/api/character/create', { method: 'POST', body: formData })
     const json = await res.json()
@@ -126,7 +120,7 @@ export default function CreateCharacter() {
             {SPECIES.map(s => (
               <button
                 key={s.id}
-                onClick={() => setSelectedSpecies(s)}
+                onClick={() => selectSpecies(s)}
                 className="text-left p-4 rounded species-card"
                 style={{
                   background: selectedSpecies?.id === s.id
@@ -137,8 +131,12 @@ export default function CreateCharacter() {
                   boxShadow: selectedSpecies?.id === s.id ? '0 0 12px rgba(212,168,67,0.1)' : 'none',
                 }}>
                 <div className="flex items-center gap-3 mb-2">
-                  <img src={s.image} alt={s.name} className="w-14 h-14 rounded object-cover shrink-0"
-                    style={{ border: '1px solid #4a3520' }} />
+                  <img
+                    src={selectedSpecies?.id === s.id ? (selectedPortrait || s.portraits[0]) : s.portraits[0]}
+                    alt={s.name}
+                    className="w-14 h-14 rounded object-cover shrink-0"
+                    style={{ border: '1px solid #4a3520' }}
+                  />
                   <div>
                     <p className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{s.name}</p>
                     <p className="text-xs mt-0.5" style={{ color: '#a08050' }}>{s.tagline}</p>
@@ -166,6 +164,36 @@ export default function CreateCharacter() {
               </button>
             ))}
           </div>
+
+          {/* Portrait picker */}
+          {selectedSpecies && (
+            <div className="mt-6 fade-in">
+              <p className="text-sm font-bold mb-3" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>
+                Choose Your Portrait
+              </p>
+              <div className="flex gap-3 flex-wrap">
+                {selectedSpecies.portraits.map((src, i) => (
+                  <button
+                    key={src}
+                    onClick={() => setSelectedPortrait(src)}
+                    className="rounded overflow-hidden shrink-0"
+                    style={{
+                      width: 88,
+                      height: 88,
+                      padding: 0,
+                      border: selectedPortrait === src ? '2px solid #d4a843' : '2px solid #3a2810',
+                      boxShadow: selectedPortrait === src ? '0 0 10px rgba(212,168,67,0.35)' : 'none',
+                      transition: 'border-color 0.15s, box-shadow 0.15s',
+                    }}
+                    aria-label={`Portrait ${i + 1}`}
+                  >
+                    <img src={src} alt={`Portrait ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-6 flex justify-end">
             <button className="btn-primary" disabled={!selectedSpecies} onClick={() => setStep('stats')}>
               Continue →
@@ -226,7 +254,7 @@ export default function CreateCharacter() {
         </div>
       )}
 
-      {/* Step 3: Name & Image */}
+      {/* Step 3: Name */}
       {step === 'name' && selectedSpecies && (
         <div className="fade-in">
           <h2 className="text-xl font-bold mb-1 page-title" style={{ fontSize: '1.25rem' }}>Name Your Beast</h2>
@@ -248,30 +276,32 @@ export default function CreateCharacter() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold mb-2" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>Profile Image (optional)</label>
+              <label className="block text-sm font-bold mb-2" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>Portrait</label>
               <div className="flex items-center gap-4">
-                {profilePreview ? (
-                  <img src={profilePreview} alt="preview" className="w-20 h-20 rounded object-cover"
-                    style={{ border: '2px solid #5a4028', boxShadow: '0 2px 6px rgba(0,0,0,0.7)' }} />
-                ) : (
-                  <img src={selectedSpecies.image} alt={selectedSpecies.name}
-                    className="w-20 h-20 rounded object-cover opacity-60"
-                    style={{ border: '2px dashed #3a2810' }} />
-                )}
-                <button className="btn-ghost text-sm" onClick={() => fileRef.current?.click()}>
-                  {profilePreview ? 'Change Image' : 'Upload Image'}
+                <img
+                  src={selectedPortrait || selectedSpecies.portraits[0]}
+                  alt={selectedSpecies.name}
+                  className="w-20 h-20 rounded object-cover"
+                  style={{ border: '2px solid #5a4028', boxShadow: '0 2px 6px rgba(0,0,0,0.7)' }}
+                />
+                <button
+                  className="btn-ghost text-sm"
+                  onClick={() => setStep('species')}
+                >
+                  Change Portrait
                 </button>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
               </div>
-              <p className="text-xs mt-2" style={{ color: '#8a7040' }}>
-                JPG, PNG, GIF — max 2MB. If omitted, your species emoji will be used.
-              </p>
             </div>
 
             <div className="pt-4" style={{ borderTop: '1px solid #2a1e0e' }}>
               <p className="text-xs mb-2" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.06em' }}>SUMMARY</p>
               <div className="flex items-center gap-3">
-                <img src={selectedSpecies.image} alt={selectedSpecies.name} className="w-12 h-12 rounded object-cover" style={{ border: '1px solid #4a3520' }} />
+                <img
+                  src={selectedPortrait || selectedSpecies.portraits[0]}
+                  alt={selectedSpecies.name}
+                  className="w-12 h-12 rounded object-cover"
+                  style={{ border: '1px solid #4a3520' }}
+                />
                 <div>
                   <p className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>{name || '(no name yet)'}</p>
                   <p className="text-sm" style={{ color: '#a08050' }}>{selectedSpecies.name}</p>

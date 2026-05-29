@@ -2,8 +2,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { GearSlot, STAT_MAX } from '@/lib/game-data'
+import { GearSlot, GearTemplate, GEAR_SLOTS, STAT_MAX } from '@/lib/game-data'
 import { createClient } from '@/lib/supabase/client'
+import { Icon } from '@iconify/react'
 
 const SLOT_IMAGES: Record<GearSlot, string> = {
   jaws:      '/images/equipment/fang.png',
@@ -25,6 +26,7 @@ interface StatRow {
   key: string
   label: string
   emoji: string
+  icon: string
   description: string
   base: number
   gear: number
@@ -63,6 +65,9 @@ interface Props {
   lastRegenAt?: string
   regenPerMinute?: number
   style?: React.CSSProperties
+  // Inline equipment management (when provided, slots become interactive)
+  ownedGear?: GearTemplate[]
+  initialEquippedGearIds?: string[]
 }
 
 export default function CharacterCard({
@@ -73,6 +78,8 @@ export default function CharacterCard({
   passiveName, passiveDescription,
   lastRegenAt, regenPerMinute,
   style: styleProp,
+  ownedGear,
+  initialEquippedGearIds,
 }: Props) {
   const [expanded, setExpanded] = useState(false)
   const [localStatPoints, setLocalStatPoints] = useState(statPoints)
@@ -81,10 +88,15 @@ export default function CharacterCard({
   const [hpBase, setHpBase] = useState(hp)
   const [liveHp, setLiveHp] = useState(hp)
   const [hoveredStat, setHoveredStat] = useState<string | null>(null)
+  // Inline equipment state
+  const [localEquippedIds, setLocalEquippedIds] = useState(initialEquippedGearIds || [])
+  const [localOwnedIds, setLocalOwnedIds] = useState(initialEquippedGearIds ? (ownedGear || []).map(g => g.id) : [] as string[])
+  const [openEquipSlot, setOpenEquipSlot] = useState<GearSlot | null>(null)
+  const [equipLoading, setEquipLoading] = useState<string | null>(null)
+  const [sellLoading, setSellLoading] = useState<string | null>(null)
   const liveHpRef = useRef(hp)
   const router = useRouter()
 
-  // Regen ticker — restarts whenever hpBase changes (e.g. after a remote battle)
   useEffect(() => {
     if (!lastRegenAt || !regenPerMinute || hpBase >= maxHp) return
     const msPerHp = 60000 / regenPerMinute
@@ -105,10 +117,6 @@ export default function CharacterCard({
     return () => clearTimeout(timeout)
   }, [hpBase, maxHp, lastRegenAt, regenPerMinute])
 
-  // Realtime: when character HP changes on another device, refresh the
-  // server component. router.refresh() re-fetches the town page — if a
-  // replay is pending it redirects there first; otherwise the new HP
-  // comes in via fresh props and the regen ticker restarts correctly.
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase.channel(`char-hp-${characterId}`)
@@ -148,7 +156,72 @@ export default function CharacterCard({
     }
     setSpending(null)
   }
+
+  // Inline equipment helpers (only active when ownedGear is provided)
+  function equippedInSlot(slotKey: GearSlot): GearTemplate | null {
+    if (!ownedGear) return null
+    const id = localEquippedIds.find(id => ownedGear.find(g => g.id === id)?.slot === slotKey)
+    return id ? ownedGear.find(g => g.id === id) ?? null : null
+  }
+  function ownedInSlot(slotKey: GearSlot): GearTemplate[] {
+    if (!ownedGear) return []
+    return ownedGear.filter(g => g.slot === slotKey && localOwnedIds.includes(g.id))
+  }
+  function recomputeGearStats(newEquippedIds: string[]) {
+    const bonus: Record<string, number> = {}
+    newEquippedIds.forEach(id => {
+      const item = ownedGear?.find(g => g.id === id)
+      if (!item) return
+      Object.entries(item.statBonus).forEach(([k, v]) => {
+        bonus[k] = (bonus[k] || 0) + (v as number)
+      })
+    })
+    setLocalStats(prev => prev.map(s => {
+      const g = (bonus[s.key] as number) || 0
+      return { ...s, gear: g, total: s.base + g + s.buff }
+    }))
+  }
+  async function sellItem(gearId: string) {
+    setSellLoading(gearId)
+    const res = await fetch('/api/shop/sell', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gearId }),
+    })
+    if (res.ok) {
+      setLocalOwnedIds(ids => ids.filter(id => id !== gearId))
+      const newEquipped = localEquippedIds.filter(id => id !== gearId)
+      setLocalEquippedIds(newEquipped)
+      recomputeGearStats(newEquipped)
+      setOpenEquipSlot(null)
+    }
+    setSellLoading(null)
+  }
+
+  async function changeEquip(gearId: string) {
+    if (!ownedGear) return
+    setEquipLoading(gearId)
+    const item = ownedGear.find(g => g.id === gearId)!
+    const sameSlotIds = localEquippedIds.filter(id => ownedGear.find(g => g.id === id)?.slot === item.slot)
+    const isEquipped = localEquippedIds.includes(gearId)
+    const res = await fetch('/api/shop/equip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gearId, equip: !isEquipped }),
+    })
+    if (res.ok) {
+      const newEquipped = isEquipped
+        ? localEquippedIds.filter(id => id !== gearId)
+        : [...localEquippedIds.filter(id => !sameSlotIds.includes(id)), gearId]
+      setLocalEquippedIds(newEquipped)
+      recomputeGearStats(newEquipped)
+      setOpenEquipSlot(null)
+    }
+    setEquipLoading(null)
+  }
+
   const hasBuffs = buffs.length > 0
+  const inlineEquip = !!ownedGear
 
   return (
     <div className="mb-4" style={{
@@ -209,13 +282,13 @@ export default function CharacterCard({
 
           <div className="mt-2 flex gap-4 text-xs flex-wrap">
             <span className="flex items-center gap-1" title="Kills — opponents defeated in battle" style={{ color: '#b09060' }}>
-              <span>💀</span><span>{kills} kills</span>
+              <Icon icon="game-icons:death-skull" width={14} height={14} /><span>{kills} kills</span>
             </span>
             <span className="flex items-center gap-1" title="Win / Loss record" style={{ color: '#b09060' }}>
-              <span>⚔️</span><span>{wins}W / {losses}L</span>
+              <Icon icon="game-icons:crossed-swords" width={14} height={14} /><span>{wins}W / {losses}L</span>
             </span>
             <span className="flex items-center gap-1" title="Bones — currency used in the shop" style={{ color: '#b09060' }}>
-              <span>🦴</span><span>{bones} bones</span>
+              <Icon icon="ph:bone-fill" width={14} height={14} /><span>{bones} bones</span>
             </span>
           </div>
         </div>
@@ -261,10 +334,12 @@ export default function CharacterCard({
                 +{localStatPoints} pts
               </span>
             )}
-            <Link href="/equipment" className="ml-auto text-xs font-bold"
-              style={{ color: '#d4a843', textDecoration: 'none', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.04em' }}>
-              Equipment →
-            </Link>
+            {!inlineEquip && (
+              <Link href="/equipment" className="ml-auto text-xs font-bold"
+                style={{ color: '#d4a843', textDecoration: 'none', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.04em' }}>
+                Equipment →
+              </Link>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mb-4">
@@ -277,11 +352,14 @@ export default function CharacterCard({
                 <div key={stat.key} className="flex items-center gap-2">
                   <span
                     className="text-xs w-20 shrink-0 relative select-none"
-                    style={{ color: '#a08050', cursor: 'default' }}
+                    style={{ color: '#a08050', cursor: 'help' }}
                     onMouseEnter={() => setHoveredStat(stat.key)}
                     onMouseLeave={() => setHoveredStat(null)}
                     onClick={() => setHoveredStat(hoveredStat === stat.key ? null : stat.key)}>
-                    {stat.label}
+                    <span style={{ borderBottom: '1px dashed #4a3820', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <Icon icon={stat.icon} width={11} height={11} />
+                      {stat.label}
+                    </span>
                     {hoveredStat === stat.key && (
                       <span className="absolute left-0 z-50 pointer-events-none"
                         style={{
@@ -292,16 +370,18 @@ export default function CharacterCard({
                           whiteSpace: 'normal', width: '200px',
                           boxShadow: '0 4px 12px rgba(0,0,0,0.7)',
                         }}>
-                        <strong style={{ color: '#d4a843', display: 'block', marginBottom: '2px' }}>{stat.emoji} {stat.label}</strong>
+                        <strong style={{ color: '#d4a843', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
+                          <Icon icon={stat.icon} width={13} height={13} />{stat.label}
+                        </strong>
                         {stat.description}
                       </span>
                     )}
                   </span>
                   <div className="flex-1 stat-bar">
                     <div style={{ display: 'flex', height: '10px', borderRadius: '2px', overflow: 'hidden' }}>
-                      <div style={{ width: `${basePct}%`, background: '#6a5a3a' }} />
-                      {stat.gear > 0 && <div style={{ width: `${gearPct}%`, background: '#a88030' }} />}
-                      {stat.buff > 0 && <div style={{ width: `${buffPct}%`, background: '#3a8a4a' }} />}
+                      <div style={{ width: `${basePct}%`, background: '#6a5a3a', transition: 'width 0.3s ease' }} />
+                      {stat.gear > 0 && <div style={{ width: `${gearPct}%`, background: '#a88030', transition: 'width 0.3s ease' }} />}
+                      {stat.buff > 0 && <div style={{ width: `${buffPct}%`, background: '#3a8a4a', transition: 'width 0.3s ease' }} />}
                     </div>
                   </div>
                   <span className="text-xs font-bold w-5 text-right shrink-0" style={{ color: '#d4a843' }}>{stat.total}</span>
@@ -333,47 +413,181 @@ export default function CharacterCard({
             </div>
           )}
 
+          {/* Equipment section */}
           <div className="pt-3" style={{ borderTop: '1px solid #1e1408' }}>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {slots.map(slot => (
-                <Link key={slot.key} href="/equipment" style={{ textDecoration: 'none' }}
-                  title={slot.item ? `${slot.label}: ${slot.item.name}` : `${slot.label} — empty`}>
-                  <div className="relative rounded overflow-hidden"
-                    style={{ border: '1px solid #2a1e14', minHeight: '64px', background: '#0a0806' }}>
-                    {/* Category image background */}
-                    <div className="absolute inset-0 bg-center bg-cover" style={{
-                      backgroundImage: `url(${SLOT_IMAGES[slot.key]})`,
-                      opacity: 0.08,
-                    }} />
-                    {/* Content */}
-                    <div className="relative flex flex-col items-center justify-center gap-0.5 p-1.5" style={{ minHeight: '64px' }}>
-                      <span style={{
-                        fontSize: '11px',
-                        color: '#5a4a30',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.06em',
-                        fontFamily: 'var(--font-cinzel, Georgia)',
-                        lineHeight: 1,
-                      }}>
-                        {slot.label}
-                      </span>
-                      <span style={{
-                        fontSize: '10px',
-                        color: slot.item ? '#c8a860' : '#3a2a1a',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        lineHeight: 1.3,
-                        textAlign: 'center',
-                        width: '100%',
-                      }}>
-                        {slot.item ? slot.item.name : 'Empty'}
-                      </span>
+            <p className="text-xs font-bold mb-2" style={{ color: '#a08050', fontFamily: 'var(--font-cinzel, Georgia)', letterSpacing: '0.08em' }}>
+              EQUIPMENT
+              {inlineEquip && <span className="ml-2 font-normal" style={{ color: '#4a3820', textTransform: 'none', letterSpacing: 0 }}>tap a slot to equip</span>}
+            </p>
+
+            {inlineEquip ? (
+              /* Inline equipment management */
+              <div className="space-y-1.5">
+                {GEAR_SLOTS.map(slotDef => {
+                  const equipped = equippedInSlot(slotDef.key)
+                  const owned = ownedInSlot(slotDef.key)
+                  const isOpen = openEquipSlot === slotDef.key
+                  const hasPending = owned.length > 0
+
+                  return (
+                    <div key={slotDef.key}>
+                      <button
+                        className="w-full text-left relative overflow-hidden rounded"
+                        style={{
+                          border: `1px solid ${equipped ? '#7a5a28' : hasPending ? '#3a2a1a' : '#1e1610'}`,
+                          borderLeft: `3px solid ${equipped ? '#c8a84b' : hasPending ? '#5a4a2a' : '#2a1e10'}`,
+                          background: isOpen ? '#1a1610' : '#0e0c08',
+                          cursor: hasPending ? 'pointer' : 'default',
+                          padding: '8px 10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                        }}
+                        onClick={() => hasPending && setOpenEquipSlot(isOpen ? null : slotDef.key)}
+                      >
+                        <div className="absolute inset-0 bg-center bg-cover pointer-events-none" style={{
+                          backgroundImage: `url(${SLOT_IMAGES[slotDef.key]})`,
+                          opacity: equipped ? 0.06 : 0.03,
+                        }} />
+                        <span className="text-xs shrink-0" style={{ color: '#5a4a30', width: '48px', fontFamily: 'var(--font-cinzel, Georgia)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '9px' }}>
+                          {slotDef.label}
+                        </span>
+                        {equipped ? (
+                          <div className="flex-1 flex items-center gap-1.5 min-w-0">
+                            <span className="text-sm">{equipped.emoji}</span>
+                            <span className="text-xs font-bold truncate" style={{ color: '#c8a84b' }}>{equipped.name}</span>
+                            <div className="flex flex-wrap gap-0.5 ml-1">
+                              {Object.entries(equipped.statBonus).map(([k, v]) => (
+                                <span key={k} className="text-xs px-1 rounded" style={{
+                                  background: (v as number) > 0 ? '#0e1e0a' : '#1e0a0a',
+                                  color: (v as number) > 0 ? '#5abf6a' : '#bf5a5a',
+                                  fontSize: '9px',
+                                }}>
+                                  {(v as number) > 0 ? '+' : ''}{v} {k}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="flex-1 text-xs" style={{ color: hasPending ? '#5a4a2a' : '#2a1e10' }}>
+                            {hasPending ? 'Nothing equipped — tap to choose' : 'Empty'}
+                          </span>
+                        )}
+                        {hasPending && (
+                          <span className="text-xs shrink-0" style={{ color: '#4a3820' }}>{isOpen ? '▴' : '▾'}</span>
+                        )}
+                      </button>
+
+                      {isOpen && (
+                        <div className="rounded-b overflow-hidden" style={{ border: '1px solid #2a1e14', borderTop: 'none', background: '#0a0806' }}>
+                          {equipped && (
+                            <button
+                              className="w-full text-left px-3 py-2.5 text-xs"
+                              style={{ borderBottom: '1px solid #1a1410', color: '#8a5a4a', display: 'flex', alignItems: 'center', gap: '6px' }}
+                              disabled={equipLoading === equipped.id}
+                              onClick={() => changeEquip(equipped.id)}>
+                              <Icon icon="lucide:x" width={10} height={10} />
+                              {equipLoading === equipped.id ? 'Unequipping…' : `Unequip ${equipped.name}`}
+                            </button>
+                          )}
+                          {owned.map(item => {
+                            const isEquipped = localEquippedIds.includes(item.id)
+                            const sellPrice = Math.max(1, Math.floor(item.price * 0.25))
+                            return (
+                              <div key={item.id} style={{ borderBottom: '1px solid #1a1410', background: isEquipped ? '#1a1610' : 'transparent' }}>
+                                <button
+                                  className="w-full text-left px-3 pt-2.5 pb-1.5 transition-colors"
+                                  style={{ cursor: isEquipped ? 'default' : 'pointer' }}
+                                  disabled={equipLoading === item.id || isEquipped}
+                                  onClick={() => !isEquipped && changeEquip(item.id)}>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-base">{item.emoji}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-xs font-bold" style={{ color: isEquipped ? '#c8a84b' : '#e8d5b0' }}>
+                                          {item.name}
+                                        </span>
+                                        {isEquipped && <span className="text-xs" style={{ color: '#c8a84b' }}>✓ equipped</span>}
+                                        <div className="flex flex-wrap gap-0.5">
+                                          {Object.entries(item.statBonus).map(([k, v]) => (
+                                            <span key={k} className="text-xs px-1 rounded" style={{
+                                              background: (v as number) > 0 ? '#1a3a1a' : '#3a1a1a',
+                                              color: (v as number) > 0 ? '#6abf6a' : '#bf6a6a',
+                                              fontSize: '9px',
+                                            }}>
+                                              {(v as number) > 0 ? '+' : ''}{v} {k}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {equipLoading === item.id && <span className="text-xs" style={{ color: '#a08050' }}>…</span>}
+                                  </div>
+                                </button>
+                                <div className="px-3 pb-2">
+                                  <button
+                                    className="text-xs px-2.5 py-1.5 rounded flex items-center gap-1"
+                                    style={{ background: '#1a0a0a', color: '#8a5040', border: '1px solid #3a1a14', cursor: 'pointer' }}
+                                    disabled={sellLoading === item.id}
+                                    onClick={() => sellItem(item.id)}>
+                                    {sellLoading === item.id ? 'Selling…' : <><Icon icon="ph:bone-fill" width={11} height={11} /> Sell for {sellPrice}</>}
+                                  </button>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  )
+                })}
+                <div className="mt-2 text-center">
+                  <Link href="/equipment" className="text-xs" style={{ color: '#4a3820', textDecoration: 'none' }}>
+                    Sell gear or buy more at the smithy →
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              /* Read-only slot grid (no ownedGear provided) */
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {slots.map(slot => (
+                  <Link key={slot.key} href="/equipment" style={{ textDecoration: 'none' }}
+                    title={slot.item ? `${slot.label}: ${slot.item.name}` : `${slot.label} — empty`}>
+                    <div className="relative rounded overflow-hidden"
+                      style={{ border: '1px solid #2a1e14', minHeight: '64px', background: '#0a0806' }}>
+                      <div className="absolute inset-0 bg-center bg-cover" style={{
+                        backgroundImage: `url(${SLOT_IMAGES[slot.key]})`,
+                        opacity: 0.08,
+                      }} />
+                      <div className="relative flex flex-col items-center justify-center gap-0.5 p-1.5" style={{ minHeight: '64px' }}>
+                        <span style={{
+                          fontSize: '11px',
+                          color: '#5a4a30',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                          fontFamily: 'var(--font-cinzel, Georgia)',
+                          lineHeight: 1,
+                        }}>
+                          {slot.label}
+                        </span>
+                        <span style={{
+                          fontSize: '10px',
+                          color: slot.item ? '#c8a860' : '#3a2a1a',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          lineHeight: 1.3,
+                          textAlign: 'center',
+                          width: '100%',
+                        }}>
+                          {slot.item ? slot.item.name : 'Empty'}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           {hasBuffs && (

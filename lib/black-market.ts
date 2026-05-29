@@ -1,9 +1,10 @@
-import { StatKey, GearSlot } from './game-data'
+import { StatKey, GearSlot, GEAR_SLOTS } from './game-data'
 
 export interface BlackMarketItem {
   name: string
   description: string
   emoji: string
+  icon: string
   slot: GearSlot
   statBonus: Partial<Record<StatKey, number>>
   price: number
@@ -110,7 +111,8 @@ function generateItem(dateStr: string, tier: 1 | 2 | 3): BlackMarketItem {
     .map(([k, v]) => `${(v as number) > 0 ? '+' : ''}${v} ${k}`)
     .join(', ')}.`
 
-  return { name, description, emoji, slot, statBonus, price, levelReq: tierConfig.levelReq, flavor, tier }
+  const icon = GEAR_SLOTS.find(s => s.key === slot)?.icon ?? 'game-icons:charm'
+  return { name, description, emoji, icon, slot, statBonus, price, levelReq: tierConfig.levelReq, flavor, tier }
 }
 
 export function generateDailyMarket(dateStr: string): BlackMarketItem[] {

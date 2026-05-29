@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { xpForLevel, levelFromXp } from '@/lib/game-data'
+import { Icon } from '@iconify/react'
 
 interface Props {
   won: boolean
@@ -152,8 +153,8 @@ export default function BattleOutcome({
           border: '1px solid #d4a843',
           boxShadow: '0 0 24px rgba(212,168,67,0.25)',
         }}>
-          <p className="font-bold text-lg page-title" style={{ color: '#d4a843', letterSpacing: '0.12em' }}>
-            ⬆ LEVEL UP!
+          <p className="font-bold text-lg page-title flex items-center justify-center gap-1" style={{ color: '#d4a843', letterSpacing: '0.12em' }}>
+            <Icon icon="game-icons:upgrade" width={12} height={12} style={{ color: '#5abf6a' }} /> LEVEL UP!
           </p>
           <p className="text-sm" style={{ color: '#c8b890' }}>
             {fighterName} reached level {newLevel}
@@ -212,7 +213,7 @@ export default function BattleOutcome({
 
           {/* Bones */}
           <div className="flex justify-between text-sm items-center">
-            <span style={{ color: '#a08050' }}>🦴 Bones</span>
+            <span style={{ color: '#a08050' }} className="flex items-center gap-1"><Icon icon="ph:bone-fill" width={14} height={14} /> Bones</span>
             <span className="font-bold" style={{ color: '#d4a843', fontFamily: 'var(--font-cinzel, Georgia)' }}>
               {displayedBones}
               {showButton && bonusDelta !== 0 && (

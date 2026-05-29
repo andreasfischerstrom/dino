@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { Icon } from '@iconify/react'
 import { BattleEvent } from '@/lib/battle-engine'
 import { DaringOption } from '@/lib/game-data'
 import BattleOutcome from './BattleOutcome'
@@ -87,13 +88,17 @@ function hpBarColor(pct: number) {
   return 'linear-gradient(to bottom, #ff4444 0%, #cc2020 60%, #991010 100%)'
 }
 
-function eventEmoji(type: string) {
-  if (type === 'crit') return '💥 '
-  if (type === 'death') return '☠️ '
-  if (type === 'surrender') return '🏳️ '
-  if (type === 'outcome') return '🏆 '
-  if (type === 'counter') return '↩️ '
-  return ''
+function EventIcon({ type }: { type: string }) {
+  const map: Record<string, string> = {
+    crit: 'game-icons:burst-blob',
+    death: 'game-icons:skull-crossbones',
+    surrender: 'game-icons:white-flag',
+    outcome: 'game-icons:trophy-cup',
+    counter: 'game-icons:return-arrow',
+  }
+  const icon = map[type]
+  if (!icon) return null
+  return <Icon icon={icon} width={14} height={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px', position: 'relative', top: '-1px' }} />
 }
 
 function FighterHead({ image, name, align, size = 72, attacking, dead, flash, floatNum }: {
@@ -563,7 +568,7 @@ export default function BattleViewer({
               overflow: 'hidden',
               flex: 1,
             }}>
-              {eventEmoji(currentEvent.type)}
+              <EventIcon type={currentEvent.type} />
               {typedText}
               {isTyping && (
                 <span className="type-cursor" style={{ color: '#d4a843', marginLeft: '1px' }}>▌</span>
