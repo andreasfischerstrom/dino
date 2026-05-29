@@ -138,6 +138,9 @@ export default function NavBar() {
 
   useEffect(() => {
     const supabase = createClient()
+    let charId: string | null = null
+    let channel: ReturnType<typeof supabase.channel> | null = null
+
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -147,6 +150,7 @@ export default function NavBar() {
         .eq('user_id', user.id)
         .single()
       if (!char) return
+      charId = char.id as string
       const { count } = await supabase
         .from('challenges').select('*', { count: 'exact', head: true })
         .eq('challenged_id', char.id).eq('status', 'pending')
@@ -165,8 +169,34 @@ export default function NavBar() {
         speciesImage: sp?.image ?? null,
         speciesEmoji: sp?.emoji ?? '🦕',
       })
+
+      // Subscribe to live character updates (HP regen, battles, purchases)
+      channel = supabase
+        .channel(`nav-char-${char.id}`)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'characters',
+          filter: `id=eq.${char.id}`,
+        }, (payload) => {
+          const c = payload.new as Record<string, unknown>
+          setData(prev => prev ? {
+            ...prev,
+            hp: c.hp as number,
+            maxHp: c.max_hp as number,
+            xp: c.xp as number,
+            level: c.level as number,
+            bones: c.bones as number,
+          } : prev)
+        })
+        .subscribe()
     }
+
     load()
+
+    return () => {
+      if (channel) channel.unsubscribe()
+    }
   }, [pathname])
 
   if (HIDDEN_ON.some(p => pathname.startsWith(p))) return null
