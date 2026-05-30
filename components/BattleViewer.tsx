@@ -204,6 +204,11 @@ export default function BattleViewer({
   const [portraitSize, setPortraitSize] = useState(72)
 
   useEffect(() => {
+    document.body.classList.add('battle-active')
+    return () => document.body.classList.remove('battle-active')
+  }, [])
+
+  useEffect(() => {
     setIsTouch(window.matchMedia('(pointer: coarse)').matches)
     setPortraitSize(Math.min(96, Math.max(72, Math.floor(window.innerWidth * 0.22))))
   }, [])

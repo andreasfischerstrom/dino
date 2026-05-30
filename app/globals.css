@@ -403,3 +403,7 @@ input[type="range"]::-moz-range-thumb {
   background: linear-gradient(to right, transparent, #4a3520, transparent);
   margin: 0.75rem 0;
 }
+
+
+/* Hide navbar during fullscreen battle */
+body.battle-active nav { display: none !important; }
