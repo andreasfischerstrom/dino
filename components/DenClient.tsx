@@ -170,7 +170,7 @@ export default function DenClient({
           {!isHomeTown && (
             <div className="panel mb-4 text-sm" style={{ color: '#7a6848', borderColor: '#2a1e10' }}>
               <span className="flex items-center gap-2">
-                <Icon icon="ph:house-fill" width={14} height={14} style={{ color: '#5a4020' }} />
+                <Icon icon="game-icons:cave-entrance" width={14} height={14} style={{ color: '#5a4020' }} />
                 Your Den is in {denTownDef!.name}. Regen and Tavern perks apply there. Home defense applies when challenged there.
               </span>
             </div>

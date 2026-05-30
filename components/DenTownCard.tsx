@@ -28,7 +28,7 @@ export default function DenTownCard({ isHome, accent, desc }: Props) {
           }}
         >
           <Icon
-            icon="ph:house-fill"
+            icon="game-icons:cave-entrance"
             width={20} height={20}
             style={{ color: hovered ? '#e8c870' : (isHome ? accent : '#c8a050'), flexShrink: 0, filter: isHome ? `drop-shadow(0 0 6px ${accent})` : 'none', transition: 'color 0.15s' }}
           />
