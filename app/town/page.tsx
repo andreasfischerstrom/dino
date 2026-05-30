@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Icon } from '@iconify/react'
 import LocationCards from '@/components/LocationCards'
-import DenTownCard from '@/components/DenTownCard'
 import TownUnlockPrompt from '@/components/TownUnlockPrompt'
 import TownIntroOverlay from '@/components/TownIntroOverlay'
 import { SPECIES, TOWNS, DEN_DATA, DEN_TIERS, getDenPerks, maxHp } from '@/lib/game-data'
@@ -364,25 +363,25 @@ export default async function TownPage() {
         </div>
 
         {/* Location cards — dark overlay so text is readable */}
-        <LocationCards cards={[
-          { href: '/arena',  label: townDef.locations.arena,  icon: 'game-icons:crossed-swords', desc: 'Fight mobs & players' },
-          { href: '/tavern', label: townDef.locations.tavern, icon: 'game-icons:tavern-sign',    desc: 'Quests & healing' },
-          { href: '/shop',   label: townDef.locations.gear,   icon: 'game-icons:anvil',          desc: 'Buy gear' },
-        ]} gridBackground="rgba(0,0,0,0.82)" />
-
-        {/* Den row */}
         {(() => {
           const isHome = !!denTownId && denTownId === currentTownEarly
           const hasDenElsewhere = !!denTownId && denTownId !== currentTownEarly
           const denTownName = hasDenElsewhere ? (TOWNS.find(t => t.id === denTownId)?.name ?? '') : ''
           const denTownData = denTownId ? DEN_DATA[denTownId] : null
-          const accent = isHome ? (denTownData?.accentColor ?? '#c8a050') : '#c8a050'
+          const accent = isHome ? (denTownData?.accentColor ?? undefined) : undefined
           const desc = isHome
-            ? `Your ${DEN_TIERS[denTierId! - 1]} · perks active`
+            ? `${DEN_TIERS[denTierId! - 1]} · perks active`
             : hasDenElsewhere
-              ? `You own a den in ${denTownName}`
-              : 'Claim territory in this town'
-          return <DenTownCard isHome={isHome} accent={accent} desc={desc} />
+              ? `Den in ${denTownName}`
+              : 'No den yet'
+          return (
+            <LocationCards cards={[
+              { href: '/arena',  label: townDef.locations.arena,  icon: 'game-icons:crossed-swords', desc: 'Fight mobs & players' },
+              { href: '/tavern', label: townDef.locations.tavern, icon: 'game-icons:tavern-sign',    desc: 'Quests & healing' },
+              { href: '/shop',   label: townDef.locations.gear,   icon: 'game-icons:anvil',          desc: 'Buy gear' },
+              { href: '/den',    label: 'Den',                    icon: 'game-icons:campfire',      desc, accent },
+            ]} gridBackground="rgba(0,0,0,0.82)" />
+          )
         })()}
       </div>
 
